@@ -20,25 +20,25 @@ milestones and issues.
 | GitLab milestone | [!1](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/milestones/1) |
 | Status | Active |
 | Start date | Not set |
-| Due date | Not set |
+| Due date | October 5, 2026 |
 | Description | Not set |
-| Created / last updated (UTC) | 2026-10-04 18:37:14 / 2026-10-04 18:37:14 |
+| Created / last updated (UTC) | 2026-10-04 18:37:14 / 2026-10-04 20:06:37 |
 | Issues | 6 open; 2 closed |
 
 ## Issues
 
 All issues below belong to **P#6 - Synthesizing Discovery**. GitLab supports
-a date-only issue due date, so every issue is due **October 4, 2026**. They
+a date-only issue due date, so every issue is due **October 5, 2026**. They
 were created by `theankitjoshi12345`, have no GitLab assignees or labels, are
 not confidential, and have no locked discussion.
 
 ### [#1 — Define User Segments](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/1)
 
 - Status: Closed
-- Due date: October 4, 2026
+- Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399358
-- Created / last updated (UTC): 2026-10-04 18:37:14 / 2026-10-04 19:52:56
+- Created / last updated (UTC): 2026-10-04 18:37:14 / 2026-10-04 20:06:20
 - Closed (UTC): 2026-10-04 19:52:56
 - GitLab assignment: None
 - Responsibility: Synthesize interview findings into actionable user segments.
@@ -54,10 +54,10 @@ Checklist:
 ### [#2 — Persona + Scenarios + User Stories — Member A (Matthew)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/2)
 
 - Status: Closed
-- Due date: October 4, 2026
+- Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399359
-- Created / last updated (UTC): 2026-10-04 18:37:15 / 2026-10-04 19:01:28
+- Created / last updated (UTC): 2026-10-04 18:37:15 / 2026-10-04 20:06:21
 - Closed (UTC): 2026-10-04 19:01:28
 - GitLab assignment: None
 - Owner: Matthew — Team Lead
@@ -74,10 +74,10 @@ Checklist:
 ### [#3 — Persona + Scenarios + User Stories — Member B (Logan)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/3)
 
 - Status: Open
-- Due date: October 4, 2026
+- Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399361
-- Created / last updated (UTC): 2026-10-04 18:37:16 / 2026-10-04 18:37:16
+- Created / last updated (UTC): 2026-10-04 18:37:16 / 2026-10-04 20:06:22
 - GitLab assignment: None
 - Owner: Logan
 - Responsibility: Develop one evidence-based persona and convert their needs into scenarios and user stories.
@@ -93,10 +93,10 @@ Checklist:
 ### [#4 — Persona + Scenarios + User Stories — Member C (Ankit)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/4)
 
 - Status: Open
-- Due date: October 4, 2026
+- Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399364
-- Created / last updated (UTC): 2026-10-04 18:37:17 / 2026-10-04 18:37:17
+- Created / last updated (UTC): 2026-10-04 18:37:17 / 2026-10-04 20:06:22
 - GitLab assignment: None
 - Owner: Ankit
 - Responsibility: Develop one evidence-based persona and convert their needs into scenarios and user stories.
@@ -112,10 +112,10 @@ Checklist:
 ### [#5 — Persona + Scenarios + User Stories — Member D (Jonathan)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/5)
 
 - Status: Open
-- Due date: October 4, 2026
+- Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399366
-- Created / last updated (UTC): 2026-10-04 18:37:18 / 2026-10-04 18:37:18
+- Created / last updated (UTC): 2026-10-04 18:37:18 / 2026-10-04 20:06:23
 - GitLab assignment: None
 - Owner: Jonathan
 - Responsibility: Develop one evidence-based persona and convert their needs into scenarios and user stories.
@@ -131,10 +131,10 @@ Checklist:
 ### [#6 — Compile Feature List](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/6)
 
 - Status: Open
-- Due date: October 4, 2026
+- Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399367
-- Created / last updated (UTC): 2026-10-04 18:37:19 / 2026-10-04 18:37:19
+- Created / last updated (UTC): 2026-10-04 18:37:19 / 2026-10-04 20:06:24
 - GitLab assignment: None
 - Responsibility: Turn the team’s user stories into a prioritized feature list.
 
@@ -149,10 +149,10 @@ Checklist:
 ### [#7 — Identify Riskiest Assumptions](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/7)
 
 - Status: Open
-- Due date: October 4, 2026
+- Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399370
-- Created / last updated (UTC): 2026-10-04 18:37:20 / 2026-10-04 18:37:20
+- Created / last updated (UTC): 2026-10-04 18:37:20 / 2026-10-04 20:06:24
 - GitLab assignment: None
 - Responsibility: Document the assumptions most likely to undermine the proposed solution if they prove false.
 
@@ -167,10 +167,10 @@ Checklist:
 ### [#8 — Compile Final Report](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/8)
 
 - Status: Open
-- Due date: October 4, 2026
+- Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399372
-- Created / last updated (UTC): 2026-10-04 18:37:21 / 2026-10-04 18:37:21
+- Created / last updated (UTC): 2026-10-04 18:37:21 / 2026-10-04 20:06:25
 - GitLab assignment: None
 - Responsibility: Assemble and quality-check the final P#6 report.
 
