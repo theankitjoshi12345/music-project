@@ -23,7 +23,7 @@ milestones and issues.
 | Due date | Not set |
 | Description | Not set |
 | Created / last updated (UTC) | 2026-10-04 18:37:14 / 2026-10-04 18:37:14 |
-| Issues | 7 open; 1 closed |
+| Issues | 6 open; 2 closed |
 
 ## Issues
 
@@ -34,11 +34,12 @@ not confidential, and have no locked discussion.
 
 ### [#1 — Define User Segments](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/1)
 
-- Status: Open
+- Status: Closed
 - Due date: October 4, 2026
 - Issue type: Issue
 - GitLab ID: 205399358
-- Created / last updated (UTC): 2026-10-04 18:37:14 / 2026-10-04 18:37:14
+- Created / last updated (UTC): 2026-10-04 18:37:14 / 2026-10-04 19:52:56
+- Closed (UTC): 2026-10-04 19:52:56
 - GitLab assignment: None
 - Responsibility: Synthesize interview findings into actionable user segments.
 
