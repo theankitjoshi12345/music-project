@@ -23,7 +23,7 @@ milestones and issues.
 | Due date | Not set |
 | Description | Not set |
 | Created / last updated (UTC) | 2026-10-04 18:37:14 / 2026-10-04 18:37:14 |
-| Issues | 8 open; 0 closed |
+| Issues | 7 open; 1 closed |
 
 ## Issues
 
@@ -52,11 +52,12 @@ Checklist:
 
 ### [#2 — Persona + Scenarios + User Stories — Member A (Matthew)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/2)
 
-- Status: Open
+- Status: Closed
 - Due date: October 4, 2026
 - Issue type: Issue
 - GitLab ID: 205399359
-- Created / last updated (UTC): 2026-10-04 18:37:15 / 2026-10-04 18:37:15
+- Created / last updated (UTC): 2026-10-04 18:37:15 / 2026-10-04 19:01:28
+- Closed (UTC): 2026-10-04 19:01:28
 - GitLab assignment: None
 - Owner: Matthew — Team Lead
 - Responsibility: Develop one evidence-based persona and convert their needs into scenarios and user stories.
