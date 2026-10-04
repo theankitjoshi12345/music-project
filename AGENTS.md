@@ -1,5 +1,15 @@
 # Project Agent Instructions
 
+## P#6 work
+
+- Before performing any P#6 work, read `P6_INSTRUCTIONS.md` and
+  `P6_RUBRIC.md`; follow their evidence, privacy, tracker, publication, and
+  review boundaries.
+- When the user explicitly requests publication of all pending project files,
+  inspect `git status`, state any public-repository privacy implications, then
+  commit and push every listed pending file to the `github` remote only. Do
+  not push those files to GitLab unless the user separately asks.
+
 ## Issue tracking
 
 - Use GitLab as the source of truth for project milestones and issues.
