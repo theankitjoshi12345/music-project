@@ -23,14 +23,14 @@ milestones and issues.
 | Due date | October 5, 2026 |
 | Description | Not set |
 | Created / last updated (UTC) | 2026-10-04 18:37:14 / 2026-10-04 20:06:37 |
-| Issues | 6 open; 2 closed |
+| Issues | 4 open; 4 closed |
 
 ## Issues
 
 All issues below belong to **P#6 - Synthesizing Discovery**. GitLab supports
 a date-only issue due date, so every issue is due **October 5, 2026**. They
-were created by `theankitjoshi12345`, have no GitLab assignees or labels, are
-not confidential, and have no locked discussion.
+were created by `theankitjoshi12345`, are not confidential, and have no locked
+discussion. GitLab assignments are recorded with each issue below.
 
 ### [#1 — Define User Segments](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/1)
 
@@ -73,11 +73,12 @@ Checklist:
 
 ### [#3 — Persona + Scenarios + User Stories — Member B (Logan)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/3)
 
-- Status: Open
+- Status: Closed
 - Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399361
-- Created / last updated (UTC): 2026-10-04 18:37:16 / 2026-10-04 20:06:22
+- Created / last updated (UTC): 2026-10-04 18:37:16 / 2026-10-04 23:02:07
+- Closed (UTC): 2026-10-04 23:02:07
 - GitLab assignment: None
 - Owner: Logan
 - Responsibility: Develop one evidence-based persona and convert their needs into scenarios and user stories.
@@ -92,22 +93,23 @@ Checklist:
 
 ### [#4 — Persona + Scenarios + User Stories — Member C (Ankit)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/4)
 
-- Status: Open
+- Status: Closed
 - Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399364
-- Created / last updated (UTC): 2026-10-04 18:37:17 / 2026-10-04 20:06:22
-- GitLab assignment: None
+- Created / last updated (UTC): 2026-10-04 18:37:17 / 2026-10-05 00:38:40
+- Closed (UTC): 2026-10-05 00:38:40
+- GitLab assignment: [Ankit Joshi (@theankitjoshi12345)](https://gitlab.com/theankitjoshi12345)
 - Owner: Ankit
 - Responsibility: Develop one evidence-based persona and convert their needs into scenarios and user stories.
 
 Checklist:
 
-- [ ] Create one persona grounded in interview data.
-- [ ] Include persona name, assigned segment, a real interview quote, goals, pains, and behaviors.
-- [ ] Write 1–2 scenarios; each must include trigger, context, goal, and current pain.
-- [ ] Write 2–4 user stories using: `As a [persona], I want to [action], so that [benefit].`
-- [ ] Cite or link the supporting interview evidence in the deliverable.
+- [x] Create one persona grounded in interview data.
+- [x] Include persona name, assigned segment, a real interview quote, goals, pains, and behaviors.
+- [x] Write 1–2 scenarios; each must include trigger, context, goal, and current pain.
+- [x] Write 2–4 user stories using: `As a [persona], I want to [action], so that [benefit].`
+- [x] Cite or link the supporting interview evidence in the deliverable.
 
 ### [#5 — Persona + Scenarios + User Stories — Member D (Jonathan)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/5)
 
@@ -115,8 +117,8 @@ Checklist:
 - Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399366
-- Created / last updated (UTC): 2026-10-04 18:37:18 / 2026-10-04 20:06:23
-- GitLab assignment: None
+- Created / last updated (UTC): 2026-10-04 18:37:18 / 2026-10-04 22:07:29
+- GitLab assignment: [JDemp06 (@JDemp06)](https://gitlab.com/JDemp06)
 - Owner: Jonathan
 - Responsibility: Develop one evidence-based persona and convert their needs into scenarios and user stories.
 
