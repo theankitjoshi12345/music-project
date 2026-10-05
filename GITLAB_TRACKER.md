@@ -1,7 +1,7 @@
 # GitLab Milestones and Issues
 
 This document is a snapshot of the GitLab tracker for the Music Project. It
-was retrieved on October 4, 2026. GitLab is the source of truth for project
+was retrieved on October 5, 2026. GitLab is the source of truth for project
 milestones and issues.
 
 - GitLab project: <https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project>
@@ -18,12 +18,12 @@ milestones and issues.
 | --- | --- |
 | GitLab ID | 7640834 |
 | GitLab milestone | [!1](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/milestones/1) |
-| Status | Active |
+| Status | Closed |
 | Start date | Not set |
 | Due date | October 5, 2026 |
 | Description | Not set |
-| Created / last updated (UTC) | 2026-10-04 18:37:14 / 2026-10-04 20:06:37 |
-| Issues | 4 open; 4 closed |
+| Created / last updated (UTC) | 2026-10-04 18:37:14 / 2026-10-05 19:53:06 |
+| Issues | 0 open; 8 closed |
 
 ## Issues
 
@@ -113,73 +113,77 @@ Checklist:
 
 ### [#5 — Persona + Scenarios + User Stories — Member D (Jonathan)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/5)
 
-- Status: Open
+- Status: Closed
 - Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399366
-- Created / last updated (UTC): 2026-10-04 18:37:18 / 2026-10-04 22:07:29
+- Created / last updated (UTC): 2026-10-04 18:37:18 / 2026-10-05 01:01:45
+- Closed (UTC): 2026-10-05 01:01:45
 - GitLab assignment: [JDemp06 (@JDemp06)](https://gitlab.com/JDemp06)
 - Owner: Jonathan
 - Responsibility: Develop one evidence-based persona and convert their needs into scenarios and user stories.
 
 Checklist:
 
-- [ ] Create one persona grounded in interview data.
-- [ ] Include persona name, assigned segment, a real interview quote, goals, pains, and behaviors.
-- [ ] Write 1–2 scenarios; each must include trigger, context, goal, and current pain.
-- [ ] Write 2–4 user stories using: `As a [persona], I want to [action], so that [benefit].`
-- [ ] Cite or link the supporting interview evidence in the deliverable.
+- [x] Create one persona grounded in interview data.
+- [x] Include persona name, assigned segment, a real interview quote, goals, pains, and behaviors.
+- [x] Write 1–2 scenarios; each must include trigger, context, goal, and current pain.
+- [x] Write 2–4 user stories using: `As a [persona], I want to [action], so that [benefit].`
+- [x] Cite or link the supporting interview evidence in the deliverable.
 
 ### [#6 — Compile Feature List](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/6)
 
-- Status: Open
+- Status: Closed
 - Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399367
-- Created / last updated (UTC): 2026-10-04 18:37:19 / 2026-10-04 20:06:24
+- Created / last updated (UTC): 2026-10-04 18:37:19 / 2026-10-05 19:52:45
+- Closed (UTC): 2026-10-05 19:52:45
 - GitLab assignment: None
 - Responsibility: Turn the team’s user stories into a prioritized feature list.
 
 Checklist:
 
-- [ ] Gather all approved user stories.
-- [ ] Group proposed functionality into Core Features, Supporting Features, and Excluded Features.
-- [ ] Describe each feature concisely and trace it to relevant user stories where practical.
-- [ ] Explain why every excluded feature is out of scope.
-- [ ] Review the grouping with the team before finalizing.
+- [x] Gather all approved user stories.
+- [x] Group proposed functionality into Core Features, Supporting Features, and Excluded Features.
+- [x] Describe each feature concisely and trace it to relevant user stories where practical.
+- [x] Explain why every excluded feature is out of scope.
+- [x] Review the grouping with the team before finalizing.
 
 ### [#7 — Identify Riskiest Assumptions](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/7)
 
-- Status: Open
+- Status: Closed
 - Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399370
-- Created / last updated (UTC): 2026-10-04 18:37:20 / 2026-10-04 20:06:24
+- Created / last updated (UTC): 2026-10-04 18:37:20 / 2026-10-05 19:52:46
+- Closed (UTC): 2026-10-05 19:52:46
 - GitLab assignment: None
 - Responsibility: Document the assumptions most likely to undermine the proposed solution if they prove false.
 
 Checklist:
 
-- [ ] Select the top three riskiest assumptions.
-- [ ] State each assumption clearly.
-- [ ] Explain why each assumption is risky.
-- [ ] Propose a practical test or validation method for each assumption.
-- [ ] Prioritize tests that can be run before significant implementation effort.
+- [x] Select the top three riskiest assumptions.
+- [x] State each assumption clearly.
+- [x] Explain why each assumption is risky.
+- [x] Propose a practical test or validation method for each assumption.
+- [x] Prioritize tests that can be run before significant implementation effort.
 
 ### [#8 — Compile Final Report](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/8)
 
-- Status: Open
+- Status: Closed
 - Due date: October 5, 2026
 - Issue type: Issue
 - GitLab ID: 205399372
-- Created / last updated (UTC): 2026-10-04 18:37:21 / 2026-10-04 20:06:25
+- Created / last updated (UTC): 2026-10-04 18:37:21 / 2026-10-05 19:52:48
+- Closed (UTC): 2026-10-05 19:52:48
 - GitLab assignment: None
 - Responsibility: Assemble and quality-check the final P#6 report.
 
 Checklist:
 
-- [ ] Combine the Title Page, Delivery Schedule, User Segments, Individual Contributions, Feature List, and Riskiest Assumptions.
-- [ ] Confirm all required sections are complete, coherent, and consistently formatted.
-- [ ] Verify that interview evidence, personas, scenarios, and stories are represented accurately.
-- [ ] Proofread for clarity, spelling, and attribution.
-- [ ] Prepare the final report for submission.
+- [x] Combine the Title Page, Delivery Schedule, User Segments, Individual Contributions, Feature List, and Riskiest Assumptions.
+- [x] Confirm all required sections are complete, coherent, and consistently formatted.
+- [x] Verify that interview evidence, personas, scenarios, and stories are represented accurately.
+- [x] Proofread for clarity, spelling, and attribution.
+- [x] Prepare the final report for submission.
