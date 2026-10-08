@@ -8,9 +8,9 @@ required report template.
 
 - Current assignment deadline: **October 5, 2026, 11:55 PM**.
 - Submission format: one PDF uploaded to Moodle.
-- Start from the provided `P6-Report-Template.html.docx` template when it is
+- Start from the provided `report-template.docx` template when it is
   available.
-- Use `P6_RUBRIC.md` during review; it captures the supplied grader notes and
+- Use `RUBRIC.md` during review; it captures the supplied grader notes and
   identifies a scenario-count mismatch that needs careful handling.
 - The pasted course page also contains March 2026 example dates. Those are
   stale examples and must not be used for this offering.
@@ -40,10 +40,11 @@ required report template.
    GitLab is the project tracker.
 5. Do not submit, upload, convert, overwrite, or publish the final report
    without an explicit user request.
-6. Keep interview source material out of public repositories by default. Do
-   not place raw transcripts, participant names, contact information, or
-   identifying details in public-facing files unless the user explicitly
-   authorizes that exact publication.
+6. The user has explicitly authorized the project files, including the
+   standardized interview source material, to be mirrored between GitHub and
+   GitLab. Keep the material unchanged unless the user directs otherwise; do
+   not add new raw transcripts, participant names, contact information, or
+   identifying details without explicit authorization.
 7. Do not change project code while preparing P#6 artifacts unless the user
    explicitly asks for a code change.
 8. Before a GitLab push, inspect the outgoing commits and confirm that
@@ -120,9 +121,10 @@ need to complete that individual contribution for this four-member team. Keep
 the remaining tracker status unchanged unless the user explicitly directs a
 GitLab action.
 
-## Explicit publication exception
+## Repository mirror policy
 
-The user explicitly authorized publication of
-`Complete_Combined_Interview_Scripts_Standardized.txt` to this public GitHub
-repository on October 4, 2026. This authorization applies only to that named
-file; do not infer permission to publish any other interview source material.
+The user explicitly authorized the current project files to stay the same on
+GitHub and GitLab on October 7, 2026. This includes
+`p4/complete-combined-interview-scripts-standardized.txt`. The sole exception
+is `GITLAB_TRACKER.md`, which remains GitHub-only and must never be staged or
+pushed to GitLab.
