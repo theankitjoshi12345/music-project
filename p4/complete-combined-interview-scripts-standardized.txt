@@ -1,0 +1,365 @@
+COMPLETE COMBINED INTERVIEW SCRIPTS
+Standardized speaker format
+
+Speaker convention:
+Interviewer (Int.): interviewer questions/comments
+Interviewee Name (abbreviation): interviewee responses
+
+========================================================================================
+INTERVIEW 1 — MADDUX VITRANO
+
+Interviewer (Int.): All right, just recording. So, thanks for talking.
+Interviewer (Int.): Oh, thanks for taking the time to talk with me. I'm researching how musicians practice, read music, and manage their sheet music during rehearsals. So we can jump straight into the questions.
+Interviewer (Int.): So the first question is, what instrument or instruments do you play, and what ensembles are you currently part of?
+Maddux Vitrano (MV): I play battery and melodic percussion, and right now I'm in the university marching band, and then during the spring semester, I'll be in the university concert band.
+Interviewer (Int.): There you go. Sounds interesting. So how long have you been playing?
+Maddux Vitrano (MV): Uh, let's see. Dang. Uh, 13 years.
+Interviewer (Int.): That looks like more than you have been coding for. Yes. All right, so how much time do you usually spend each week in rehearsals compared with practicing on your own?
+Maddux Vitrano (MV): Um, I'd say a fairly even split, like rehearsing with the band and practicing on my own.
+Interviewer (Int.): All right, so think about your most recent ensemble rehearsal. Walk me through what happened from the time you arrived until rehearsal started.
+Maddux Vitrano (MV): From the time I arrived, I mean, I showed up, I unpacked my gear, and I went out onto the field, and then rehearsal started.
+Interviewer (Int.): So how do you set up your music?
+Maddux Vitrano (MV): If it's like a concert ensemble, usually they give it to us, print it out, and then they say, hey, we're gonna play these pieces.
+Interviewer (Int.): So you use paper, not any digital device for it?
+Maddux Vitrano (MV): If it's a concert ensemble, it's paper, but if it's a marching ensemble, then it's all digital.
+Interviewer (Int.): All right. Now it comes to an interesting point. So when the director asks everyone to start at a particular measure or section or rehearsal mark, how do you follow it? Because on paper, it would be harder for you to get exactly to that point, right?
+Maddux Vitrano (MV): Yeah. I don't know, I kind of just eyeball them, search through for a little bit until I find it.
+Interviewer (Int.): All right. So can you remember a recent time when finding the right place took longer than expected?
+Maddux Vitrano (MV): Yes, because sometimes the numbers are not written on there. So you find the nearest rehearsal number and then you count however many measures to the measure you actually have to start.
+Interviewer (Int.): So tell me about the last time you lost your place or missed an entrance or felt like you were behind during the rehearsal because of that problem.
+Maddux Vitrano (MV): Oh, me personally, I don't know, maybe like last year.
+Interviewer (Int.): Last year? It doesn't happen that often?
+Maddux Vitrano (MV): No.
+Interviewer (Int.): You don't feel like you are behind?
+Maddux Vitrano (MV): No, not me specifically. Some people, yeah.
+Interviewer (Int.): Some people. So, do you know what caused it for them maybe?
+Maddux Vitrano (MV): It's usually just like a lack of attention.
+Interviewer (Int.): Lack of attention? Yeah. All right, so how many people have a problem like that a lot? Or maybe in terms of percentage?
+Maddux Vitrano (MV): I mean, it happens to everybody every now and then, but consistently, I don't know, maybe like 20%.
+Interviewer (Int.): So when you receive a piece that looks difficult, what do you normally do before you feel ready to play it?
+Maddux Vitrano (MV): I go and I look at it. I try to tap out the hardest-looking parts, the stuff that I don't think I can do. Like, if I'm going through and they're like, here's the music, we're playing this in like 30 seconds, I go, I look at the hard stuff, figure it out, and then sight-read the rest, usually.
+Interviewer (Int.): So do you add markings?
+Maddux Vitrano (MV): Depending on what it's for. Like, certain melodic pieces I will, if I have enough time.
+Interviewer (Int.): So, do you practice certain measures, like some difficult ones?
+Maddux Vitrano (MV): Oh, yeah.
+Interviewer (Int.): And you look for fingerings or notes during playing if you messed up something? You put up some notes?
+Maddux Vitrano (MV): Oh yeah, yeah, yeah.
+Interviewer (Int.): All right. Do you ask somebody for help?
+Maddux Vitrano (MV): Usually not, unless I just can't figure it out for some reason.
+Interviewer (Int.): Think about the last piece where you added a lot of markings to the piece. What did you add and why?
+Maddux Vitrano (MV): Well, for me, since I do melodic percussion, the last thing I added was just stickings for a melodic piece that didn't have the sticking written. Like, sometimes if I'm playing four-mallet marimba, I'll write down which sticks are hitting which notes.
+Interviewer (Int.): All right. Approximately how much time did you spend preparing or marking that piece before a rehearsal?
+Maddux Vitrano (MV): That's definitely when players do that way more often than us in percussion, but I don't know, for me, like maybe five minutes.
+Interviewer (Int.): Five minutes. All right. This is still gonna save at least some time. So what tools do you normally use when practicing or rehearsing your music, like printed music, pencil or highlighter, binder, phone, tablet, laptop, GoodNotes? There is an app called MuseScore, maybe, and then SmartMusic or any other apps?
+Maddux Vitrano (MV): For me, I usually just use, like, a metronome, maybe a pencil, eyeball it.
+Interviewer (Int.): All right, let's talk about digital sheet music. So tell me about the last time you used a phone, tablet, or computer to read the music.
+Maddux Vitrano (MV): Let's see. Yesterday, and in about 15 minutes, I will.
+Interviewer (Int.): All right. So you use your phone, right? Not the laptop or anything?
+Maddux Vitrano (MV): I definitely prefer the laptop, but I can't use it for marching because I can't put it on my drum.
+Interviewer (Int.): So what app or file format do you use? PDF, most likely?
+Maddux Vitrano (MV): Yeah, we usually get the PDF.
+Interviewer (Int.): All right. How did you get the music onto the device?
+Maddux Vitrano (MV): A shared Google Drive.
+Interviewer (Int.): So, Google Drive. What did you have to do to get the music ready to use? Do you have to import the file, crop it sometimes, zoom it, rearrange the pieces, edit some notation, change the orientation, or adjust the brightness?
+Maddux Vitrano (MV): With the shared Google Drive, everything is just ready. Importing the file, maybe, just... If it wasn't a shared Google Drive, then definitely. But since they just use Google Drive for everything, it's already set up for us.
+Interviewer (Int.): Okay. What parts of the process were inconvenient or took longer than you expected when using it on the phone?
+Maddux Vitrano (MV): With Google Drive, jumping between different things takes a while. I have to go through and then I just save everything. I download everything to where it's all in the same place in the offline section so I can easily bounce between.
+Interviewer (Int.): And if it is downloaded, it's not gonna take that long either, right?
+Maddux Vitrano (MV): Yeah. If you don't download it and you try to open it at the football games, you're not getting it. It's not happening.
+Interviewer (Int.): Can you remember the last time you had to zoom, scroll, or change spaces while you were actually playing?
+Maddux Vitrano (MV): Every time. So Wednesday.
+Interviewer (Int.): So did you keep playing?
+Maddux Vitrano (MV): Yeah, yeah.
+Interviewer (Int.): How do you keep playing if you have to change it? You might have to stop a little bit.
+Maddux Vitrano (MV): No, I wait until a part where I can do it with one hand and then I scroll with my other hand and then go back to playing.
+Interviewer (Int.): All right. So you recover fast from it. When the director gives you a correction during the rehearsal, what do you normally do?
+Maddux Vitrano (MV): I usually just keep it in my head and just fix it next time.
+Interviewer (Int.): But you might forget it. If you're using Google Drive, they don't have a quick edit option, do they?
+Maddux Vitrano (MV): Yeah, I haven't. There's no editing on Google Drive.
+Interviewer (Int.): So if there is somebody who makes a lot of mistakes and they want to correct it, they will need some sort of tool that Google Drive is missing.
+Maddux Vitrano (MV): Mm-hmm.
+Interviewer (Int.): So you just remember it, you don't do anything?
+Maddux Vitrano (MV): Yeah. I remember it, and then I practice it the right way until it becomes muscle memory.
+Interviewer (Int.): So how quickly can you get ready for the next run-through with the same correction?
+Maddux Vitrano (MV): Instantly.
+Interviewer (Int.): What if there are multiple corrections?
+Maddux Vitrano (MV): I just try to keep them in my head. Fix what I can.
+Interviewer (Int.): Can you remember a rehearsal where reading the music became difficult after playing for a long time?
+Maddux Vitrano (MV): I mean, yeah. Usually after, like, if you're sitting there reading it for hours, then it just kind of sucks after a while.
+Interviewer (Int.): So what made it difficult, you think?
+Maddux Vitrano (MV): I don't know, like fatigue, almost.
+Interviewer (Int.): Fatigue. Was the music too small, crowded, far away, or difficult to follow?
+Maddux Vitrano (MV): No, just general fatigue.
+Interviewer (Int.): Did you change anything to make it easier?
+Maddux Vitrano (MV): Maybe a sip of coffee or something.
+Interviewer (Int.): Have you ever changed the appearance of your music to make it easier for you to read? Like enlarging, highlighting some parts, increasing the contrast, adding more colors, rewriting some sections, or adding note names or symbols throughout the notes?
+Maddux Vitrano (MV): When I was learning melodic percussion, I would write notes on the page, or when I was learning bass drum, I would...
+Interviewer (Int.): So newcomers might need that?
+Maddux Vitrano (MV): Yeah, definitely newcomers. Newcomers and wind players.
+Interviewer (Int.): Have you ever bought something specifically to make reading or managing music easier? Like apps, subscriptions for MuseScore, tablet accessories, stands, devices, printing, or enlargement?
+Maddux Vitrano (MV): No.
+Interviewer (Int.): Any of your friends?
+Maddux Vitrano (MV): Not that I can think of. Usually for our pieces, we just rig something up. Like, if I have eight sheets of music, sometimes I'll just tape them to a piece of cardboard so I can just flip the whole thing halfway through the piece.
+Interviewer (Int.): That's a little bit of work. What problem were you trying to solve?
+Maddux Vitrano (MV): If you have a lot of sheets of music, you can generally just memorize the section around where the page turn is, and then you can turn the page whenever you get a chance. This is generally the strategy.
+Interviewer (Int.): Okay. What is the most frustrating part of dealing with sheet music during rehearsal?
+Maddux Vitrano (MV): Paper sheet music, turning the page.
+Interviewer (Int.): All right. What have you already tried to make that easier?
+Maddux Vitrano (MV): That cardboard thing, putting it all together.
+Interviewer (Int.): Which of these solutions actually helped? Which one did not? Is there any solution that you tried and did not work? Maybe it's the same one.
+Maddux Vitrano (MV): The cardboard thing semi-works, depending on the piece and how long it is.
+Interviewer (Int.): It cannot go infinite.
+Maddux Vitrano (MV): Yeah, and also depending on how many stands you can have. Like, if I could have two stands, I could fit four pieces on the cardboard and flip the whole thing if there's a rest there. Otherwise, I have to memorize a bunch of stuff, and then when I'm not playing, then I can...
+Interviewer (Int.): All right. So now let's wrap up. Is there anything about reading, preparing, or managing music that regularly bothers you, but that we did not discuss?
+Maddux Vitrano (MV): No, not really. No, not that I can think of.
+Interviewer (Int.): All right. It was a nice interview. Thank you.
+
+========================================================================================
+INTERVIEW 2 — HOPE FOSTER
+
+[Script 2 used: **BAND STUDENTS**]
+[Interviewee: Hope Foster, Northwestern State University band member.]
+[Objective: Validate individual sight-reading lag, pre-rehearsal score prep time, makeshift annotation habits, and mobile screen usability]
+[Part 1: Warm up/background (Establish rapport) [3-5 min]]
+Interviewer (Int.): Thanks for jumping on a call with me! I'm conducting research into how musicians practice and manage their sheet music during rehearsals. I'm not pitching a product, I just want to understand your real-day-to-day experience in a band.
+Interviewer (Int.): To start, what instrument(s) do you play, what ensembles are you currently performing in, and how long have you been playing?
+Hope Foster (HF): Flute/piccolo
+Interviewer (Int.): How many hours a week do you typically spend in group rehearsals versus individual home practice?
+Hope Foster (HF): 19 hours, 3 hours alone
+[Part 2: Last challenging rehearsal (extract facts from a recent rehearsal) [7-10 min]]
+Interviewer (Int.): Walk me through your last ensemble rehearsal from start to finish. How did you set up your sheet music on your stand?
+Hope Foster (HF): Marching band exercises, no issues and was successful.
+Interviewer (Int.): When the director called out a specific measure to jump to or gave a quick tempo change, how did you navigate your score to find your spot?
+Hope Foster (HF): No struggle, I memorize the music prior.
+Interviewer (Int.): Tell me about a specific time during a rehearsal when you got lost, missed an entry, or fell behind the ensemble. What caused that moment?
+Hope Foster (HF): Hand written music or old music from the 1930's or earlier is difficult to read.
+[Part 3: Dig for friction & makeshift solutions (Identify workarounds and quality effort) [8-10 min]]
+Interviewer (Int.): When you receive a piece of music with fast time signatures, complex interval leaps, difficult key signatures, or tricky accidentals, what do you manually do to your score to make it easier to play?
+Hope Foster (HF): Technicalities are difficult, such as challenging key signatures."
+Interviewer (Int.): How much time do you spend before rehearsals coloring, highlighting, writing in note names, or enlarging parts of your score?
+Hope Foster (HF): Upon receiving music, I spend 5-10 minutes making marks.
+Interviewer (Int.): What tools do you currently use for your music? Paper binders with highlighters, phone screens, tablets with apps like GoodNotes or MuseScore?
+Hope Foster (HF): I pay for an app that allows for digital music scans, and am able to highlight effectively.
+Interviewer (Int.): If you use digital scores on a tablet or phone, walk me through how you import, crop, or mark up those files. What is annoying or clunky about that process?
+Hope Foster (HF): Sometimes I have to do multiple scans, especially if the music is multiple pages.
+Interviewer (Int.): How many times in the past month have you had to zoom, scroll horizontally, or flip pages on a screen mid-song while trying to keep playing?
+Hope Foster (HF): A lot, especially when sight reading.
+[Part 4: In-session markup & fatigue (Uncover pains during active play) [5-7 min]]
+Interviewer (Int.): When the director gives quick feedback during rehearsal, how do you mark that on your score? Does taking that note cause you to miss the start of the next run-through?
+Hope Foster (HF): Writing boldly for when the director gives quick feedback. Other than that, its no trouble.
+Interviewer (Int.): Have you ever experienced physical eye strain, headache, or visual fatigue trying to read small or crowded digital notation during a long rehearsal?
+Hope Foster (HF): Headaches often.
+Interviewer (Int.): Have you ever paid money out of your own pocket for music reader apps, sheet music subscriptions, or physical accessories like page-turn pedals or tablet mounts? If so, what made you buy them?
+Hope Foster (HF): She has paid for that digital scanning app.
+[Part 5: Wrap-up & referrals [2-3 min]]
+Interviewer (Int.): This was super helpful! Is there anything else about reading music during rehearsals that drives you crazy that wasn't mentioned?
+Hope Foster (HF): No other struggles.
+Interviewer (Int.): Do you have a bandmate or section leader who maybe has some trouble reading music that you could introduce me to for a quick chat?
+Hope Foster (HF): You may speak to any band member who is willing to answer these questions.
+
+========================================================================================
+INTERVIEW 3 — PEARL COE
+
+[Script 2 used: **BAND STUDENTS**]
+[Interviewee: Pearl Coe, Northwestern State University band member.]
+[Objective: Validate individual sight-reading lag, pre-rehearsal score prep time, makeshift annotation habits, and mobile screen usability]
+[Part 1: Warm up/background (Establish rapport) [3-5 min]]
+Interviewer (Int.): Thanks for jumping on a call with me! I'm conducting research into how musicians practice and manage their sheet music during rehearsals. I'm not pitching a product, I just want to understand your real-day-to-day experience in a band.
+Interviewer (Int.): To start, what instrument(s) do you play, what ensembles are you currently performing in, and how long have you been playing?
+Pearl Coe (PC): Most instruments, experience translates through most instruments.
+Interviewer (Int.): How many hours a week do you typically spend in group rehearsals versus individual home practice?
+Pearl Coe (PC): "10 hours as a group weekly, and 3.5 hours by myself daily." (24.5 hours a week individual practice.)
+[Part 2: Last challenging rehearsal (extract facts from a recent rehearsal) [7-10 min]]
+Interviewer (Int.): Walk me through your last ensemble rehearsal from start to finish. How did you set up your sheet music on your stand?
+Pearl Coe (PC): Practice went well, had marching band practice this morning and it was successful. No issues, the temperature helped.
+Interviewer (Int.): When the director called out a specific measure to jump to or gave a quick tempo change, how did you navigate your score to find your spot?
+Pearl Coe (PC): I am able to pretty successfully navigate through the music and mark when the director makes callouts.
+Interviewer (Int.): Tell me about a specific time during a rehearsal when you got lost, missed an entry, or fell behind the ensemble. What caused that moment?
+Pearl Coe (PC): I have no recent recollection of messing up, but others messing up can throw the whole band off.
+[Part 3: Dig for friction & makeshift solutions (Identify workarounds and quality effort) [8-10 min]]
+Interviewer (Int.): When you receive a piece of music with fast time signatures, complex interval leaps, difficult key signatures, or tricky accidentals, what do you manually do to your score to make it easier to play?
+Pearl Coe (PC): Anything above 5 sharps, I will make marks.
+Interviewer (Int.): How much time do you spend before rehearsals coloring, highlighting, writing in note names, or enlarging parts of your score?
+Pearl Coe (PC): Very rarely. I make simple strokes on my device.
+Interviewer (Int.): What tools do you currently use for your music? Paper binders with highlighters, phone screens, tablets with apps like GoodNotes or MuseScore?
+Pearl Coe (PC): I use a tablet.
+Interviewer (Int.): If you use digital scores on a tablet or phone, walk me through how you import, crop, or mark up those files. What is annoying or clunky about that process?
+Pearl Coe (PC): Note taking app, it is reliable.
+Interviewer (Int.): How many times in the past month have you had to zoom, scroll horizontally, or flip pages on a screen mid-song while trying to keep playing?
+Pearl Coe (PC): 25% of the time doing this.
+[Part 4: In-session markup & fatigue (Uncover pains during active play) [5-7 min]]
+Interviewer (Int.): When the director gives quick feedback during rehearsal, how do you mark that on your score? Does taking that note cause you to miss the start of the next run-through?
+Pearl Coe (PC): Simple marks, sometimes will make re-marks to make sure something is emphasized.
+Interviewer (Int.): Have you ever experienced physical eye strain, headache, or visual fatigue trying to read small or crowded digital notation during a long rehearsal?
+Pearl Coe (PC): Not really, no.
+Interviewer (Int.): Have you ever paid money out of your own pocket for music reader apps, sheet music subscriptions, or physical accessories like page-turn pedals or tablet mounts? If so, what made you buy them?
+Pearl Coe (PC): No money spent.
+[Part 5: Wrap-up & referrals [2-3 min]]
+Interviewer (Int.): This was super helpful! Is there anything else about reading music during rehearsals that drives you crazy that wasn't mentioned?
+Pearl Coe (PC): Finding something that works for you is important. It doesn't drive me crazy, but it is important to know.
+Interviewer (Int.): Thank you so much, this was super helpful. Thank you for answering!
+
+========================================================================================
+INTERVIEW 4 — ANONYMOUS STUDENT
+========================================================================================
+Interviewer (Int.): To start, what instruments do you play, what ensembles are you currently performing in, and how long have you been playing?
+Anonymous Student (Anon): I've played instruments for about 12 year now? Mostly on low brass instruments and piano, though I've dabbled in some obscure things like Harmonica. I'm not currently in any ensembles, though I have done quite a few concert and jazz ensembles in the past.
+Interviewer (Int.): How many hours a week do you usually spend practicing?
+Anonymous Student (AS): I spend about three hours each week in a piano class for my minor. On my own, it's more spontaneous. If a song catches my ear then I will probably want to practice it on my own, though.
+Interviewer (Int.): Tell me about your last practice, then. You use sheet music? How's it set up?
+Anonymous Student (AS): I have some sheet music I bring to piano class. I usually take it out of its binder and organize it based on what we will be covering that day in a stack. On my own? I use MuseScore to read off of on my phone, placing it on my keyboard stand.
+Interviewer (Int.): So, say your teacher tells you to jump to a specific measure. How do you navigate your sheet music?
+Anonymous Student (AS): It's simple for that class, since sheet music is normally one page. It can be annoying while transitioning songs because paper has a tendency to fly off the stand with how clumsy I am, but it's bearable.
+Interviewer (Int.): Was there ever a point you fell behind a class practice, or missed an entry, got lost?
+Anonymous Student (AS): A few times. It's mainly because I'm relearning how to read piano music in a hand-instinct way, if that makes sense. I hated learning new pieces when I was self-teaching just because of the time sink. Nowadays it'd usually be due to complacency, not moving my hand because "oh, it's just the same position for songs here" when it absolutely IS a changed position there.
+Interviewer (Int.): So you play music on your own, right? If you found one with a tricky time signature, key signature, or some tough intervals, how do you usually make it easier to play?
+Anonymous Student (AS): Back when I played tuba it wasn't a big issue since I was weirdly comfortable sight reading on it. On piano, I tend to look at the piece hand-by-hand, section-by-section to practice slowly. I'm not a fan of writing in notes but I will write finger markings to remember specific hand motions that make it more fluid to play.
+Interviewer (Int.): Does this take a long time?
+Anonymous Student (AS): Not usually. It mostly takes more time physically working out how my hands should play something.
+Interviewer (Int.): What about MuseScore, is there anything clunky or unwieldy with it?
+Anonymous Student (AS): For one, I read off of my phone. It's an iPhone XS, super tiny to read sheet music on. MuseScore doesn't have a good zoom functionality to it and the UI gets in the way of the notes. No markup either for finger positions.
+Interviewer (Int.): Let's revisit classtime. If the teacher gives you quick feedback, does applying it to your score ever cause you or someone else to miss the next run-through?
+Anonymous Student (AS): Not me in particular. Though, there is one student in our class that often requests things to be taken slowly.
+Interviewer (Int.): Have you ever experienced physical eye strain, headache, or visual fatigue trying to read small or crowded digital notation during a long rehearsal?
+Anonymous Student (AS): I've definitely hated screen glare while reading digital stuff. Sometimes the white background starts turning blue-ish, sometimes looks like it's "eating" the edges of the notes and staff if that makes sense. Ledger lines and chords are also terrible to read when they're stacked closely to one another. They become like blobs of ink and really bother me.
+Interviewer (Int.): Have you ever paid money out of your own pocket for anything to help with these? Music reader apps, subscriptions, accessories?
+Anonymous Student (AS): Not personally. I don't like spending money on things I can "make up for" with more practice.
+Interviewer (Int.): Thanks so much for listening. Is there anything else about reading music during rehearsals that drives you crazy that wasn't mentioned?
+Anonymous Student (AS): Back when I played tuba for grade school bands, I always had to listen for others' parts as a reference for where we were in the music. It's basically the same measure over and over for most songs, if not just year-long rests. It got difficult to mark their parts in, so I had to muscle my way learning how to count rests reliably. It got way easier when I took a mental note of in-song cues.
+
+========================================================================================
+INTERVIEW 5 — DR. LANDRY
+========================================================================================
+Interviewer (Int.): To start off, could you give me an overview of your ensembles and how many students you cover?
+Dr. Landry (DL): There’s three main [ensembles].The largest one would be Marching Band, anywhere between what is now 160 students all the way up to as many as 300 a few years prior. Second would be Concert Band, an indoor concert ensemble anywhere between 80 to 110 students. The last one would be the smallest, which is Percussion Ensemble, that can be as few as 3 or 4 up to as many as 15 to 20.
+Interviewer (Int.): So I assume the Percussion Ensemble covers some unique stuff?
+Dr. Landry (DL): Oh, for sure we do.
+Interviewer (Int.): What does your normal weekly rehearsal schedule look like, especially leading up to performances or competitions?
+Dr. Landry (DL): Essentially, for all three of those ensembles, it’s two or three rehearsals a week. Especially in the case of Marching Band and Concert Band, it's three rehearsals a week. For Marching Band it’s two hours a day, Concert band is about 50 minutes a day. Percussion Ensemble is about two rehearsals a week, but because of the nature of the number of pieces we do, it may not be every single day. For example, if we have six pieces we’re working on, some students may rehearse one day a week, some may rehearse two, and some may do none at all one week and two the next week, so the schedule changes depending on the piece we’re working on.
+Interviewer (Int.): Awesome. So is two pieces an average that y’all usually cover?
+Dr. Landry (DL): Oh it can be more. We’ve done as many as 5 or 6 large ensembles plus three or four smaller ones, some steel band pieces, it can blow out to sometimes 20 pieces of music.
+Interviewer (Int.): That’s quite a few.
+Dr. Landry (DL): Yeah, but there’s a difference in the amount of time each piece takes. Steel band tunes take like three or four minutes, so you can do five of those in the span of 15, maybe 20 minutes max, whereas there’s some standalone pieces like one we’re doing right now that’s 11 minutes. We don’t always pin it down, so every semester looks very different.
+Interviewer (Int.): I see. So how do you usually prepare and distribute the sheet music? For example, the last concert cycle you had, from selecting the pieces to the first rehearsal?
+Dr. Landry (DL): For me, when I talk about Concert Band, I first think about “Are there pieces that I would like to personally play? Are there pieces that I think are important for our students to know as musicians–you know, pillars of wind band literature?” And then fun things, new music or composers that I want to introduce, you know, those types of things. So I’ll usually start formulating my program around this time of year [fall semester] for the following spring since we only meet then. Distribution usually occurs very close to the start of the semester, so it can be done either with an email saying “folders are done, pick them up,” maybe a week before classes begin, or at the first, second, or third rehearsal–somewhere in there–we will distribute music to the ensemble. Marching Band is different as we do most of our stuff digitally. We hand out no paper copies whatsoever. Percussion Ensemble is very similar to Concert Band as we usually begin the semester formulating our pieces and distribute them as we go on. For example this semester, we have some pieces planned that our students have not seen yet and we’re a month in. It’ll take some time for things to get out, but it’s also relative to when our final performance is. We want to make sure everyone has enough time to be prepared, to feel confident, and to execute the thing we want them to execute. That time can fluctuate.
+Interviewer (Int.): Ok, so Concert Band and Percussion usually receive it in folders, while Marching Band receive it digitally. How is it usually distributed digitally?
+Dr. Landry (DL): I can speak on drumline since that’s my primary focus. We have a protected site in Google Drive that we use to distribute parts. Those parts are my arrangements or the arrangements of my colleague for everything we do, from stands to halftime shows to warmup cadences. Students receive those sometimes as early as June for the coming Fall. They don’t have to print the PDFs, they can access them on their phones and tablets.
+Interviewer (Int.): Say, for Concert Band, if you have a piece with a complex time signature, fast tempo changes, or some tricky intervals for students, how much time do you spend marking those up for students?
+Dr. Landry (DL): I don’t mark anyone’s music. I mark on my score, but my goal is to teach students to recognize their problems for themselves to solve. The way I see it is I see them three times a week for 50 minutes. For the rest of the week, they see themselves in the practice rooms, so they need to diagnose those problems themselves before they show up to rehearsal. I’ll point them out, especially if there’s a particularly tricky rhythm or fingering, I’ll say “check out measure so-and-so, that rhythm’s complicated. Let’s take a moment to go over it really quick,” and that gives them a little more information, but it’s their responsibility to dig into the rest of it to completion. I’m only presenting the information for them to see and recognize it.
+Interviewer (Int.): Do you have any students who need visual accommodations like large print or something high contrast to look at?
+Dr. Landry (DL): We have a few. We’ve never dealt with high contrast, but I have had students that required large print. Generally what we do is provide them with a PDF copy of the piece that they can use whatever device they have to zoom in on the piece or, back before we had technology, we would make a copy of that piece and expand it (with gesture) as much as we could for their comfort. I had a friend in college who would move his music stand really close–he was nearly classified as blind–he would move the music stand as close as he could to his face. It’s really good that technology can help us in that aspect, as not all instruments can do that. Music has its own contrast so we’ve never dealt with that. It’s more the amount and congestion of material.
+Interviewer (Int.): Right. Sometimes it’s hard to see ledger lines when they’re all close together, it can look like a whole new staff.
+Dr. Landry (DL): Many times it kind of is. It’s always hard to see ledger lines, even for someone like me. I have vision impairment, but nothing like some do. We’ve got thousands of years of music history but we haven’t gone too-too much further into that. [It] might be work for someone in the future.
+Int. So, about the last rehearsal you went over, if the ensemble stumbled at all or got out of sync in a terrible way, were there any significant causes easy to point out?
+Dr. Landry (DL): To me there are two main ones. The first one is showing up to rehearsal without having looked at the music. They’re not prepared to listen to other people, they’re focusing on themselves and that’s where ensembles can fracture. The second thing, and this is partially for me to see and understand, is music that is beyond their current capabilities. My job as the instructor is to push and challenge them, but not to overwhelm them, and it’s a very thin line. It’s about finding that challenge point. The best way to do that is experience, but also having good mentors who can provide you with what worked for them. You can build a portfolio of challenge points that help you build a better program to challenge your students.
+Interviewer (Int.): For those students who might not have looked at the music before, they were struggling to read it in real time.
+Dr. Landry (DL): Well, think of it like this: If I told you that tomorrow you were going to give a presentation and I’m going to hand you the information right before you walk up to present..
+Interviewer (Int.): You’d struggle unless you were a perfect public speaker?
+Dr. Landry (DL): Not just that, but it’s more than just giving you written things. You can’t present as you understand because it’s not your material. It’s someone else’s. It’s even more complicated because you’re up there with seven other people and each of you have your own area to talk about.
+Interviewer (Int.): And they have to go together.
+Dr. Landry (DL): So all of these things have to stack up. If you’re just now looking at the music, you haven’t had a chance to consider how all the other parts interact. You’ll hear something weird and stop, not really sure how things fit together.
+Interviewer (Int.): You spoke on this earlier, but when students miss something like an interval or key change it’s usually a “call out to write it down”?
+Dr. Landry (DL): Sometimes I don’t say anything at all. Sometimes I trust a student will recognize it. This usually comes with repetition, if it’s one time it could be that they don’t know, they made a mistake, it could be a fly flew in front of their face. What I’m looking for is consistent errors. In an ensemble you can almost see students go “Oh, I understand,” and it’s better in that moment not to labor in that point but simply give students the opportunity to try again.
+Interviewer (Int.): Do you have any tools or specific call outs for those repeated errors?
+Dr. Landry (DL): Nothing specific, we handle each situation as it happens. It would be like if I’m a carpenter and all I used was a hammer. Well, I might need to cut wood, just that tool won’t do much.
+Interviewer (Int.): What about difficult runs or such that might be beyond student capabilities?
+Dr. Landry (DL): That’s a good point to make. First thing to consider is slowing down. In practice, generally slowing down is better, especially at the beginning. I don’t necessarily believe in showing them how to do it as much as them learning through action. I prefer they learn from their peers or seek out helpful references online, like watching someone play scales for techniques. If they still don’t get it, at that point I’ll step in and say “hey let’s talk about things we can do.” But I want them to discover what it is they’re actually doing instead of waiting for the answer. It’s never a good idea to be constantly giving answers in an ensemble. We talk about the process of doing things right, but not enough about learning through failure and mistakes. As a teacher I want them to experience that frustration and realize the greater goal that lies beyond it, not just success in learning that one thing but the skills it takes to acquire knowledge in all aspects of life.
+Interviewer (Int.): You mentioned there’s digital PDFs at least in Marching Band. Is there something similar for Concert and Percussion?
+Dr. Landry (DL): Yes. Well, we abide by copyright laws and they have very specific rules. On a case-by-case basis we would deal with that.
+Interviewer (Int.): What’s your policy for phones and tablets on stands during rehearsals?
+Dr. Landry (DL): No problem. I assume my students are paying attention unless I’m given reason to believe otherwise. It’s easier to keep them engaged with how I teach and assume they’re paying attention rather than policing their phones. It’s often their section-mates that will nudge them and say “hey, pay attention.”
+Interviewer (Int.): In the last year, have you had to purchase or approve any software, digital sheet music tools subscriptions for your program? If so, what was the approval process?
+Dr. Landry (DL): I have not personally, no. If I purchase a piece of music, I buy it as myself for the university using our university funding. I buy nothing for the students except the pieces themselves or we write it in-house.
+(bit of wrap-up talk)
+Interviewer (Int.): Is there anything about score readability or rehearsal flow that I didn’t ask but really grinds your gears?
+Dr. Landry (DL): Not from an individual basis. I think most students can read their parts pretty well, but when you look at a full score for a large band, it can be a bit unwieldy since it’s a lot of information and generally not a big space.
+Interviewer (Int.): (Signs a roughly 20:15 region midair for clarification)
+Dr. Landry (DL): You would think it would be that size, but some can be smaller like the size of your laptop. If you’ve got 25 instruments on a score and it’s only about that big, you may have 8 or 9, sometimes 10 measures a page. We used to have compressed scores that only show “Soprano Alto Tenor Bass” with text saying “x instrument has the melody,” and we would have to assume who is playing what. What my friends and colleagues have done is resize their scores and bring them to a print shop to help with visibility. Also the more you do a piece, the less you’ll rely on a score. There are some pieces I can conduct without a score in all their detail. They’re minor problems, but don’t always require an answer. Sometimes blanket solutions can leave people out for things like this.
+
+========================================================================================
+INTERVIEW 6 — MELVIN GREY
+========================================================================================
+(a bit of casual talk before the interview starts)
+Interviewer (Int.): So… Instruments that you play. Ensembles. Go.
+Melvin Grey (MG): Right now? Marching Band. French Horn, Trumpet. I joined Horn Studio last year. The semester before that I joined Concert Band and then joined Wind Ensemble, all last year.
+Interviewer (Int.): How many hours a week do you usually spend in group rehearsals versus practicing on your own?
+Melvin Grey (MG): It’s a pretty big difference? It’s more often easier to just practice at rehearsal. We rehearse for two hours every Monday, Wednesday, and Friday, so it’s a lot easier to just have that and study for classes outside of rehearsal. To even it out I would have do a LOT of practicing.
+Interviewer (Int.): So for marching band, you’re practicing on sheet music? How do you usually set it up?
+Melvin Grey (MG): During rehearsal, my friend and I look at her tablet. There’s a drive with all of our show music, folders for each of the shows we have done and will do. For some reason arrangements and individual parts are put together. Anyway, we go through our part and mark where the moves are when marching, and when we hold, to get used to what it sounds like when we move. We read off our tablet, on a stand in the middle of the field while it’s like 90 degrees.
+Interviewer (Int.): Whenever you’re called to jump to a specific measure or have a fast tempo change, how does that work with your score program? Does it give any complications during rehearsal?
+Melvin Grey (MG): So this is the only time we get to read the music, is during rehearsal. In the song “Call Me” we have have an accelerando in the middle from 144 [beats per minute] to 156. It’s a big juicy jump. The INTERESTING part is we have a metronome, and we have to rely on this metronome to change from 144 to 156 during rehearsal.
+Interviewer (Int.): Does that interact with the sheet music?
+Melvin Grey (MG): Lucky for us it’s only one page so there’s no problem. Other pieces that have like five million pages? It can be annoying.
+Interviewer (Int.): What about when a director says like “do this again! do this again!”
+Melvin Grey (MG): I honestly like redoing things I already know since it’s easy to jump to. Barely have to even look at my music. If I don’t remember then I’ll just whip out my phone.
+Interviewer (Int.): What about any times when you fell behind the ensemble? Missed an entry?
+Melvin Grey (MG): (feigning embarrassment)… In general or just this ensemble?
+Interviewer (Int.): If you’ve got an example.
+Melvin Grey (MG): My senior year in high school–my first year marching–there was one time we were at this extremely random point in the first movement of our three movement show. I was like “it’ll be okay.” There’s people all around me–trumpet players have to line up–as we’re moving, a group in front of me and to my sides. I ENTIRELY forgot what came after that. I stood there while everybody was moving, and I was one of the main reasons. [I] Swore after that I’d never forget a set.
+Interviewer (Int.): When you receive a piece that’s really fast, or time signatures like cut time, or has weird key signatures, what do you do with your score to make it easier to play? If anything.
+Melvin Grey (MG): Sometimes, on horn at least I will mark it if something’s flat so I don’t have to go through the mental problem. It’ll be what I need to know around the area or above the note specifically. Sometimes I’ll highlight a line through a measure if an accidental shows up to display that the accidental carries through the measure.
+Interviewer (Int.): How much time do you think you’d spend at the start of rehearsal marking this up?
+Melvin Grey (MG): I’m better of a musician now than I was before so it’s mostly mental notes before practice.
+Interviewer (Int.): Ok. You mentioned a highlighter and tablet earlier, do you use any other tools or apps to help you out?
+Melvin Grey (MG): There’s one I use that can scan and display music, don’t remember the name, since it makes things either. But it’s VERY nuanced and doesn’t explain anything. Imagine you jump into Unity or OBS and you’re just blasted with everything in the UI and lose all your ideas? And it’s slow. Exactly what it’s like.
+Interviewer (Int.): How many times have you had to zoom, scroll, or flip pages on a screen while playing?
+Melvin Grey (MG): A lot. We have some short arrangements called “stadium jams” that are so small, our parts are put on a sheet with others. We have to zoom in like crazy and scroll to the side.
+Interviewer (Int.): When noting down some things mid-rehearsal, do they cause you to make other errors or miss an entrance.
+Melvin Grey (MG): I have a tendency to, when I fix something brought to my attention, I’d hyperfixate on it and mess up something else that was not a problem.
+Interviewer (Int.): Have you ever had any fatigue or eye strain reading digital notation?
+Melvin Grey (MG): … Ok, for example… We had a sectional. I had to stare at my stand and play the music off to a weird angle. I was sharing with someone so I couldn’t move it. Also sometimes I forget my sunglasses, so the glare gets bad.
+Interviewer (Int.): Have you ever paid money out of your own pocket for music reader apps, sheet music subscriptions, or physical accessories like page-turn pedals or tablet mounts? If so, what made you buy them?
+Melvin Grey (MG): There’s that app I told you about earlier. Fifteen dollars.
+Interviewer (Int.): Fifteen dollars?
+Melvin Grey (MG): Fif…teen… dollars. For an app that is clunky and terrible and I’m quite frankly not sure how it works. I was TOLD you could scan music
+Interviewer (Int.): Wow. Well, this is insightful. Anything else that makes you crazy in rehearsal that I did not talk about? Anything like “I would rather be anywhere else but here.”
+Melvin Grey (MG): Let’s talk about Google Drive. It doesn’t save files you open, folders you open, or where you were in a PDF. The files CAN be arranged in folders separately… or, they can specifically arrange it to where–let me show you.
+(One song folder has a full score plus each part’s PDFs and a recording. Another folder has just an overall score PDF and recording).
+Melvin Grey (MG): So if you want your part, not only do you have to wait for it to load and search for it… you’d have to turn your phone, zoom, and look.
+Interviewer (Int.): I can’t read that.
+Melvin Grey (MG): You’re telling me! I guess it’s my fault for not having a lyre, flip book, or phone mount.
+
+========================================================================================
+INTERVIEW 7 — MONTREL RABY
+========================================================================================
+(The exact dialogue for Q1-Q3 was lost due to a tech error. In summary: Montrel (MR) has played music for nearly a decade now, and has a background in a variety of wind instruments and ensembles. He primarily plays saxophone, and serves as a saxophone Section Leader for marching band at Southeastern)
+Interviewer (Int.): When the director calls out a specific measure to jump to or gives a quick tempo change, how do you usually navigate through your scores?
+Montrel Raby (MR): Usually measures will be numbered. If it’s not there will be the first measure of each line or specific sections numbered, and I write the measure numbers on important spots and transitions. I also write ear-mapping signals over long multi-measure rests. For example this semester, one song has a trumpet and trombone duet for 16 bars, followed by the same duet but with them putting in mutes. I write above that “duet - mute duet.”
+Interviewer (Int.): I see. Tell me about a specific time during a rehearsal when you got lost, missed an entry, or fell behind the ensemble. However far back that might be, since I know you’re an expert.
+Montrel Raby (MR): Usually whenever we come back from a break or when I just get a new piece of music, I might mis-hear where we’re starting or I’m just distracted.
+Interviewer (Int.): Okay. So let’s say when you’re getting a new piece of music, it has a faster time signature like cut-time, some weird big intervals, key signatures or accidentals, what do you do to your score to make it easier to play?
+Montrel Raby (MR): I don’t typically have trouble with key signatures? I typically finger through a scale silently when sight reading, airing through with no air to catch accidentals. I DO struggle with cut time, probably my worst time signature. If I have any prolonged trouble I write out the vocalized rhythms above the measure, so “1 - and - a” or “1 - la - lee” to better get the rhythm. But I tend to practice to the point where, by the time performances come around, I won’t even need to look at my music.
+Interviewer (Int.): How much time do you spend before rehearsals coloring, highlighting, writing in note names, stuff like that? Making the score more visible to you, for lack of a better term?
+Montrel Raby (MR): I usually do this sort of thing during rehearsal, but if for whatever reason we’re moving really quickly or doing a lot of sight reading, I star the measure. And when I look at it later by myself, I’ll see the star and write it in. After the first one or two rehearsals, I know the music well enough to practice with others.
+Interviewer (Int.): You mentioned earlier how you receive black folders of music for jazz ensemble. What tools do you currently use for other music? Binders, phone screens, tablets with apps like GoodNotes or MuseScore?
+Montrel Raby (MR): For solo rep I prefer physical music, like pages, because I fear anything going wrong with a device. But I do sometimes use a tablet and GoodNotes. I prefer two physical copies of music. One for notes and massacring with information, and one as a clean copy to read from for performance.
+Interviewer (Int.): So you mentioned you hate using anything with a tablet. What is annoying or clunky in the process?
+Montrel Raby (MR): It’s more accurate to say I don’t ENJOY using the tablet, I just prefer staying on the safe side. The iPad might have connectivity issues, but physical music might blow away outdoors. It’s circumstantial.
+Interviewer (Int.): Ok. From speaking to another band student, they mentioned that they receive parts as PDFs for marching band, and sometimes have to scroll through PDFs for their parts. Do you ever have issues with that?
+Montrel Raby (MR): It can be time-consuming to find your part, for sure. Especially for me as a saxophone. Never last and never first. But sometimes different parts are included at weird spots, or the parts are ordered weird and it’s more difficult to find than usual. I feel bad for trumpets, they have Trumpet 1, 2, 3, and Cornet 1, 2, 3 sometimes because composers are hateful people. I usually print my part out to avoid this issue, but brass often has to deal with it.
+Interviewer (Int.): So when the director gives quick feedback during rehearsals, does noting it down ever cause you to miss the start of the next run-through?
+Montrel Raby (MR): Yes. Especially my director, he’s very quick. Sometimes his advice is… in an educational sense, pedagogical. In lower grades, a director will be more specific with his critiques. “These sections, be sure of this, this, and this.” But my director often goes “I know that will be better for next time.” He takes more time explaining things of personal taste or if it’s a critical repeated issue, but often we don’t have enough time to pick up our pencils, write it down, and get ready to play again, because he’s already conducting what he wants us to fix.
+Interviewer (Int.): Have you ever experienced physical eye strain, headache, or visual fatigue trying to read small or crowded notation during a long rehearsal, digital or physical?
+Montrel Raby (MR): I… realize that all of my directors are very old farts, and I don’t want to do the same thing those old farts do, picking up the music to squint at. Obviously on my iPad I can just scroll to zoom in, but I carry a magnifying glass for physical scores so I don’t use every muscle of my eye to read.
+Interviewer (Int.): Have you ever paid money out of your own pocket for music reader apps, sheet music subscriptions, or physical accessories like page-turn pedals or tablet mounts? If so, what made you buy them?
+Montrel Raby (MR): I currently do not have a MuseScore subscription. I contemplated it for the MIDI sounds that are better in the subscription version than free ones, but until I start composing or arranging more I’ll hold off. There are two apps I currently use that I will glaze. The first is TonalEnergy (TE) Tuner. I had this app for almost a decade and I still find out things that it can do. It is more than just a tuner and more than just a metronome, it has tone analysis, it records acoustics, it has playback, different metronome click sounds. You can even change the metronome systems to fit time signature changes within your music and modify its speed for practice purposes. You can even save that system to the app so you don’t have to remake it each time. The other app that I use is ForScore, a software that lets you download and read music. You can tap to turn a page or half-a-page at a time. It’s also good for storage, it lets you sort by title, composer, folders, and it doesn’t clog your iCloud or Google Drive. Every musician who wants to go far should have these.
+Interviewer (Int.): Thank you very much, this has been insightful for sure. Is there anything that annoys you during rehearsals that I have NOT mentioned that seems really pressing.
+Montrel Raby (MR): Nothing too specific. I guess if I had to pick one, sometimes you can get some eight-foot-tall behemoth seated in front of you and can’t see the conductor for anything no matter how high I raise my stand. For issues like that, maybe directors should just reorganize their band and put those skinwalkers at the END of the row so people can see.
+
+========================================================================================
+INTERVIEW 8 — ANONYMOUS DIRECTOR
+========================================================================================
+Interviewer (Int.): Could you give me a quick overview of your current ensemble setup—what types of bands do you direct, and how many performers are under your leadership?
+Anonymous Director (AD): Currently I’m focused on the Jazz department. I lead the Big Band, which is a standard 18 to 20-person group, and then I oversee three smaller Jazz Combos that usually have about 5 to 10 students each. In total, I’m looking after around 35 to 40 musicians at any given time.
+Interviewer (Int.): What does your typical weekly rehearsal schedule look like leading up to a major performance?
+Anonymous Director (AD): For the Big Band, we meet twice a week for about 90 minutes. The Combos are a bit more flexible. They usually have one coached hour a week, but with the amount of improvising in jazz means they’re often in the practice rooms on their own time working through heads and changes.
+Interviewer (Int.): Walk me through the step-by-step process of preparing and distributing sheet music for your last concert cycle. From selecting pieces to the first rehearsal, what did that look like?
+Anonymous Director (AD): I try to balance our selections with well known guys like Ellington or Basie and some newer pieces that catch my eye. For the Combos, we usually grab some PDF lead sheets for standards, some 12 bar blues, stuff like that. For the Big Band, I stick with physical folders. They're usually ready about a week before the first rehearsal for students to pick up. These guys aren't usually standard performers if they're looking for specifically the jazz group I find, so I'm less picky about their choice of reading.
+Interviewer (Int.): When you distribute a new piece with complex key signatures or tricky intervals, how much time do you spend beforehand marking up copies for struggling students?
+Anonymous Director (AD): I don’t mark anyone’s music, Jazz isn't that uptight for the most part. If they can't recognize a flat five or a sharp nine on their own, they hold themselves back. I’ll point it out in rehearsal, say "check that chord, you can do a lot more with that line," but they need to be responsible for their own musicianship.
+Interviewer (Int.): Think back to your last full rehearsal. When the ensemble stumbled or got out of sync, what were the primary causes?
+Anonymous Director (AD): Usually, it’s two things. One is showing up without having looked at the charts. If they’re just reading the notes, they're not gonna get thrown off by other parts' rhythms and lose their place. Second tends to be a lack of confidence with soloing, at least in the Combos. Some newer students can feel pressured when their voice is put on center stage. They might fumble with their keys trying to play something more complicated than they're able, they might play a bit too fast or too slow for what the rhythm section is playing. Worst is if they lock up and don't play. I make it a point to iron out issues with solos because they're the essence of Jazz Combos.
+Interviewer (Int.): What is your current policy regarding phones or tablets on music stands during rehearsals?
+Anonymous Director (AD): I have no problem with it. Like I said earlier, students can read whichever way works best. It's not so much for reading purposes as it is for a reference. Plus, these groups are small. If somebody's not paying attention, I'll know.
+Interviewer (Int.): Is there anything about score readability or rehearsal flow that I didn't ask about, but that frustrates you regularly?
+Anonymous Director (AD): I'm an old guy. Some of these fonts are getting hard to read, whether digital or on paper. In Big Band when I'm looking at whole array of parts, it gets to be a lot at once. But it's not too bad, I'm confident in my students to play right, and my ears to hear if something's wrong.

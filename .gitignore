@@ -1,3 +1,3 @@
-# GitLab tracker snapshot is intentionally retained on the GitHub-only history.
-# Do not add it to commits that are pushed to the GitLab `origin` remote.
+# GitLab tracker snapshot is retained in GitHub-only history.
+# Never add it to commits pushed to the GitLab `origin` remote.
 GITLAB_TRACKER.md
