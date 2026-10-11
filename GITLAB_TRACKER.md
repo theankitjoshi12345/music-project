@@ -1,7 +1,7 @@
 # GitLab Milestones and Issues
 
 This document is a snapshot of the GitLab tracker for the Music Project. It
-was retrieved on October 7, 2026. GitLab is the source of truth for project
+was retrieved on October 11, 2026. GitLab is the source of truth for project
 milestones and issues.
 
 - GitLab project: <https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project>
@@ -36,7 +36,7 @@ milestones and issues.
 | Due date | October 12, 2026 |
 | Description | Track the team’s evidence-based rapid-prototyping work: refined behavioral segments, critical moment, focused MVP features, static prototype screens, integration, README, and submission. |
 | Created / last updated (UTC) | 2026-10-07 20:03:53 / 2026-10-07 20:03:53 |
-| Issues | 8 open; 0 closed |
+| Issues | 3 open; 5 closed |
 
 ## Issues
 
@@ -204,42 +204,47 @@ Checklist:
 ## P#7 Issues
 
 All issues below belong to **P#7 - Rapid Prototyping**. They were created by
-`theankitjoshi12345`, are open, non-confidential, and have no locked
-discussion. GitLab supports a date-only issue due date. Assignments are
-recorded below.
+`theankitjoshi12345`, are non-confidential, and have no locked discussion.
+Three issues are open and five are closed. GitLab supports a date-only issue
+due date. Assignments are recorded below.
 
 ### [#9 — Refine Behavioral Segments](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/9)
 
-- Status: Open
+- Status: Closed
 - Due date: October 7, 2026
+- Closed (UTC): 2026-10-08 00:40:28
 - GitLab assignment: [Matthew Pisani (@p1sani2)](https://gitlab.com/p1sani2)
 - Responsibility: Refine P#6 behavioral segments using observed behaviors, pains, success criteria, and interview evidence.
 
 ### [#10 — Define Critical Moment](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/10)
 
-- Status: Open
+- Status: Closed
 - Due date: October 8, 2026
+- Closed (UTC): 2026-10-08 00:40:29
 - GitLab assignment: [Matthew Pisani (@p1sani2)](https://gitlab.com/p1sani2)
 - Responsibility: Document the user trigger, goal, current failure, product difference, and supporting interview evidence for the critical moment.
 
 ### [#11 — Scope MVP Features](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/11)
 
-- Status: Open
+- Status: Closed
 - Due date: October 10, 2026
+- Closed (UTC): 2026-10-08 00:38:56
 - GitLab assignment: [Matthew Pisani (@p1sani2)](https://gitlab.com/p1sani2)
 - Responsibility: Select no more than five critical-moment features and document each feature’s evidence, segment, pain reduced, and assumption.
 
 ### [#12 — Screen Design — Member B (Logan)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/12)
 
-- Status: Open
+- Status: Closed
 - Due date: October 10, 2026
+- Closed (UTC): 2026-10-10 17:24:52
 - GitLab assignment: [Logan Broussard (@lpb100)](https://gitlab.com/lpb100)
 - Responsibility: Create labeled, evidence-annotated static screens for the agreed task flow.
 
 ### [#13 — Screen Design — Member C (Ankit)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/13)
 
-- Status: Open
+- Status: Closed
 - Due date: October 10, 2026
+- Closed (UTC): 2026-10-11 15:15:33
 - GitLab assignment: [Ankit Joshi (@theankitjoshi12345)](https://gitlab.com/theankitjoshi12345)
 - Responsibility: Create labeled, evidence-annotated static screens for the agreed task flow.
 
