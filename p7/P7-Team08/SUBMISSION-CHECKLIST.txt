@@ -1,8 +1,6 @@
-Files are prepared locally; no remote push, GitLab issue closure, or Moodle submission has been performed.
+Initial report, README and screens were pushed to GitLab main in commit 48f54ac on October 12. Activity screenshots confirm issues #14 and #15 closed October 12.
 
-1. Check live issues #14, #15 and #16 and update the delivery schedule with actual close dates. Jonathan's design was received Oct 12; do not infer a closure date from receipt.
-2. Add this folder under p7/ in the repository. Link p7/P7-Team08/README.md from the root README, or adapt these sections into the existing root README.
-3. Commit and push the report, screens and README to the project.
-4. Close #15 after integration is shared. Complete #16 according to its checklist, including submission.
-5. Submit P7-Team08-Report.pdf and the GitLab repository link to Moodle by Oct 12, 11:55 PM America/Chicago.
-6. Complete the separate IR#7 individual report according to its own Moodle instructions.
+1. Copy this revised report, README and checklist over the corresponding files under p7/P7-Team08, then commit and push the corrections.
+2. Submit the revised P7-Team08-Report.pdf and GitLab repository link to Moodle by October 12, 11:55 PM America/Chicago.
+3. Close #16 after completing README and final submission.
+4. Complete the separate IR#7 individual report according to its Moodle instructions.

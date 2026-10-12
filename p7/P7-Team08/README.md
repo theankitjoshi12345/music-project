@@ -58,7 +58,7 @@ These are static mockups with illustrative music and cue content. They do not im
 ## Project tracking
 GitLab: https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project
 
-Milestone: P#7 - Rapid Prototyping. Issues #9-#16 track the work. The report records dates supported by the October 11 tracker snapshot and distinguishes later artifact preparation from unverified issue closures.
+Milestone: P#7 - Rapid Prototyping. Issues #9-#16 track the work. The report combines the October 11 tracker snapshot with October 12 activity screenshots confirming closure of #14 and #15. The README and integrated files were pushed in commit 48f54ac on October 12. Issue #16 remains pending final submission.
 
 ## Tools
 Paper sketches; supplied PDF mockups; team interview and task documents; ChatGPT/Codex-assisted integration and ReportLab PDF generation.
