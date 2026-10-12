@@ -1,7 +1,7 @@
 # GitLab Milestones and Issues
 
 This document is a snapshot of the GitLab tracker for the Music Project. It
-was retrieved on October 11, 2026. GitLab is the source of truth for project
+was retrieved on October 12, 2026. GitLab is the source of truth for project
 milestones and issues.
 
 - GitLab project: <https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project>
@@ -36,7 +36,7 @@ milestones and issues.
 | Due date | October 12, 2026 |
 | Description | Track the team’s evidence-based rapid-prototyping work: refined behavioral segments, critical moment, focused MVP features, static prototype screens, integration, README, and submission. |
 | Created / last updated (UTC) | 2026-10-07 20:03:53 / 2026-10-07 20:03:53 |
-| Issues | 3 open; 5 closed |
+| Issues | 2 open; 6 closed |
 
 ## Issues
 
@@ -205,7 +205,7 @@ Checklist:
 
 All issues below belong to **P#7 - Rapid Prototyping**. They were created by
 `theankitjoshi12345`, are non-confidential, and have no locked discussion.
-Three issues are open and five are closed. GitLab supports a date-only issue
+Two issues are open and six are closed. GitLab supports a date-only issue
 due date. Assignments are recorded below.
 
 ### [#9 — Refine Behavioral Segments](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/9)
@@ -250,8 +250,9 @@ due date. Assignments are recorded below.
 
 ### [#14 — Screen Design — Member D (Jonathan)](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/14)
 
-- Status: Open
+- Status: Closed
 - Due date: October 11, 2026
+- Closed (UTC): 2026-10-12 14:52:04
 - GitLab assignment: [J Demp (@JDemp06)](https://gitlab.com/JDemp06)
 - Responsibility: Create labeled, evidence-annotated static screens for the agreed task flow.
 
