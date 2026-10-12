@@ -47,8 +47,9 @@ required report template.
    identifying details without explicit authorization.
 7. Do not change project code while preparing P#6 artifacts unless the user
    explicitly asks for a code change.
-8. Before a GitLab push, inspect the outgoing commits and confirm that
-   `GITLAB_TRACKER.md` is absent. That tracker snapshot is GitHub-only.
+8. Before a GitLab push, inspect the outgoing commits and confirm that any
+   `GITLAB_TRACKER.md` update accurately reflects the current GitLab data and
+   contains no raw interview material or newly added identifying information.
 
 ## Required report content
 
@@ -125,6 +126,6 @@ GitLab action.
 
 The user explicitly authorized the current project files to stay the same on
 GitHub and GitLab on October 7, 2026. This includes
-`p4/complete-combined-interview-scripts-standardized.txt`. The sole exception
-is `GITLAB_TRACKER.md`, which remains GitHub-only and must never be staged or
-pushed to GitLab.
+`p4/complete-combined-interview-scripts-standardized.txt` and
+`GITLAB_TRACKER.md`. The tracker remains a read-only snapshot of GitLab; do
+not use it to create, mirror, or manage GitHub issues.
