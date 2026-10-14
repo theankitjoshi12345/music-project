@@ -1,7 +1,7 @@
 # GitLab Milestones and Issues
 
 This document is a snapshot of the GitLab tracker for the Music Project. It
-was retrieved on October 12, 2026. GitLab is the source of truth for project
+was retrieved on October 14, 2026. GitLab is the source of truth for project
 milestones and issues.
 
 - GitLab project: <https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project>
@@ -36,7 +36,19 @@ milestones and issues.
 | Due date | October 12, 2026 |
 | Description | Track the team’s evidence-based rapid-prototyping work: refined behavioral segments, critical moment, focused MVP features, static prototype screens, integration, README, and submission. |
 | Created / last updated (UTC) | 2026-10-07 20:03:53 / 2026-10-07 20:03:53 |
-| Issues | 2 open; 6 closed |
+| Issues | 0 open; 8 closed |
+
+### P#8 – User Testing
+
+| Field | Value |
+| --- | --- |
+| GitLab ID | 7661869 |
+| GitLab milestone | [!3](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/milestones/3) |
+| Status | Active |
+| Start date | Not set |
+| Due date | October 19, 2026 |
+| Description | Track P#8 usability-testing preparation, sessions, synthesis, design decisions, and final reporting. |
+| Issues | 6 open; 1 closed |
 
 ## Issues
 
@@ -205,7 +217,7 @@ Checklist:
 
 All issues below belong to **P#7 - Rapid Prototyping**. They were created by
 `theankitjoshi12345`, are non-confidential, and have no locked discussion.
-Two issues are open and six are closed. GitLab supports a date-only issue
+All eight issues are closed. GitLab supports a date-only issue
 due date. Assignments are recorded below.
 
 ### [#9 — Refine Behavioral Segments](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/9)
@@ -258,14 +270,65 @@ due date. Assignments are recorded below.
 
 ### [#15 — Screen Integration](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/15)
 
-- Status: Open
+- Status: Closed
 - Due date: October 10, 2026
+- Closed (UTC): 2026-10-12 23:12:22
 - GitLab assignment: [Matthew Pisani (@p1sani2)](https://gitlab.com/p1sani2)
 - Responsibility: Integrate every contribution into one coherent, beginning-to-end task flow and verify labels, evidence annotations, and credits.
 
 ### [#16 — README and Final Submission](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/16)
 
-- Status: Open
+- Status: Closed
 - Due date: October 12, 2026
+- Closed (UTC): 2026-10-13 00:01:36
 - GitLab assignment: [Matthew Pisani (@p1sani2)](https://gitlab.com/p1sani2)
 - Responsibility: Prepare the P#7 README and final PDF-plus-GitLab-link submission materials.
+
+## P#8 Issues
+
+All issues below belong to **P#8 – User Testing**. They are open, unassigned,
+and have no issue-level due dates; the milestone is due October 19, 2026.
+Each issue includes a description, task checklist, and acceptance criteria.
+
+### [#17 — Prepare Figma prototype and testing materials.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/17)
+
+- Status: Closed
+- Closed (UTC): 2026-10-14 20:25:21
+- GitLab assignment: None
+- Responsibility: Prepare the prototype, neutral task prompt, facilitator script, and anonymous observation materials.
+
+### [#18 — Recruit 3–5 musicians from our target segment.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/18)
+
+- Status: Open
+- GitLab assignment: None
+- Responsibility: Recruit and schedule qualified participants, documenting anonymous segment fit.
+
+### [#19 — Conduct 3–5 usability testing sessions.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/19)
+
+- Status: Open
+- GitLab assignment: None
+- Responsibility: Run consistent think-aloud Wizard-of-Oz sessions with at least two team members present.
+
+### [#20 — Document observations for each participant.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/20)
+
+- Status: Open
+- GitLab assignment: None
+- Responsibility: Capture anonymous per-session evidence, including completion, hesitation, wrong turns, quotes, and suggestions.
+
+### [#21 — Analyze feedback and identify usability patterns.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/21)
+
+- Status: Open
+- GitLab assignment: None
+- Responsibility: Identify evidence-backed, actionable patterns across all participant sessions.
+
+### [#22 — Decide on prototype improvements based on findings.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/22)
+
+- Status: Open
+- GitLab assignment: None
+- Responsibility: Make and document evidence-based change and keep decisions for the next prototype iteration.
+
+### [#23 — Compile the final P#8 PDF report.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/23)
+
+- Status: Open
+- GitLab assignment: None
+- Responsibility: Compile and quality-check the required P#8 report and GitLab tracking link.
