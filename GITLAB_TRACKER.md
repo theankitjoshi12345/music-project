@@ -1,7 +1,7 @@
 # GitLab Milestones and Issues
 
 This document is a snapshot of the GitLab tracker for the Music Project. It
-was retrieved on October 14, 2026. GitLab is the source of truth for project
+was retrieved on October 18, 2026. GitLab is the source of truth for project
 milestones and issues.
 
 - GitLab project: <https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project>
@@ -48,7 +48,7 @@ milestones and issues.
 | Start date | Not set |
 | Due date | October 19, 2026 |
 | Description | Track P#8 usability-testing preparation, sessions, synthesis, design decisions, and final reporting. |
-| Issues | 6 open; 1 closed |
+| Issues | 0 open; 7 closed |
 
 ## Issues
 
@@ -286,9 +286,9 @@ due date. Assignments are recorded below.
 
 ## P#8 Issues
 
-All issues below belong to **P#8 – User Testing**. They are open, unassigned,
-and have no issue-level due dates; the milestone is due October 19, 2026.
-Each issue includes a description, task checklist, and acceptance criteria.
+All issues below belong to **P#8 – User Testing**. They are closed,
+unassigned, and have no issue-level due dates; the milestone is due October
+19, 2026. Closure status was verified from GitLab on October 18, 2026.
 
 ### [#17 — Prepare Figma prototype and testing materials.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/17)
 
@@ -299,36 +299,42 @@ Each issue includes a description, task checklist, and acceptance criteria.
 
 ### [#18 — Recruit 3–5 musicians from our target segment.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/18)
 
-- Status: Open
+- Status: Closed
+- Closed (UTC): 2026-10-18 16:12:50
 - GitLab assignment: None
 - Responsibility: Recruit and schedule qualified participants, documenting anonymous segment fit.
 
 ### [#19 — Conduct 3–5 usability testing sessions.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/19)
 
-- Status: Open
+- Status: Closed
+- Closed (UTC): 2026-10-18 16:12:51
 - GitLab assignment: None
 - Responsibility: Run consistent think-aloud Wizard-of-Oz sessions with at least two team members present.
 
 ### [#20 — Document observations for each participant.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/20)
 
-- Status: Open
+- Status: Closed
+- Closed (UTC): 2026-10-18 16:12:53
 - GitLab assignment: None
 - Responsibility: Capture anonymous per-session evidence, including completion, hesitation, wrong turns, quotes, and suggestions.
 
 ### [#21 — Analyze feedback and identify usability patterns.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/21)
 
-- Status: Open
+- Status: Closed
+- Closed (UTC): 2026-10-18 16:12:55
 - GitLab assignment: None
 - Responsibility: Identify evidence-backed, actionable patterns across all participant sessions.
 
 ### [#22 — Decide on prototype improvements based on findings.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/22)
 
-- Status: Open
+- Status: Closed
+- Closed (UTC): 2026-10-18 16:12:56
 - GitLab assignment: None
 - Responsibility: Make and document evidence-based change and keep decisions for the next prototype iteration.
 
 ### [#23 — Compile the final P#8 PDF report.](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/23)
 
-- Status: Open
+- Status: Closed
+- Closed (UTC): 2026-10-18 16:12:58
 - GitLab assignment: None
 - Responsibility: Compile and quality-check the required P#8 report and GitLab tracking link.
