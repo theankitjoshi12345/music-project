@@ -12,6 +12,7 @@ The current checkout contains project documents rather than application source. 
 - `p4/` - customer-discovery report and standardized interview source material
 - `p6/` - discovery-synthesis report, contribution PDFs, template, rubric, instructions, and segments
 - `p7/` - rapid-prototyping task documents
+- `p8/` - user-testing report, observation evidence, prototype, and design decisions
 - Root - repository metadata, license, and the GitHub-only GitLab tracker snapshot
 
 ## For reviewers
@@ -25,3 +26,22 @@ See [LICENSE](LICENSE). The license covers only Ankit Joshi's original contribut
 - [Product overview and team contributions](p7/P7-Team08/README.md)
 - [P#7 report](p7/P7-Team08/P7-Team08-Report.pdf)
 - [Integrated prototype screens](p7/P7-Team08/P7-Integrated-Screens.pdf)
+
+## P#8 - User Testing
+
+- [User-testing report](p8/P8_User_Testing_Report.pdf)
+- [Original P1/P2 observation notes](p8/P8_TwoParticipants_Issues2-4.pdf)
+- [Preserved P3 session record](p8/LOGAN_GITLAB_SESSION.md)
+- [Synthesis and implementation decisions](p8/P8_SYNTHESIS_AND_IMPLEMENTATION.md)
+- [Assignment instructions](p8/INSTRUCTIONS.md)
+- [GitLab P#8 milestone](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/milestones/3)
+
+Three anonymous participant records support the analysis. Planned changes focus
+on musical context and a clearer mark, note, and review flow. Offline status and
+resolution feedback are retained.
+
+The report includes the original observation notes and the complete preserved
+third-session record. Attendance, recruitment, exact prompt, missing timing,
+and full P#8 member contributions still require confirmation. The included
+tracker snapshot records closed P#8 issues without assignees or issue due dates;
+live GitLab status has not been checked.
