@@ -13,7 +13,7 @@ The current checkout contains project documents rather than application source. 
 - `p6/` - discovery-synthesis report, contribution PDFs, template, rubric, instructions, and segments
 - `p7/` - rapid-prototyping task documents
 - `p8/` - user-testing report, observation evidence, prototype, and design decisions
-- Root - repository metadata, license, and the GitHub-only GitLab tracker snapshot
+- Root - repository metadata, license, and GitLab tracker snapshot mirrored to both remotes
 
 ## For reviewers
 This is a team project, not an individually built application. Do not infer completed software from the repository name. Documentation and project status should be evaluated separately from working-code samples.
@@ -42,6 +42,6 @@ resolution feedback are retained.
 
 The report includes the original observation notes and the complete preserved
 third-session record. Attendance, recruitment, exact prompt, missing timing,
-and full P#8 member contributions still require confirmation. The included
-tracker snapshot records closed P#8 issues without assignees or issue due dates;
-live GitLab status has not been checked.
+and full P#8 member contributions remain limitations of the available records.
+Live GitLab was verified on October 21, 2026: the P#8 milestone and issues
+#17-#23 are closed; the issues have no assignees or issue-level due dates.
