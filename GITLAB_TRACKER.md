@@ -25,7 +25,7 @@ for project milestones and issues.
 | Due date | October 26, 2026 |
 | Description | Track P#9 development-environment setup, first screen implementations, and GitLab merge-request workflow. |
 | Created / last updated (UTC) | 2026-10-24 02:18:53 / 2026-10-24 02:18:53 |
-| Issues | 4 open; 0 closed |
+| Issues | 5 open; 0 closed |
 
 | Issue | Owner | Status | Scope |
 | --- | --- | --- | --- |
@@ -33,8 +33,9 @@ for project milestones and issues.
 | [#25 Add Measure Marker screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/25) | Matthew Pisani (`p1sani2`) | Open | Measure Marker — hard |
 | [#26 Add Practice Review screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/26) | J Demp (`JDemp06`) | Open | Practice Review — medium |
 | [#27 Add Offline Score Library screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/27) | Logan Broussard (`lpb100`) | Open | Offline Score Library — easiest |
+| [#28 Implement shared REST API contract](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/28) | Ankit Joshi (`theankitjoshi12345`) | Open | Document and implement the shared Django REST API |
 
-All P#9 screen issues require implementation from
+The four P#9 screen issues (#24–#27) require implementation from
 `p9/Score_Companion_P8_Revised_Screens.pdf`, link directly to that PDF in
 GitLab, and include the [Score Companion Figma design](https://www.figma.com/design/NSZliKsVC3CiwrjqQfrOHS).
 

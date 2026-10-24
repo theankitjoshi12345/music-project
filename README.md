@@ -43,6 +43,7 @@ backend/                  Django project
   requirements.txt        Backend dependencies
 p9/                       P#9 instructions and revised Figma PDF reference
 architecture.md           Planned technical architecture
+API_CONTRACT.md           Shared REST endpoint and data contract
 ```
 
 ## Local setup
@@ -77,6 +78,18 @@ npm run dev
 ```
 
 Vite serves the app at `http://localhost:5173/`. Use the navigation links to visit each reserved route.
+
+## API
+
+The Django REST API is documented in [API_CONTRACT.md](API_CONTRACT.md).
+After creating data through the Django admin, shell, or fixtures, the primary
+endpoints are scores, score passages, and practice marks under `/api/`.
+
+Run backend API tests with:
+
+```bash
+backend/.venv/bin/python backend/manage.py test scoreapi
+```
 
 ## Development workflow
 
