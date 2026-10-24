@@ -1,47 +1,100 @@
-# Music Project
+# Score Companion
 
-A CMPS 453 team project repository. GitLab is the authoritative task tracker;
-project files are mirrored between GitLab and GitHub, except for the
-GitHub-only `GITLAB_TRACKER.md` snapshot.
+Score Companion is a CMPS 453 team project for helping musicians open downloaded score parts, mark passages for practice, add a practice note, and review unresolved corrections.
 
-## Status
-The current checkout contains project documents rather than application source. There is no runnable web application, dependency manifest, automated test suite, AI API integration, or hosted demo to evaluate.
+## P#9 status
+
+The Django + React application shell is initialized. It provides a verified API health endpoint and four owner-reserved frontend routes. The revised Figma screens are the primary UI reference, but their designs have intentionally **not** been implemented in this setup commit. Each owner builds only their assigned screen in a separate issue and branch.
+
+## Tech stack
+
+| Area | Choice |
+| --- | --- |
+| Frontend | React + Vite (JavaScript) |
+| Backend | Django + Django REST Framework |
+| Database | SQLite |
+| Runtime | Python 3.12+ and Node.js LTS |
+| IDE | VS Code |
+| Version control | Git + GitHub |
+| API testing | Postman (recommended) |
+| UI reference | Figma export: `p9/Score_Companion_P8_Revised_Screens.pdf` |
+
+See [architecture.md](architecture.md) for the planned architecture and boundaries.
+
+## Screen ownership
+
+| Owner | Assigned screen | Complexity | Route |
+| --- | --- | --- | --- |
+| Ankit Joshi | Score Viewer & Navigation | Hardest | [`#/score-viewer`](http://localhost:5173/#/score-viewer) |
+| Matthew Pisani | Measure Marker | Hard | [`#/measure-marker`](http://localhost:5173/#/measure-marker) |
+| Jonathan Dempsey | Practice Review | Medium | [`#/practice-review`](http://localhost:5173/#/practice-review) |
+| Logan Broussard | Offline Score Library | Easiest | [`#/score-library`](http://localhost:5173/#/score-library) |
+
+These routes are placeholders only. Do not implement another member's screen.
 
 ## Project structure
 
-- `p4/` - customer-discovery report and standardized interview source material
-- `p6/` - discovery-synthesis report, contribution PDFs, template, rubric, instructions, and segments
-- `p7/` - rapid-prototyping task documents
-- `p8/` - user-testing report, observation evidence, prototype, and design decisions
-- Root - repository metadata, license, and GitLab tracker snapshot mirrored to both remotes
+```text
+frontend/                 React + Vite application
+  src/App.jsx             Shared app shell and placeholder hash routes
+backend/                  Django project
+  config/                 Django settings and root routing
+  scoreapi/               Initial REST API app
+  requirements.txt        Backend dependencies
+p9/                       P#9 instructions and revised Figma PDF reference
+architecture.md           Planned technical architecture
+```
 
-## For reviewers
-This is a team project, not an individually built application. Do not infer completed software from the repository name. Documentation and project status should be evaluated separately from working-code samples.
+## Local setup
+
+### Prerequisites
+
+- Python 3.12 or newer
+- Node.js LTS
+- Git
+
+### Backend
+
+```bash
+python3.12 -m venv backend/.venv
+backend/.venv/bin/pip install -r backend/requirements.txt
+backend/.venv/bin/python backend/manage.py migrate
+backend/.venv/bin/python backend/manage.py runserver
+```
+
+The API runs at `http://127.0.0.1:8000/`. Confirm it with:
+
+```bash
+curl http://127.0.0.1:8000/api/health/
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Vite serves the app at `http://localhost:5173/`. Use the navigation links to visit each reserved route.
+
+## Development workflow
+
+1. Read the revised Figma PDF before building a screen.
+2. Work only on your assigned GitHub issue and branch.
+3. Build your owned screen; do not modify another owner's screen without coordination.
+4. Test the frontend and relevant API requests.
+5. Open a pull request with `Closes #<issue-number>`.
+6. Request teammate review before merging.
+
+## Prior project work
+
+- [P#7 product overview and contributions](p7/P7-Team08/README.md)
+- [P#7 report](p7/P7-Team08/P7-Team08-Report.pdf)
+- [P#8 synthesis and implementation decisions](p8/P8_SYNTHESIS_AND_IMPLEMENTATION.md)
+- [P#8 user-testing report](p8/P8_User_Testing_Report.pdf)
+- [P#9 instructions](p9/instruction.md)
 
 ## License
+
 See [LICENSE](LICENSE). The license covers only Ankit Joshi's original contributions. Team work, research records, participant material, and course-provided documents are excluded unless separately licensed.
-
-## P#7 - Rapid Prototyping
-
-- [Product overview and team contributions](p7/P7-Team08/README.md)
-- [P#7 report](p7/P7-Team08/P7-Team08-Report.pdf)
-- [Integrated prototype screens](p7/P7-Team08/P7-Integrated-Screens.pdf)
-
-## P#8 - User Testing
-
-- [User-testing report](p8/P8_User_Testing_Report.pdf)
-- [Original P1/P2 observation notes](p8/P8_TwoParticipants_Issues2-4.pdf)
-- [Preserved P3 session record](p8/LOGAN_GITLAB_SESSION.md)
-- [Synthesis and implementation decisions](p8/P8_SYNTHESIS_AND_IMPLEMENTATION.md)
-- [Assignment instructions](p8/INSTRUCTIONS.md)
-- [GitLab P#8 milestone](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/milestones/3)
-
-Three anonymous participant records support the analysis. Planned changes focus
-on musical context and a clearer mark, note, and review flow. Offline status and
-resolution feedback are retained.
-
-The report includes the original observation notes and the complete preserved
-third-session record. Attendance, recruitment, exact prompt, missing timing,
-and full P#8 member contributions remain limitations of the available records.
-Live GitLab was verified on October 21, 2026: the P#8 milestone and issues
-#17-#23 are closed; the issues have no assignees or issue-level due dates.

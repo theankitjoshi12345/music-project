@@ -1,0 +1,31 @@
+.app-shell {
+  box-sizing: border-box;
+  max-width: 900px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+}
+
+header { margin-bottom: 2rem; }
+h1, h2 { margin: 0; color: #102a43; }
+h1 { font-size: clamp(2.25rem, 6vw, 4rem); letter-spacing: -0.06em; }
+h2 { font-size: 1.75rem; }
+.subtitle { color: #52677f; margin: .75rem 0 0; }
+.eyebrow { color: #2d61d8; font-size: .8rem; font-weight: 800; letter-spacing: .08em; margin: 0 0 .6rem; text-transform: uppercase; }
+
+nav { display: flex; flex-wrap: wrap; gap: .75rem; margin: 0 0 2rem; }
+nav a { border: 1px solid #cbd7e6; border-radius: .5rem; color: #254d77; padding: .65rem .85rem; text-decoration: none; }
+nav a:hover, nav a.active { background: #2d61d8; border-color: #2d61d8; color: white; }
+
+.placeholder { background: white; border: 1px dashed #9ab0c9; border-radius: .75rem; padding: 2rem; }
+.placeholder > p { color: #52677f; line-height: 1.6; }
+dl { display: flex; gap: 2rem; margin: 1.5rem 0; }
+dt { color: #60758b; font-size: .8rem; font-weight: 700; text-transform: uppercase; }
+dd { font-weight: 600; margin: .25rem 0 0; }
+footer { color: #60758b; font-size: .9rem; margin-top: 2rem; }
+code { background: #e8eff9; border-radius: .25rem; color: #153c68; padding: .2rem .35rem; }
+
+@media (max-width: 600px) {
+  .app-shell { padding: 2.5rem 1rem; }
+  dl { flex-direction: column; gap: 1rem; }
+}

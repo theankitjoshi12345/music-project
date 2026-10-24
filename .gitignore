@@ -1,0 +1,14 @@
+# Python
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/db.sqlite3
+*.py[cod]
+
+# JavaScript
+frontend/node_modules/
+frontend/dist/
+
+# Local and operating-system files
+.DS_Store
+tmp/
