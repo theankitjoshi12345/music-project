@@ -35,8 +35,8 @@ for project milestones and issues.
 | [#27 Add Offline Score Library screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/27) | Logan Broussard (`lpb100`) | Open | Offline Score Library — easiest |
 
 All P#9 screen issues require implementation from
-`p9/Score_Companion_P8_Revised_Screens.pdf` and link directly to that PDF in
-GitLab. The repository does not contain a shareable Figma URL.
+`p9/Score_Companion_P8_Revised_Screens.pdf`, link directly to that PDF in
+GitLab, and include the [Score Companion Figma design](https://www.figma.com/design/NSZliKsVC3CiwrjqQfrOHS).
 
 ## Closed Milestones
 

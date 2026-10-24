@@ -17,7 +17,7 @@ The Django + React application shell is initialized. It provides a verified API 
 | IDE | VS Code |
 | Version control | Git + GitLab |
 | API testing | Postman (recommended) |
-| UI reference | Figma export: `p9/Score_Companion_P8_Revised_Screens.pdf` |
+| UI reference | [Score Companion Figma design](https://www.figma.com/design/NSZliKsVC3CiwrjqQfrOHS) and export: `p9/Score_Companion_P8_Revised_Screens.pdf` |
 
 See [architecture.md](architecture.md) for the planned architecture and boundaries.
 
