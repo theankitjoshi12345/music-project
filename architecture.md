@@ -26,8 +26,8 @@ The React client will provide the user interface. Django REST Framework will exp
 | Backend | Django + Django REST Framework | **Mandatory** | Provide server-side application logic and REST API endpoints. |
 | Database | SQLite | **Mandatory** | Persist development data through Django's ORM. |
 | Runtime | Python 3 + Node.js LTS | **Mandatory** | Run the Django backend and React/Vite frontend. |
-| Version control and hosting | Git + GitHub | **Mandatory** | Track source changes and support the P#9 issue and pull-request workflow. |
-| Project tracking | GitLab | **Mandatory** | Source of truth for the course's GitLab milestones and issues; P#9 GitHub tracking is used at the user's explicit request. |
+| Version control and hosting | Git + GitLab | **Mandatory** | Track source changes and support the P#9 issue and merge-request workflow. |
+| Project tracking | GitLab | **Mandatory** | Source of truth for milestones, issues, branches, merge requests, and reviews. |
 | IDE | VS Code | **Recommended** | Shared development environment for the team. |
 | AI assistant | Codex or GitHub Copilot | **Recommended** | Assist with setup, implementation, and debugging. |
 | API testing | Postman | **Recommended** | Send and inspect requests to the REST API during development. |

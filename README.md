@@ -15,7 +15,7 @@ The Django + React application shell is initialized. It provides a verified API 
 | Database | SQLite |
 | Runtime | Python 3.12+ and Node.js LTS |
 | IDE | VS Code |
-| Version control | Git + GitHub |
+| Version control | Git + GitLab |
 | API testing | Postman (recommended) |
 | UI reference | Figma export: `p9/Score_Companion_P8_Revised_Screens.pdf` |
 
@@ -81,10 +81,10 @@ Vite serves the app at `http://localhost:5173/`. Use the navigation links to vis
 ## Development workflow
 
 1. Read the revised Figma PDF before building a screen.
-2. Work only on your assigned GitHub issue and branch.
+2. Work only on your assigned GitLab issue and branch.
 3. Build your owned screen; do not modify another owner's screen without coordination.
 4. Test the frontend and relevant API requests.
-5. Open a pull request with `Closes #<issue-number>`.
+5. Open a GitLab merge request with `Closes #<issue-number>`.
 6. Request teammate review before merging.
 
 ## Prior project work
