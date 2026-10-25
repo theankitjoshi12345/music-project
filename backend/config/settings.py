@@ -25,10 +25,14 @@ SECRET_KEY = 'django-insecure-am054yffs4&j)l#v$f^b$_q^-pi6t(x!c3*ljo)i8as@26!28=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "::1"]
 
 # Local Vite development server. Tighten this list before production deployment.
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]

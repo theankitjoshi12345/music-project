@@ -1,8 +1,8 @@
-# Planned Architecture — Score Companion
+# Architecture — Score Companion
 
-**Status:** Planned architecture for P#9. No application code has been implemented yet.
+**Status:** P#9 app shell is implemented. The project currently includes a shared React shell, a Django health endpoint, and the planned screen-route structure for future feature work.
 
-Score Companion is planned as a web application for musicians to open score parts, mark passages for practice, add contextual notes, and review unresolved passages.
+Score Companion is intended to support musicians opening score parts, marking passages for practice, adding contextual notes, and reviewing unresolved passages.
 
 ## System Overview
 

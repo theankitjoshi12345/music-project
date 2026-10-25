@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import OfflineScoreLibrary from './OfflineScoreLibrary.jsx'
 
 const routes = {
   '/score-library': {
@@ -41,6 +42,10 @@ function App() {
   }, [])
 
   const screen = routes[route]
+
+  if (route === '/score-library') {
+    return <OfflineScoreLibrary />
+  }
 
   return (
     <main className="app-shell">

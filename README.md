@@ -21,6 +21,15 @@ The Django + React application shell is initialized. It provides a verified API 
 
 See [architecture.md](architecture.md) for the planned architecture and boundaries.
 
+## Team
+
+| Member | Role | Screen ownership |
+| --- | --- | --- |
+| Member A | Team lead | Splash / Home |
+| Member B | Search screen owner | Search |
+| Member C | Profile screen owner | Profile |
+| Member D | Settings screen owner | Settings |
+
 ## Screen ownership
 
 | Owner | Assigned screen | Complexity | Route |
