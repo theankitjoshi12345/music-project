@@ -38,6 +38,7 @@ The Score Viewer supports page controls, section selection, and jumping to a mea
 frontend/                 React + Vite application
   src/App.jsx             Shared app shell and placeholder hash routes
   src/pages/ScoreViewer.jsx  Ankit's Score Viewer & Navigation
+  src/components/score-companion/  Shared UI components and teammate usage guide
 backend/                  Django project
   config/                 Django settings and root routing
   scoreapi/               Initial REST API app
@@ -99,6 +100,14 @@ viewer does not claim a score is offline-ready.
 
 Run `npm test --prefix frontend`, `npm run lint --prefix frontend`, and
 `npm run build --prefix frontend` to verify the viewer's data integration and build.
+
+### Reusing frontend components
+
+The viewer is composed from shared layout, heading, feedback, score context,
+navigation, score sheet, measure preview, and measure-jump components.
+See the [component usage guide](frontend/src/components/score-companion/README.md)
+for props and examples for the other screen owners. Components accept data and
+callbacks; each owner keeps their own API integration and screen behavior.
 
 ## API
 

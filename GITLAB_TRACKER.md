@@ -45,6 +45,10 @@ sample for an empty library. The issue remains open for browser verification
 and teammate review in [draft MR !2](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/2)
 before merging. The other screen issues remain open.
 
+The #24 branch also provides shared frontend components and a usage guide in
+`frontend/src/components/score-companion/` for the other screen owners.
+Eleven frontend tests cover viewer data and shared-component rendering.
+
 ## Closed Milestones
 
 ### P#6 - Synthesizing Discovery
