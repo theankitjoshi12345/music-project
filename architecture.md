@@ -1,6 +1,8 @@
 # Planned Architecture — Score Companion
 
-**Status:** Planned architecture for P#9. No application code has been implemented yet.
+**Status:** Planned architecture for P#9. The shared API contract is implemented
+on feature branch `28-shared-api-contract` and awaits team review; no screen
+implementation is included in that work.
 
 Score Companion is planned as a web application for musicians to open score parts, mark passages for practice, add contextual notes, and review unresolved passages.
 
