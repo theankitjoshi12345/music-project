@@ -1,7 +1,7 @@
 # GitLab Milestones and Issues
 
 This document is a snapshot of the GitLab tracker for the Music Project,
-retrieved on October 23, 2026 (Central Time). GitLab is the source of truth
+retrieved on October 25, 2026 (Central Time). GitLab is the source of truth
 for project milestones and issues.
 
 - GitLab project: <https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project>
@@ -38,6 +38,11 @@ for project milestones and issues.
 The four P#9 screen issues (#24–#27) require implementation from
 `p9/Score_Companion_P8_Revised_Screens.pdf`, link directly to that PDF in
 GitLab, and include the [Score Companion Figma design](https://www.figma.com/design/NSZliKsVC3CiwrjqQfrOHS).
+
+Issue #24 is implemented on branch `24-score-viewer-navigation`, with page,
+section, and measure navigation, live score/passages API reads, and a labeled
+sample for an empty library. The issue remains open for browser verification
+and teammate review before merging. The other screen issues remain open.
 
 ## Closed Milestones
 

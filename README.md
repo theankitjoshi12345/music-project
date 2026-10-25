@@ -4,7 +4,7 @@ Score Companion is a CMPS 453 team project for helping musicians open downloaded
 
 ## P#9 status
 
-The Django + React application shell is initialized. It provides a verified API health endpoint and four owner-reserved frontend routes. The revised Figma screens are the primary UI reference, but their designs have intentionally **not** been implemented in this setup commit. Each owner builds only their assigned screen in a separate issue and branch.
+The Django + React application shell and shared REST API are initialized. Ankit's Score Viewer & Navigation is implemented on branch `24-score-viewer-navigation` for team review. The other three screen routes remain reserved for their owners. The revised Figma PDF is the primary UI reference.
 
 ## Tech stack
 
@@ -30,13 +30,14 @@ See [architecture.md](architecture.md) for the planned architecture and boundari
 | Jonathan Dempsey | Practice Review | Medium | [`#/practice-review`](http://localhost:5173/#/practice-review) |
 | Logan Broussard | Offline Score Library | Easiest | [`#/score-library`](http://localhost:5173/#/score-library) |
 
-These routes are placeholders only. Do not implement another member's screen.
+The Score Viewer supports page controls, section selection, and jumping to a measure. The other three routes are placeholders. Each member implements only their assigned screen.
 
 ## Project structure
 
 ```text
 frontend/                 React + Vite application
   src/App.jsx             Shared app shell and placeholder hash routes
+  src/pages/ScoreViewer.jsx  Ankit's Score Viewer & Navigation
 backend/                  Django project
   config/                 Django settings and root routing
   scoreapi/               Initial REST API app
@@ -78,6 +79,26 @@ npm run dev
 ```
 
 Vite serves the app at `http://localhost:5173/`. Use the navigation links to visit each reserved route.
+
+### Score Viewer (#24)
+
+Open `http://localhost:5173/#/score-viewer`. To open a particular API score,
+use `#/score-viewer?score=1` (replace `1` with its database ID). Library
+integration can link to this route without changing the viewer.
+
+The viewer requests the selected score and its passages through `/api/`; Vite
+proxies these requests to Django at `127.0.0.1:8000`. Start both servers for
+live data. An empty library displays a clearly labeled sample reproducing
+Section B, measures 17–24 from page 2 of the revised PDF. Failed requests show
+a retry action and an explicit option to view the sample.
+
+Notation is illustrative: the current API provides measure metadata, not music
+notation or score-file contents. PDF rendering, actual offline file caching,
+and measure-marking actions are outside this screen's implementation. The
+viewer does not claim a score is offline-ready.
+
+Run `npm test --prefix frontend`, `npm run lint --prefix frontend`, and
+`npm run build --prefix frontend` to verify the viewer's data integration and build.
 
 ## API
 

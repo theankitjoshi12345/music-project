@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import ScoreViewer from './pages/ScoreViewer'
 
 const routes = {
   '/score-library': {
@@ -27,7 +28,7 @@ const routes = {
 const defaultRoute = '/score-library'
 
 function currentRoute() {
-  const path = window.location.hash.replace('#', '')
+  const path = window.location.hash.replace('#', '').split('?')[0]
   return routes[path] ? path : defaultRoute
 }
 
@@ -41,6 +42,10 @@ function App() {
   }, [])
 
   const screen = routes[route]
+
+  if (route === '/score-viewer') {
+    return <ScoreViewer />
+  }
 
   return (
     <main className="app-shell">
