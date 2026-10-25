@@ -42,7 +42,8 @@ GitLab, and include the [Score Companion Figma design](https://www.figma.com/des
 Issue #24 is implemented on branch `24-score-viewer-navigation`, with page,
 section, and measure navigation, live score/passages API reads, and a labeled
 sample for an empty library. The issue remains open for browser verification
-and teammate review before merging. The other screen issues remain open.
+and teammate review in [draft MR !2](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/2)
+before merging. The other screen issues remain open.
 
 ## Closed Milestones
 
