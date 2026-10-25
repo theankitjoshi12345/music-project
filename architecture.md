@@ -1,6 +1,9 @@
 # Architecture — Score Companion
 
 **Status:** P#9 app shell is implemented. The project currently includes a shared React shell, a Django health endpoint, and the planned screen-route structure for future feature work.
+**Status:** Planned architecture for P#9. The shared API contract is implemented
+on feature branch `28-shared-api-contract` and awaits team review; no screen
+implementation is included in that work.
 
 Score Companion is intended to support musicians opening score parts, marking passages for practice, adding contextual notes, and reviewing unresolved passages.
 
