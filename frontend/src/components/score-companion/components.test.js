@@ -22,14 +22,16 @@ before(async () => {
 
 after(async () => { await server?.close() })
 
-test('merged routing retains the library, viewer score links, and unimplemented screen placeholders', () => {
+test('integrated routing renders all four screens and preserves viewer score links', () => {
   const originalWindow = globalThis.window
+  const originalStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
   try {
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: () => null } })
     for (const [hash, expected] of [
       ['#/score-library', /Your offline score library/],
       ['#/score-viewer?score=42', /Score viewer &amp; navigation · Ankit Joshi/],
-      ['#/measure-marker', /Matthew Pisani/],
-      ['#/practice-review', /Jonathan Dempsey/],
+      ['#/measure-marker', /Select a measure to mark/],
+      ['#/practice-review', /<h1>Practice review<\/h1>/],
     ]) {
       globalThis.window = { location: { hash } }
       assert.match(renderToStaticMarkup(h(App)), expected)
@@ -37,6 +39,8 @@ test('merged routing retains the library, viewer score links, and unimplemented 
   } finally {
     if (originalWindow === undefined) delete globalThis.window
     else globalThis.window = originalWindow
+    if (originalStorage) Object.defineProperty(globalThis, 'localStorage', originalStorage)
+    else delete globalThis.localStorage
   }
 })
 
