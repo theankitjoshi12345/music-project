@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import ScoreViewer from './pages/ScoreViewer'
 import OfflineScoreLibrary from './OfflineScoreLibrary.jsx'
 import PracticeReview from './PracticeReview.jsx'
 
@@ -29,7 +30,7 @@ const routes = {
 const defaultRoute = '/score-library'
 
 function currentRoute() {
-  const path = window.location.hash.replace('#', '')
+  const path = window.location.hash.replace('#', '').split('?')[0]
   return routes[path] ? path : defaultRoute
 }
 
@@ -43,6 +44,10 @@ function App() {
   }, [])
 
   const screen = routes[route]
+
+  if (route === '/score-viewer') {
+    return <ScoreViewer />
+  }
 
   if (route === '/score-library') {
     return <OfflineScoreLibrary />

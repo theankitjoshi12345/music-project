@@ -40,6 +40,18 @@ The four P#9 screen issues (#24–#27) require implementation from
 `p9/Score_Companion_P8_Revised_Screens.pdf`, link directly to that PDF in
 GitLab, and include the [Score Companion Figma design](https://www.figma.com/design/NSZliKsVC3CiwrjqQfrOHS).
 
+Issue #24 is implemented on branch `24-score-viewer-navigation`, with page,
+section, and measure navigation, live score/passages API reads, and a labeled
+sample for an empty library. MR !2 was closed so the branch could be updated
+from `main`; the routing conflict is resolved with both Logan's library and
+Ankit's viewer preserved. Issue #24 remains open for teammate review in
+[MR !6](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/6).
+
+The #24 branch also provides shared frontend components and a usage guide in
+`frontend/src/components/score-companion/` for the other screen owners.
+Twelve frontend tests cover viewer data, shared-component rendering, and
+routing for the library, viewer score links, and remaining placeholders.
+
 ## Closed Milestones
 
 ### P#6 - Synthesizing Discovery
