@@ -1,7 +1,7 @@
 # GitLab Milestones and Issues
 
 This document is a snapshot of the GitLab tracker for the Music Project,
-retrieved on October 23, 2026 (Central Time). GitLab is the source of truth
+retrieved on October 25, 2026 (Central Time). GitLab is the source of truth
 for project milestones and issues.
 
 - GitLab project: <https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project>
@@ -25,15 +25,16 @@ for project milestones and issues.
 | Due date | October 26, 2026 |
 | Description | Track P#9 development-environment setup, first screen implementations, and GitLab merge-request workflow. |
 | Created / last updated (UTC) | 2026-10-24 02:18:53 / 2026-10-24 02:18:53 |
-| Issues | 4 open; 1 closed |
+| Issues | 3 open; 3 closed |
 
 | Issue | Owner | Status | Scope |
 | --- | --- | --- | --- |
 | [#24 Add Score Viewer & Navigation screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/24) | Ankit Joshi (`theankitjoshi12345`) | Open | Score Viewer & Navigation — hardest |
 | [#25 Add Measure Marker screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/25) | Matthew Pisani (`p1sani2`) | Open | Measure Marker — hard |
 | [#26 Add Practice Review screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/26) | J Demp (`JDemp06`) | Open | Practice Review — medium |
-| [#27 Add Offline Score Library screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/27) | Logan Broussard (`lpb100`) | Open | Offline Score Library — easiest |
+| [#27 Add Offline Score Library screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/27) | Logan Broussard (`lpb100`) | Closed | Offline Score Library — easiest |
 | [#28 Implement shared REST API contract](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/28) | Ankit Joshi (`theankitjoshi12345`) | Closed | Document and implement the shared Django REST API; closed by merged [MR !1](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/1) |
+| [#29 Fix unresolved backend test merge conflict](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/29) | Ankit Joshi (`theankitjoshi12345`) | Closed | Conflict markers removed on `main` in [b3e8bb1](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/commit/b3e8bb1); all seven backend tests pass |
 
 The four P#9 screen issues (#24–#27) require implementation from
 `p9/Score_Companion_P8_Revised_Screens.pdf`, link directly to that PDF in
