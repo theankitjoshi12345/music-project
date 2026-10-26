@@ -21,12 +21,13 @@ export default function useScoreViewer() {
       setLoading(true)
       setError('')
       setData(null)
-      const scoreId = new URLSearchParams(location.split('?')[1] || '').get('score')
+      const query = new URLSearchParams(location.split('?')[1] || '')
+      const scoreId = query.get('score')
       try {
         const result = await loadViewerData(scoreId, controller.signal)
         if (!controller.signal.aborted) {
           setData(result)
-          setPage(initialPage(result.passages, result.score.page_count))
+          setPage(initialPage(result.passages, result.score.page_count, query.get('passage')))
         }
       } catch (failure) {
         if (!controller.signal.aborted) setError(failure.message || 'Unable to load the score.')

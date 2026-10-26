@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import './PracticeReview.css'
+import { scoreViewerHref } from './pages/scoreViewerData'
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
+const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
 function MusicNoteIcon() {
   return (
@@ -80,6 +81,7 @@ function PracticeReview() {
     marks.every(
       (mark) =>
         mark.passage.movement === firstMark.passage.movement &&
+        mark.passage.score_id === firstMark.passage.score_id &&
         mark.passage.section === firstMark.passage.section,
     )
 
@@ -146,7 +148,7 @@ function PracticeReview() {
                         </h3>
                         {mark.note && <p className="practice-review__note">{mark.note}</p>}
                         <div className="practice-review__actions">
-                          <a className="practice-review__button" href="#/score-viewer">
+                          <a className="practice-review__button" href={scoreViewerHref(mark.passage)}>
                             Open passage <span aria-hidden="true">→</span>
                           </a>
                           <button

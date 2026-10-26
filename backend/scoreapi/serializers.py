@@ -38,9 +38,10 @@ class PassageSerializer(serializers.ModelSerializer):
 
 class PracticeMarkPassageSerializer(PassageSerializer):
     movement = serializers.CharField(source="score.movement", read_only=True)
+    score_id = serializers.IntegerField(read_only=True)
 
     class Meta(PassageSerializer.Meta):
-        fields = PassageSerializer.Meta.fields + ["movement"]
+        fields = PassageSerializer.Meta.fields + ["movement", "score_id"]
 
 
 class PracticeMarkSerializer(serializers.ModelSerializer):

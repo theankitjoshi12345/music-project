@@ -15,9 +15,16 @@ export const samplePassages = Array.from({ length: 40 }, (_, index) => ({
   page_number: index < 16 ? 1 : Math.floor((index - 16) / 8) + 2,
 }))
 
-export function initialPage(passages, pageCount) {
+export function initialPage(passages, pageCount, passageId) {
+  const requested = passages.find((passage) => String(passage.id) === String(passageId))
+  if (requested) return requested.page_number
   const target = passages.find((passage) => passage.section === 'B' && passage.measure_number === 24)
   return target?.page_number ?? passages[0]?.page_number ?? (pageCount > 0 ? 1 : 0)
+}
+
+export function scoreViewerHref(passage) {
+  const query = new URLSearchParams({ score: passage.score_id, passage: passage.id })
+  return '#/score-viewer?' + query.toString()
 }
 
 export function pagePassages(passages, page) {

@@ -100,6 +100,29 @@ class ScoreApiTests(APITestCase):
             "status": "Use 'unresolved' or 'resolved'."
         })
 
+    def test_practice_review_preserves_each_scores_context_and_resolves_a_mark(self):
+        first_mark = PracticeMark.objects.create(passage=self.passage, note="Keep rhythm even")
+        second_mark = PracticeMark.objects.create(passage=self.other_passage, note="Review opening")
+
+        listing = self.client.get("/api/practice-marks/")
+        self.assertEqual(listing.status_code, 200)
+        marks = {item["id"]: item for item in listing.json()}
+        self.assertEqual(marks[first_mark.id]["passage"]["score_id"], self.score.id)
+        self.assertEqual(marks[first_mark.id]["passage"]["page_number"], 2)
+        self.assertEqual(marks[second_mark.id]["passage"]["score_id"], self.other_score.id)
+        self.assertEqual(marks[second_mark.id]["passage"]["movement"], "Movement II")
+
+        update = self.client.patch(
+            f"/api/practice-marks/{second_mark.id}/", {"is_resolved": True}, format="json"
+        )
+        self.assertEqual(update.status_code, 200)
+        self.assertTrue(update.json()["is_resolved"])
+        self.assertEqual(update.json()["note"], "Review opening")
+        self.assertEqual(update.json()["passage"]["score_id"], self.other_score.id)
+
+        unresolved = self.client.get("/api/practice-marks/?status=unresolved")
+        self.assertEqual([item["id"] for item in unresolved.json()], [first_mark.id])
+
     def test_patch_updates_note_and_resolution_without_moving_passage(self):
         mark = PracticeMark.objects.create(passage=self.passage)
         response = self.client.patch(

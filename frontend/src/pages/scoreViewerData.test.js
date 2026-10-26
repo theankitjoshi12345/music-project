@@ -1,6 +1,20 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { initialPage, loadViewerData, pagePassages, samplePassages, sectionOptions } from './scoreViewerData.js'
+import { initialPage, loadViewerData, pagePassages, samplePassages, sectionOptions, scoreViewerHref } from './scoreViewerData.js'
+
+test('practice review links identify the exact score and passage', () => {
+  const link = scoreViewerHref({ id: 70, score_id: 42 })
+  assert.equal(link, '#/score-viewer?score=42&passage=70')
+})
+
+test('opening a saved passage selects its page before the default practice measure', () => {
+  const passages = [
+    { id: 7, section: 'B', measure_number: 24, page_number: 2 },
+    { id: 70, section: 'C', measure_number: 40, page_number: 4 },
+  ]
+  assert.equal(initialPage(passages, 4, '70'), 4)
+  assert.equal(initialPage(passages, 4, 'unknown'), 2)
+})
 
 test('empty library returns an explicitly identified sample at Section B, measure 24', async () => {
   const result = await loadViewerData(null, undefined, async () => ({ ok: true, json: async () => [] }))

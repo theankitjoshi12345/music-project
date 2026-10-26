@@ -86,6 +86,8 @@ Vite serves the app at `http://localhost:5173/`. Use the navigation links to vis
 Open `http://localhost:5173/#/score-viewer`. To open a particular API score,
 use `#/score-viewer?score=1` (replace `1` with its database ID). Library
 integration can link to this route without changing the viewer.
+Practice Review includes `&passage=<id>` to reopen the saved passage's page
+within its original score.
 
 The viewer requests the selected score and its passages through `/api/`; Vite
 proxies these requests to Django at `127.0.0.1:8000`. Start both servers for

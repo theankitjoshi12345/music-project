@@ -41,8 +41,13 @@
 | measure_number | integer | Positive measure number |
 | page_number | integer | Positive score page number |
 | movement | string | Included in practice-mark passage context for review display |
+| score_id | integer | Included in practice-mark passage context so Open passage targets the correct score |
 
 A score cannot have duplicate section and measure_number combinations.
+
+Practice Review links to `#/score-viewer?score={score_id}&passage={id}` using
+the nested passage object from a practice mark. The viewer opens the requested
+passage's page, with the normal initial-page fallback for an unknown passage ID.
 
 ### PracticeMark
 
