@@ -42,7 +42,7 @@ export default function MeasureMarker() {
       <main className="mm-content">
         <h1>{count ? 'Select another measure' : 'Select a measure to mark'}</h1>
         <p className="mm-subtitle">{count ? 'Your saved measures remain marked. Choose another measure, then mark it.' : 'Tap a measure, then choose Mark for practice.'}</p>
-        <div className="mm-meta"><span>Demo score · Saved on this browser</span><strong>{count} marked {count === 1 ? 'measure' : 'measures'}</strong></div>
+        <div className="mm-meta"><span>Matthew Pisani | Demo score | Saved on this browser</span><strong>{count} marked {count === 1 ? 'measure' : 'measures'}</strong></div>
         <section className="mm-score" aria-labelledby="mm-score-title">
           <h2 id="mm-score-title">MOVEMENT I · PERCUSSION / SECTION B</h2>
           <div className="mm-grid">{passages.map(p => <button type="button" key={p.id}
