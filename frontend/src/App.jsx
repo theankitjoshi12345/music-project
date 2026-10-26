@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import OfflineScoreLibrary from './OfflineScoreLibrary.jsx'
+import MeasureMarker from './MeasureMarker.jsx'
 
 const routes = {
   '/score-library': {
@@ -40,6 +41,8 @@ function App() {
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
+
+  if (route === '/measure-marker') return <MeasureMarker />
 
   const screen = routes[route]
 
