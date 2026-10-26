@@ -4,7 +4,7 @@ Score Companion is a CMPS 453 team project for helping musicians open downloaded
 
 ## P#9 status
 
-The Django + React application shell and shared REST API are initialized. Ankit's Score Viewer & Navigation is implemented on branch `24-score-viewer-navigation` for team review. The other three screen routes remain reserved for their owners. The revised Figma PDF is the primary UI reference.
+The shared REST API and Logan's Offline Score Library are included from `main`. Ankit's Score Viewer & Navigation is implemented on branch `24-score-viewer-navigation` for team review. The Measure Marker and Practice Review routes remain reserved for their owners. The revised Figma PDF is the primary UI reference.
 
 ## Tech stack
 
@@ -30,7 +30,7 @@ See [architecture.md](architecture.md) for the planned architecture and boundari
 | Jonathan Dempsey | Practice Review | Medium | [`#/practice-review`](http://localhost:5173/#/practice-review) |
 | Logan Broussard | Offline Score Library | Easiest | [`#/score-library`](http://localhost:5173/#/score-library) |
 
-The Score Viewer supports page controls, section selection, and jumping to a measure. The other three routes are placeholders. Each member implements only their assigned screen.
+The library and viewer both have their own routes. The Score Viewer supports page controls, section selection, and jumping to a measure. The Measure Marker and Practice Review routes are placeholders in this branch. Each member implements only their assigned screen.
 
 ## Project structure
 

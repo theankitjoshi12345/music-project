@@ -7,6 +7,7 @@ import { createServer } from 'vite'
 
 let server
 let components
+let App
 
 before(async () => {
   server = await createServer({
@@ -15,9 +16,29 @@ before(async () => {
     appType: 'custom',
   })
   components = await server.ssrLoadModule('/src/components/score-companion/index.js')
+  const appModule = await server.ssrLoadModule('/src/App.jsx')
+  App = appModule.default
 })
 
 after(async () => { await server?.close() })
+
+test('merged routing retains the library, viewer score links, and unimplemented screen placeholders', () => {
+  const originalWindow = globalThis.window
+  try {
+    for (const [hash, expected] of [
+      ['#/score-library', /Your offline score library/],
+      ['#/score-viewer?score=42', /Score viewer &amp; navigation · Ankit Joshi/],
+      ['#/measure-marker', /Matthew Pisani/],
+      ['#/practice-review', /Jonathan Dempsey/],
+    ]) {
+      globalThis.window = { location: { hash } }
+      assert.match(renderToStaticMarkup(h(App)), expected)
+    }
+  } finally {
+    if (originalWindow === undefined) delete globalThis.window
+    else globalThis.window = originalWindow
+  }
+})
 
 test('shared layout supports another screen with its own active navigation and content', () => {
   const html = renderToStaticMarkup(h(components.AppLayout, {

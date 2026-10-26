@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import ScoreViewer from './pages/ScoreViewer'
+import OfflineScoreLibrary from './OfflineScoreLibrary.jsx'
 
 const routes = {
   '/score-library': {
@@ -45,6 +46,10 @@ function App() {
 
   if (route === '/score-viewer') {
     return <ScoreViewer />
+  }
+
+  if (route === '/score-library') {
+    return <OfflineScoreLibrary />
   }
 
   return (
