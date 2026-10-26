@@ -1,6 +1,8 @@
-<<<<<<< HEAD
 from django.test import SimpleTestCase
 from django.urls import reverse
+from rest_framework.test import APITestCase
+
+from .models import Passage, PracticeMark, Score
 
 
 class HealthCheckTests(SimpleTestCase):
@@ -9,10 +11,6 @@ class HealthCheckTests(SimpleTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "ok", "service": "score-companion-api"})
-=======
-from rest_framework.test import APITestCase
-
-from .models import Passage, PracticeMark, Score
 
 
 class ScoreApiTests(APITestCase):
@@ -78,6 +76,7 @@ class ScoreApiTests(APITestCase):
         self.assertEqual(response.json()["note"], "Keep the rhythm even.")
         self.assertFalse(response.json()["is_resolved"])
         self.assertEqual(response.json()["passage"]["measure_number"], 24)
+        self.assertEqual(response.json()["passage"]["movement"], "Movement I")
 
         listing = self.client.get(
             f"/api/practice-marks/?score={self.score.id}&status=unresolved"
@@ -119,4 +118,3 @@ class ScoreApiTests(APITestCase):
         self.assertTrue(response.json()["is_resolved"])
         self.assertEqual(move_attempt.status_code, 400)
         self.assertIn("passage_id", move_attempt.json())
->>>>>>> main
