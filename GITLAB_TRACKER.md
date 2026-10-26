@@ -25,13 +25,13 @@ for project milestones and issues.
 | Due date | October 26, 2026 |
 | Description | Track P#9 development-environment setup, first screen implementations, and GitLab merge-request workflow. |
 | Created / last updated (UTC) | 2026-10-24 02:18:53 / 2026-10-24 02:18:53 |
-| Issues | 1 open; 5 closed |
+| Issues | 0 open; 6 closed |
 
 | Issue | Owner | Status | Scope |
 | --- | --- | --- | --- |
 | [#24 Add Score Viewer & Navigation screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/24) | Ankit Joshi (`theankitjoshi12345`) | Closed | Score Viewer & Navigation; merged in [MR !6](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/6) |
 | [#25 Add Measure Marker screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/25) | Matthew Pisani (`p1sani2`) | Closed | Measure Marker; approved by Ankit and merged in [MR !4](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/4) |
-| [#26 Add Practice Review screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/26) | J Demp (`JDemp06`) | Open | Practice Review — medium |
+| [#26 Add Practice Review screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/26) | J Demp (`JDemp06`) | Closed | Implementation `00deda8` already in main; passage navigation completed and verified in [8fb442c](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/commit/8fb442c) |
 | [#27 Add Offline Score Library screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/27) | Logan Broussard (`lpb100`) | Closed | Offline Score Library — easiest |
 | [#28 Implement shared REST API contract](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/28) | Ankit Joshi (`theankitjoshi12345`) | Closed | Document and implement the shared Django REST API; closed by merged [MR !1](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/1) |
 | [#29 Fix unresolved backend test merge conflict](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/29) | Ankit Joshi (`theankitjoshi12345`) | Closed | Conflict markers removed on `main` in [b3e8bb1](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/commit/b3e8bb1); all seven backend tests pass |
@@ -45,11 +45,19 @@ was reopened, updated from current main, approved, and merged with all four
 routes preserved. His screen uses the documented local mock-data approach.
 
 Jonathan's Practice Review implementation is present in main through commit
-`00deda8`, but issue #26 remains open and MR !7 remains a draft.
+`00deda8`. Verification and saved-passage navigation were completed in
+`8fb442c`, which closed issue #26. Empty draft MR !7 was closed as redundant;
+it was not merged. This preserves the actual contribution history.
 
 Shared frontend components and their usage guide are in
-`frontend/src/components/score-companion/`. All twelve frontend tests and
-seven backend tests pass after the integration; frontend lint and build also pass.
+`frontend/src/components/score-companion/`. All fourteen frontend tests and
+eight backend tests pass; frontend lint, build, Django system checks, and
+migration checks also pass. Live HTTP requests verified the health endpoint,
+Practice Review API through Vite, and the served frontend. Interactive browser
+verification was unavailable in this session.
+
+All six tracked P#9 issues are closed. The milestone remains active while the
+team completes the final report and course submission.
 
 ## Closed Milestones
 
