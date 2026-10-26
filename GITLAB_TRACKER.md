@@ -1,7 +1,7 @@
 # GitLab Milestones and Issues
 
 This document is a snapshot of the GitLab tracker for the Music Project,
-retrieved on October 25, 2026 (Central Time). GitLab is the source of truth
+retrieved on October 26, 2026 (Central Time). GitLab is the source of truth
 for project milestones and issues.
 
 - GitLab project: <https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project>
@@ -25,12 +25,12 @@ for project milestones and issues.
 | Due date | October 26, 2026 |
 | Description | Track P#9 development-environment setup, first screen implementations, and GitLab merge-request workflow. |
 | Created / last updated (UTC) | 2026-10-24 02:18:53 / 2026-10-24 02:18:53 |
-| Issues | 3 open; 3 closed |
+| Issues | 1 open; 5 closed |
 
 | Issue | Owner | Status | Scope |
 | --- | --- | --- | --- |
-| [#24 Add Score Viewer & Navigation screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/24) | Ankit Joshi (`theankitjoshi12345`) | Open | Score Viewer & Navigation — hardest |
-| [#25 Add Measure Marker screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/25) | Matthew Pisani (`p1sani2`) | Open | Measure Marker — hard |
+| [#24 Add Score Viewer & Navigation screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/24) | Ankit Joshi (`theankitjoshi12345`) | Closed | Score Viewer & Navigation; merged in [MR !6](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/6) |
+| [#25 Add Measure Marker screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/25) | Matthew Pisani (`p1sani2`) | Closed | Measure Marker; approved by Ankit and merged in [MR !4](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/4) |
 | [#26 Add Practice Review screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/26) | J Demp (`JDemp06`) | Open | Practice Review — medium |
 | [#27 Add Offline Score Library screen](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/27) | Logan Broussard (`lpb100`) | Closed | Offline Score Library — easiest |
 | [#28 Implement shared REST API contract](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/work_items/28) | Ankit Joshi (`theankitjoshi12345`) | Closed | Document and implement the shared Django REST API; closed by merged [MR !1](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/1) |
@@ -40,17 +40,16 @@ The four P#9 screen issues (#24–#27) require implementation from
 `p9/Score_Companion_P8_Revised_Screens.pdf`, link directly to that PDF in
 GitLab, and include the [Score Companion Figma design](https://www.figma.com/design/NSZliKsVC3CiwrjqQfrOHS).
 
-Issue #24 is implemented on branch `24-score-viewer-navigation`, with page,
-section, and measure navigation, live score/passages API reads, and a labeled
-sample for an empty library. MR !2 was closed so the branch could be updated
-from `main`; the routing conflict is resolved with both Logan's library and
-Ankit's viewer preserved. Issue #24 remains open for teammate review in
-[MR !6](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/6).
+All four assigned screens are present in `main`. Matthew's existing MR !4
+was reopened, updated from current main, approved, and merged with all four
+routes preserved. His screen uses the documented local mock-data approach.
 
-The #24 branch also provides shared frontend components and a usage guide in
-`frontend/src/components/score-companion/` for the other screen owners.
-Twelve frontend tests cover viewer data, shared-component rendering, and
-routing for the library, viewer score links, and remaining placeholders.
+Jonathan's Practice Review implementation is present in main through commit
+`00deda8`, but issue #26 remains open and MR !7 remains a draft.
+
+Shared frontend components and their usage guide are in
+`frontend/src/components/score-companion/`. All twelve frontend tests and
+seven backend tests pass after the integration; frontend lint and build also pass.
 
 ## Closed Milestones
 

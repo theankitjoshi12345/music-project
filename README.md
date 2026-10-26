@@ -4,7 +4,7 @@ Score Companion is a CMPS 453 team project for helping musicians open downloaded
 
 ## P#9 status
 
-The shared REST API and Logan's Offline Score Library are included from `main`. Ankit's Score Viewer & Navigation is implemented on branch `24-score-viewer-navigation` for team review. The Measure Marker and Practice Review routes remain reserved for their owners. The revised Figma PDF is the primary UI reference.
+The shared REST API and all four assigned screens are present in `main`: Logan's Offline Score Library, Ankit's Score Viewer & Navigation, Matthew's Measure Marker, and Jonathan's Practice Review. The revised Figma PDF is the primary UI reference.
 
 ## Tech stack
 
@@ -30,7 +30,7 @@ See [architecture.md](architecture.md) for the planned architecture and boundari
 | Jonathan Dempsey | Practice Review | Medium | [`#/practice-review`](http://localhost:5173/#/practice-review) |
 | Logan Broussard | Offline Score Library | Easiest | [`#/score-library`](http://localhost:5173/#/score-library) |
 
-The library and viewer both have their own routes. The Score Viewer supports page controls, section selection, and jumping to a measure. The Measure Marker and Practice Review routes are placeholders in this branch. Each member implements only their assigned screen.
+All four screen routes are implemented. The Score Viewer supports page controls, section selection, and jumping to a measure. The Measure Marker uses local demo data and browser storage; its marks are not yet shared with the backend or Practice Review. See [Measure Marker notes](p9/MEASURE_MARKER.md) for its scope. Practice Review reads and resolves backend practice marks.
 
 ## Project structure
 
