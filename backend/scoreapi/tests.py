@@ -76,6 +76,7 @@ class ScoreApiTests(APITestCase):
         self.assertEqual(response.json()["note"], "Keep the rhythm even.")
         self.assertFalse(response.json()["is_resolved"])
         self.assertEqual(response.json()["passage"]["measure_number"], 24)
+        self.assertEqual(response.json()["passage"]["movement"], "Movement I")
 
         listing = self.client.get(
             f"/api/practice-marks/?score={self.score.id}&status=unresolved"

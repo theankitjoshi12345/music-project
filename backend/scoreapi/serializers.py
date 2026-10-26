@@ -36,6 +36,13 @@ class PassageSerializer(serializers.ModelSerializer):
         return hasattr(passage, "practice_mark")
 
 
+class PracticeMarkPassageSerializer(PassageSerializer):
+    movement = serializers.CharField(source="score.movement", read_only=True)
+
+    class Meta(PassageSerializer.Meta):
+        fields = PassageSerializer.Meta.fields + ["movement"]
+
+
 class PracticeMarkSerializer(serializers.ModelSerializer):
     passage_id = serializers.PrimaryKeyRelatedField(
         source="passage",
@@ -43,7 +50,7 @@ class PracticeMarkSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False,
     )
-    passage = PassageSerializer(read_only=True)
+    passage = PracticeMarkPassageSerializer(read_only=True)
 
     class Meta:
         model = PracticeMark

@@ -40,6 +40,7 @@
 | section | string | Musical section, such as B |
 | measure_number | integer | Positive measure number |
 | page_number | integer | Positive score page number |
+| movement | string | Included in practice-mark passage context for review display |
 
 A score cannot have duplicate section and measure_number combinations.
 
@@ -125,7 +126,8 @@ Returns 201 Created:
         "section": "B",
         "measure_number": 24,
         "page_number": 2,
-        "is_marked_for_practice": true
+        "is_marked_for_practice": true,
+        "movement": "Movement I"
       },
       "note": "Keep the rhythm even through the transition.",
       "is_resolved": false,

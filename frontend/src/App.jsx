@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import OfflineScoreLibrary from './OfflineScoreLibrary.jsx'
+import PracticeReview from './PracticeReview.jsx'
 
 const routes = {
   '/score-library': {
@@ -45,6 +46,10 @@ function App() {
 
   if (route === '/score-library') {
     return <OfflineScoreLibrary />
+  }
+
+  if (route === '/practice-review') {
+    return <PracticeReview />
   }
 
   return (

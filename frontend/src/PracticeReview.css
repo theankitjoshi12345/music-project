@@ -1,0 +1,300 @@
+.practice-review {
+  min-height: 100vh;
+  background: #f1f5fa;
+  color: #2b3b50;
+}
+
+.practice-review *,
+.practice-review *::before,
+.practice-review *::after {
+  box-sizing: border-box;
+}
+
+.practice-review__header {
+  align-items: center;
+  background: #192e43;
+  color: #fff;
+  display: flex;
+  height: 76px;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0 5.5% 0 27px;
+}
+
+.practice-review__brand {
+  align-items: center;
+  color: inherit;
+  display: inline-flex;
+  font-size: 20px;
+  font-weight: 750;
+  gap: 9px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.practice-review__brand svg {
+  height: 15px;
+  width: 15px;
+}
+
+.practice-review__status {
+  align-items: center;
+  display: flex;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 8px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.practice-review__status span {
+  background: #fff;
+  border-radius: 50%;
+  height: 11px;
+  width: 11px;
+}
+
+.practice-review__layout {
+  display: grid;
+  gap: 35px;
+  grid-template-columns: 195px minmax(0, 1fr);
+  min-height: calc(100vh - 76px);
+  padding: 27px 0 52px 19px;
+}
+
+.practice-review__sidebar {
+  background: #fff;
+  border-radius: 14px;
+  min-height: 555px;
+  padding: 38px 22px;
+}
+
+.practice-review__sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin: 0;
+}
+
+.practice-review__nav-link {
+  border: 0;
+  border-radius: 0;
+  color: #667b96;
+  font-size: 16px;
+  padding: 0;
+  text-decoration: none;
+}
+
+.practice-review__nav-link:hover,
+.practice-review__nav-link.is-active {
+  background: transparent;
+  border-color: transparent;
+  color: #3557df;
+}
+
+.practice-review__nav-link.is-active {
+  font-weight: 700;
+}
+
+.practice-review__content {
+  min-width: 0;
+  padding: 3px 0 0;
+}
+
+.practice-review__content h1 {
+  color: #2b3b50;
+  font-size: 28px;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.practice-review__subtitle {
+  color: #6c809a;
+  font-size: 14px;
+  margin: 11px 0 0;
+}
+
+.practice-review__summary {
+  color: #3557df;
+  font-size: 16px;
+  font-weight: 750;
+  margin: 40px 0 28px 14px;
+}
+
+.practice-review__list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.practice-review__card {
+  background: #fff;
+  border-radius: 15px;
+  min-height: 267px;
+  padding: 27px 23px;
+}
+
+.practice-review__state {
+  align-items: center;
+  color: #ad7400;
+  display: flex;
+  font-size: 14px;
+  font-weight: 750;
+  gap: 5px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.practice-review__state span {
+  background: #ad7400;
+  border-radius: 50%;
+  height: 11px;
+  width: 11px;
+}
+
+.practice-review__state.is-resolved {
+  color: #2a8060;
+}
+
+.practice-review__state.is-resolved span {
+  background: #2a8060;
+}
+
+.practice-review__card h3 {
+  color: #2b3b50;
+  font-size: 25px;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  margin: 38px 0 0;
+}
+
+.practice-review__note {
+  color: #6c809a;
+  font-size: 16px;
+  margin: 15px 0 0;
+}
+
+.practice-review__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 23px;
+  margin-top: 44px;
+}
+
+.practice-review__button {
+  align-items: center;
+  background: #4059dc;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 202px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 5px;
+  height: 46px;
+  justify-content: flex-start;
+  padding: 0 15px;
+  text-decoration: none;
+}
+
+.practice-review__button:hover:not(:disabled) {
+  background: #304bc7;
+}
+
+.practice-review__button:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.practice-review__footnote {
+  color: #6c809a;
+  font-size: 14px;
+  margin: 14px 18px 0;
+}
+
+.practice-review__empty,
+.practice-review__message,
+.practice-review__error {
+  color: #6c809a;
+  font-size: 15px;
+  margin: 0 14px;
+}
+
+.practice-review__error {
+  color: #a43838;
+}
+
+.practice-review__button:focus-visible,
+.practice-review a:focus-visible {
+  outline: 3px solid #8eb3ff;
+  outline-offset: 3px;
+}
+
+@media (max-width: 700px) {
+  .practice-review__header {
+    padding-right: 20px;
+  }
+
+  .practice-review__layout {
+    gap: 20px;
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .practice-review__sidebar {
+    min-height: auto;
+    padding: 18px;
+  }
+
+  .practice-review__sidebar nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 22px;
+  }
+
+  .practice-review__summary {
+    margin-top: 30px;
+  }
+
+  .practice-review__card h3 {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .practice-review__brand {
+    font-size: 14px;
+  }
+
+  .practice-review__status {
+    font-size: 9px;
+  }
+
+  .practice-review__header {
+    height: 65px;
+  }
+
+  .practice-review__layout {
+    min-height: calc(100vh - 65px);
+  }
+
+  .practice-review__card {
+    padding: 22px 18px;
+  }
+
+  .practice-review__actions {
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  .practice-review__button {
+    flex-basis: 100%;
+  }
+}
