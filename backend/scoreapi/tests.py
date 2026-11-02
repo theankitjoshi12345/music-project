@@ -1,4 +1,5 @@
 from django.test import SimpleTestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
@@ -52,6 +53,24 @@ class ScoreApiTests(APITestCase):
         detail = self.client.get(f"/api/scores/{self.score.id}/")
         self.assertEqual(detail.status_code, 200)
         self.assertEqual(detail.json()["movement"], "Movement I")
+
+    def test_upload_score_creates_an_offline_library_entry_and_starting_passage(self):
+        response = self.client.post(
+            "/api/scores/upload/",
+            {
+                "score_file": SimpleUploadedFile("winter-song.musicxml", b"<score-partwise />"),
+                "instrument": "Clarinet",
+                "page_count": "3",
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["instrument"], "Clarinet")
+        self.assertEqual(response.json()["page_count"], 3)
+        uploaded = Score.objects.get(pk=response.json()["id"])
+        self.assertTrue(uploaded.available_offline)
+        self.assertEqual(uploaded.passages.get().measure_number, 1)
 
     def test_passages_are_limited_to_the_requested_score(self):
         response = self.client.get(f"/api/scores/{self.score.id}/passages/")

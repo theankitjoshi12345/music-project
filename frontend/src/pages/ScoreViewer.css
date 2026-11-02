@@ -24,3 +24,6 @@
   line-height: 1.5;
   margin: 0;
 }
+
+.score-viewer .viewer-measure-anchor { border-radius: 10px; scroll-margin-block: 90px; transition: box-shadow .2s ease, transform .2s ease; }
+.score-viewer .viewer-measure-anchor.is-focused { box-shadow: 0 0 0 3px #dcaa2b; transform: translateY(-2px); }

@@ -1,6 +1,6 @@
 import MeasurePreview from './MeasurePreview'
 
-export default function ScoreSheet({ heading, passages, label = 'Score passages', notationLabel = 'Illustrative notation', emptyMessage = 'No measures have been added yet.', renderPassage = (passage) => <MeasurePreview passage={passage} /> }) {
+export default function ScoreSheet({ heading, passages, focusedPassageId, label = 'Score passages', notationLabel = 'Illustrative notation', emptyMessage = 'No measures have been added yet.', renderPassage = (passage) => <MeasurePreview passage={passage} /> }) {
   return (
     <section className="score-sheet" aria-label={label}>
       <div className="viewer-sheet-heading">
@@ -8,7 +8,7 @@ export default function ScoreSheet({ heading, passages, label = 'Score passages'
         {notationLabel && <span>{notationLabel}</span>}
       </div>
       {passages.length > 0 ? <div className="viewer-measure-grid">
-        {passages.map((passage) => <div key={passage.id}>{renderPassage(passage)}</div>)}
+        {passages.map((passage) => <div id={`measure-${passage.id}`} className={passage.id === focusedPassageId ? 'viewer-measure-anchor is-focused' : 'viewer-measure-anchor'} key={passage.id} tabIndex="-1">{renderPassage(passage)}</div>)}
       </div> : <p className="viewer-empty">{emptyMessage}</p>}
     </section>
   )

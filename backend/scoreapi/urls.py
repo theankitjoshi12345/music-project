@@ -5,6 +5,7 @@ from .views import (
     PracticeMarkListCreateView,
     ScoreDetailView,
     ScoreListView,
+    ScoreUploadView,
     ScorePassageListView,
     health_check,
 )
@@ -14,6 +15,7 @@ app_name = "scoreapi"
 urlpatterns = [
     path("health/", health_check, name="health-check"),
     path("scores/", ScoreListView.as_view(), name="score-list"),
+    path("scores/upload/", ScoreUploadView.as_view(), name="score-upload"),
     path("scores/<int:score_id>/", ScoreDetailView.as_view(), name="score-detail"),
     path(
         "scores/<int:score_id>/passages/",
