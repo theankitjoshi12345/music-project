@@ -64,14 +64,14 @@ export default function ScoreViewer() {
           section={currentSections[0] ?? ''}
           onSectionChange={viewer.changeSection}
           context={context}
-          measureRange={measureRange}
+          measureRange={sourceIsPdf ? undefined : measureRange}
         />
-        {sourceIsPdf && <section className="viewer-pdf" aria-label={`Uploaded PDF page ${viewer.page}`}>
+        {sourceIsPdf ? <section className="viewer-pdf" aria-label={`Uploaded PDF page ${viewer.page}`}>
           <div className="viewer-pdf-heading"><div><strong>Uploaded score</strong><span>Page {viewer.page} of {score.page_count}</span></div><a href={score.source_file} target="_blank" rel="noreferrer">Open PDF in a new tab ↗</a></div>
           <iframe key={pdfPageUrl} src={pdfPageUrl} title={`${score.title}, page ${viewer.page}`}>
             <a href={score.source_file}>Open the uploaded PDF.</a>
           </iframe>
-        </section>}
+        </section> : <>
         <ScoreSheet
           label={sourceIsPdf ? `Practice markers for PDF page ${viewer.page}` : 'Score page ' + viewer.page}
           heading={<ScoreContext movement={score.movement} instrument={score.instrument} sections={currentSections} separator=" / " />}
@@ -80,9 +80,10 @@ export default function ScoreViewer() {
           renderPassage={(passage) => <div><div className="viewer-measure-card"><span className="viewer-measure-label">m. {passage.measure_number}</span><div className="viewer-staff" aria-hidden="true"><i /><i /><i /><i /><i /><b className="viewer-note note-one" /><b className="viewer-note note-two" /><b className="viewer-note note-three" /><b className="viewer-note note-four" /></div></div><button className="viewer-mark-button" type="button" disabled={viewer.isSample || passage.is_marked_for_practice || savingId === passage.id} onClick={() => saveForPractice(passage)}>{savingId === passage.id ? 'Saving…' : passage.is_marked_for_practice ? 'Saved to review ✓' : 'Mark for practice'}</button></div>}
           emptyMessage={sourceIsPdf ? 'No practice markers are on this page yet. Add a measure from the PDF below, then mark it for practice.' : 'No measures have been added for this page yet. Try another page or section.'}
         />
-        {!viewer.isSample && score && <form className="viewer-add-measure" onSubmit={addPassage}><strong>Add a measure</strong><span>For a PDF, enter the measure details you see on the page.</span><label>Section<input name="section" defaultValue="Start" required /></label><label>Measure<input name="measure_number" type="number" min="1" required /></label><label>Page<input name="page_number" type="number" min="1" max={score.page_count} defaultValue={viewer.page || 1} required /></label><button type="submit">Add measure</button></form>}
+        {!viewer.isSample && score && <form className="viewer-add-measure" onSubmit={addPassage}><strong>Add a measure</strong><span>Enter the score position, then mark it for practice.</span><label>Section<input name="section" defaultValue="Start" required /></label><label>Measure<input name="measure_number" type="number" min="1" required /></label><label>Page<input name="page_number" type="number" min="1" max={score.page_count} defaultValue={viewer.page || 1} required /></label><button type="submit">Add measure</button></form>}
         {actionMessage && <p className="viewer-action-message" role="status">{actionMessage} <a href="#/practice-review">Open Practice Review →</a></p>}
         {actionError && <p className="viewer-error" role="alert">{actionError}</p>}
+        </>}
         <div className="viewer-bottom-row">
           <MeasureJump key={viewer.page} onJump={viewer.jumpToMeasure} />
           <p className="viewer-hint">Your place, at a glance. Use the page controls or jump to a section.</p>
