@@ -96,6 +96,11 @@ Lists downloaded parts for the Offline Score Library.
 
 Returns one score and its library/viewer context. A missing score returns 404 Not Found.
 
+### DELETE /api/scores/{id}/
+
+Removes an uploaded score, its local source file, all of its passages, and any
+practice marks attached to those passages. Returns 204 No Content.
+
 ### POST /api/scores/upload/
 
 Accepts multipart form data with `score_file` (PDF, MusicXML, XML, or MXL),

@@ -19,6 +19,7 @@ function OfflineScoreLibrary() {
   const [error, setError] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadMessage, setUploadMessage] = useState('')
+  const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -61,12 +62,30 @@ function OfflineScoreLibrary() {
       const data = await response.json()
       if (!response.ok) throw new Error(data.score_file?.[0] || data.page_count?.[0] || 'The score could not be uploaded.')
       setParts((current) => [...(current || []), data])
-      setUploadMessage(`${data.title} is saved to your offline library.`)
+      setUploadMessage(data.extraction_status === 'extracted'
+        ? `${data.title} is saved and ${data.passage_count} measures were extracted. Open the score to mark a measure for Practice Review.`
+        : `${data.title} is saved. PDFs need manual measure entry in the viewer before you can mark one for Practice Review.`)
       form.reset()
     } catch (uploadError) {
       setError(uploadError.message)
     } finally {
       setUploading(false)
+    }
+  }
+
+  async function deleteScore(part) {
+    setDeletingId(part.id)
+    setError('')
+    setUploadMessage('')
+    try {
+      const response = await fetch(`${apiBase}/scores/${part.id}/`, { method: 'DELETE', headers: mockUserHeaders(user) })
+      if (!response.ok) throw new Error(`The score could not be deleted (${response.status}).`)
+      setParts((current) => current.filter((item) => item.id !== part.id))
+      setUploadMessage(`${part.title} and its saved practice marks were deleted.`)
+    } catch (deleteError) {
+      setError(deleteError.message)
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -103,7 +122,7 @@ function OfflineScoreLibrary() {
           </p>
 
           <section className="offline-library__upload" aria-labelledby="upload-score-heading">
-            <div><h2 id="upload-score-heading">Add a score</h2><p>Upload a PDF or MusicXML score to add it to this local library.</p></div>
+            <div><h2 id="upload-score-heading">Add a score</h2><p>MusicXML extracts measures automatically. PDF uploads are saved for manual measure entry.</p></div>
             <form onSubmit={uploadScore}>
               <label>Score file<input name="score_file" type="file" accept=".pdf,.musicxml,.xml,.mxl,application/pdf,application/vnd.recordare.musicxml+xml" required /></label>
               <label>Instrument<input name="instrument" placeholder="e.g. Clarinet" /></label>
@@ -126,11 +145,9 @@ function OfflineScoreLibrary() {
                   </div>
                   <div className="offline-library__part-details">
                     <h3>{part.movement} — {part.instrument}</h3>
-                    <p>{part.title} <span>·</span> {part.page_count} pages <span>·</span> Available offline</p>
+                    <p>{part.title} <span>·</span> {part.page_count} pages <span>·</span> {part.extraction_status === 'extracted' ? `${part.passage_count} measures extracted` : 'Manual measure entry required'}</p>
                   </div>
-                  <a className="offline-library__open-button" href={`#/score-viewer?score=${part.id}`}>
-                    Open score <span aria-hidden="true">→</span>
-                  </a>
+                  <div className="offline-library__part-actions"><a className="offline-library__open-button" href={`#/score-viewer?score=${part.id}`}>Open score <span aria-hidden="true">→</span></a><button className="offline-library__delete-button" type="button" disabled={deletingId === part.id} onClick={() => deleteScore(part)}>{deletingId === part.id ? 'Deleting…' : 'Delete score'}</button></div>
                 </li>
               ))}
             </ul>}

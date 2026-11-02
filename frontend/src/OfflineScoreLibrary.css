@@ -215,6 +215,11 @@
   text-decoration: none;
 }
 
+.offline-library__part-actions { align-items: stretch; display: grid; flex: 0 0 136px; gap: 8px; }
+.offline-library__part-actions .offline-library__open-button { flex-basis: auto; }
+.offline-library__delete-button { background: #fff; border: 1px solid #bf5960; border-radius: 8px; color: #a52b34; cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; height: 34px; }
+.offline-library__delete-button:disabled { color: #9ba4af; cursor: progress; }
+
 .offline-library__message {
   color: #536a84;
   font-size: 0.95rem;
@@ -301,4 +306,6 @@
   .offline-library__open-button {
     flex-basis: 100%;
   }
+
+  .offline-library__part-actions { flex-basis: 100%; }
 }

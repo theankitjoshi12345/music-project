@@ -93,6 +93,14 @@ class ScoreApiTests(APITestCase):
         mark = self.client.post("/api/practice-marks/", {"passage_id": created.json()["id"]}, format="json")
         self.assertEqual(mark.status_code, 201)
 
+    def test_deleting_a_score_removes_its_passages_and_practice_marks(self):
+        mark = PracticeMark.objects.create(passage=self.passage)
+        response = self.client.delete(f"/api/scores/{self.score.id}/")
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Score.objects.filter(pk=self.score.id).exists())
+        self.assertFalse(Passage.objects.filter(pk=self.passage.id).exists())
+        self.assertFalse(PracticeMark.objects.filter(pk=mark.id).exists())
+
     def test_passages_are_limited_to_the_requested_score(self):
         response = self.client.get(f"/api/scores/{self.score.id}/passages/")
         self.assertEqual(response.status_code, 200)

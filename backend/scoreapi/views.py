@@ -80,6 +80,15 @@ class ScoreDetailView(APIView):
         )
         return Response(ScoreSerializer(score).data)
 
+    def delete(self, request, score_id):
+        score = get_object_or_404(Score, pk=score_id)
+        # Explicitly remove the uploaded file as well as its cascaded passages
+        # and practice marks; Django does not delete FileField files by default.
+        if score.source_file:
+            score.source_file.delete(save=False)
+        score.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class ScorePassageListView(APIView):
     def get(self, request, score_id):
