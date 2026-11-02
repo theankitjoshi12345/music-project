@@ -101,6 +101,13 @@ Returns one score and its library/viewer context. A missing score returns 404 No
 Removes an uploaded score, its local source file, all of its passages, and any
 practice marks attached to those passages. Returns 204 No Content.
 
+### POST /api/scores/{id}/extract-measures/
+
+For a stored PDF, runs the configured local Audiveris command after rendering
+each page with `pdftoppm`, then replaces existing passages with the imported
+MusicXML measure list. It returns 503 when the optional local OMR runtime is
+not configured and 422 when recognition cannot produce measures.
+
 ### POST /api/scores/upload/
 
 Accepts multipart form data with `score_file` (PDF, MusicXML, XML, or MXL),

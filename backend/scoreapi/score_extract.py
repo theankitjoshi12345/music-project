@@ -8,8 +8,15 @@ the upload workflow keeps those parts available for manual measure setup instead
 from io import BytesIO
 from pathlib import Path
 import re
+import shutil
+import subprocess
+import tempfile
 from zipfile import ZipFile
 from xml.etree import ElementTree
+
+
+class OMRUnavailable(RuntimeError):
+    """Raised when the optional local Audiveris runtime is not configured."""
 
 
 def _xml_bytes(uploaded_file, suffix):
@@ -55,3 +62,37 @@ def extract_musicxml_measures(uploaded_file):
     if not measures:
         raise ValueError("The MusicXML file does not contain any measures.")
     return measures
+
+
+def extract_pdf_measures(pdf_path, audiveris_command):
+    """Run a local PDF → image → Audiveris → MXL pipeline.
+
+    Results are globally numbered because each OMR page is exported separately
+    and would otherwise restart its measure numbering at one.
+    """
+    if not audiveris_command or not Path(audiveris_command).is_file():
+        raise OMRUnavailable("PDF measure extraction is unavailable until AUDIVERIS_COMMAND is configured.")
+    if not shutil.which("pdftoppm"):
+        raise OMRUnavailable("PDF measure extraction requires the pdftoppm utility.")
+
+    with tempfile.TemporaryDirectory(prefix="score-companion-omr-") as work:
+        work_path = Path(work)
+        image_prefix = work_path / "page"
+        subprocess.run(["pdftoppm", "-png", "-r", "300", str(pdf_path), str(image_prefix)], check=True, capture_output=True, text=True)
+        images = sorted(work_path.glob("page-*.png"))
+        if not images:
+            raise ValueError("The PDF did not contain any renderable pages.")
+        output = work_path / "output"
+        output.mkdir()
+        subprocess.run([audiveris_command, "-batch", "-transcribe", "-export", "-output", str(output), "--", *map(str, images)], check=True, capture_output=True, text=True, timeout=300)
+        extracted = []
+        number = 0
+        for page_number, path in enumerate(sorted(output.glob("*.mxl")), start=1):
+            with path.open("rb") as musicxml:
+                page_measures = extract_musicxml_measures(musicxml)
+            for _, _, _ in page_measures:
+                number += 1
+                extracted.append((f"Page {page_number}", number, page_number))
+        if not extracted:
+            raise ValueError("Audiveris did not identify any measures in this PDF.")
+        return extracted

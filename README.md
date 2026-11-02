@@ -17,6 +17,14 @@ any practice marks attached to those measures.
 Uploaded PDFs display directly in the Score Viewer. Use the viewer page controls
 to move through the document or open the original PDF in a new tab.
 
+### Optional local PDF measure extraction
+
+Set `AUDIVERIS_COMMAND` to a local Audiveris executable and ensure `pdftoppm`
+is installed. The library's **Extract measures** action renders PDF pages to
+images, runs Audiveris in batch mode, imports its MusicXML output, and saves
+the resulting measure list. OMR results should be reviewed before musical use.
+Audiveris is licensed under AGPL-3.0.
+
 ## Tech stack
 
 | Area | Choice |

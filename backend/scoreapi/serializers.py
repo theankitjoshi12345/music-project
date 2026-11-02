@@ -24,7 +24,10 @@ class ScoreSerializer(serializers.ModelSerializer):
     def get_extraction_status(self, score):
         extension = score.source_file.name.rsplit(".", 1)[-1].lower() if score.source_file else ""
         if extension == "pdf":
-            return "manual_required"
+            passage_count = getattr(score, "passage_count", None)
+            if passage_count is None:
+                passage_count = score.passages.count()
+            return "extracted" if passage_count else "manual_required"
         if extension in {"musicxml", "xml", "mxl"}:
             passage_count = getattr(score, "passage_count", None)
             if passage_count is None:
