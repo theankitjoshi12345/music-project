@@ -4,6 +4,8 @@
   color: #2b3b50;
 }
 
+.practice-review .mock-user-control { color: #fff; }
+
 .practice-review *,
 .practice-review *::before,
 .practice-review *::after {
