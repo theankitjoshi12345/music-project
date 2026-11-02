@@ -1,10 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AppLayout, FeedbackPanel, MeasureJump, ScoreContext, ScoreNavigation, ScoreSheet, ScreenHeading } from '../components/score-companion'
 import useScoreViewer from './useScoreViewer'
+import { useMockSession } from '../mockSession'
 import './ScoreViewer.css'
 
 export default function ScoreViewer() {
-  const viewer = useScoreViewer()
+  const { user } = useMockSession()
+  const viewer = useScoreViewer(user)
+  const [actionMessage, setActionMessage] = useState('')
+  const [actionError, setActionError] = useState('')
+  const [savingId, setSavingId] = useState(null)
   const { score, visible, currentSections } = viewer
   const context = score && <ScoreContext movement={score.movement} instrument={score.instrument} sections={currentSections} />
   const measureRange = visible.length ? 'Measures ' + visible[0].measure_number + '–' + visible.at(-1).measure_number : 'No measures on this page'
@@ -13,6 +18,24 @@ export default function ScoreViewer() {
     if (!viewer.focusedPassageId) return
     document.getElementById(`measure-${viewer.focusedPassageId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [viewer.focusedPassageId, viewer.page])
+
+  async function saveForPractice(passage) {
+    setSavingId(passage.id); setActionError(''); setActionMessage('')
+    try {
+      await viewer.saveForPractice(passage)
+      setActionMessage(`Measure ${passage.measure_number} is now in ${user.name}'s Practice Review.`)
+    } catch (error) { setActionError(error.message) } finally { setSavingId(null) }
+  }
+
+  async function addPassage(event) {
+    event.preventDefault(); setActionError(''); setActionMessage('')
+    const form = event.currentTarget
+    try {
+      const passage = await viewer.addPassage({ section: form.section.value, measure_number: Number(form.measure_number.value), page_number: Number(form.page_number.value) })
+      setActionMessage(`Measure ${passage.measure_number} was added. Use Mark for practice to send it to Practice Review.`)
+      form.reset()
+    } catch (error) { setActionError(error.message) }
+  }
 
   return (
     <AppLayout className="score-viewer" status={viewer.isSample ? 'Sample score' : 'Score viewer'} activeHref="#/score-library" headingId="score-title" busy={viewer.loading}>
@@ -46,8 +69,12 @@ export default function ScoreViewer() {
           heading={<ScoreContext movement={score.movement} instrument={score.instrument} sections={currentSections} separator=" / " />}
           passages={visible}
           focusedPassageId={viewer.focusedPassageId}
+          renderPassage={(passage) => <div><div className="viewer-measure-card"><span className="viewer-measure-label">m. {passage.measure_number}</span><div className="viewer-staff" aria-hidden="true"><i /><i /><i /><i /><i /><b className="viewer-note note-one" /><b className="viewer-note note-two" /><b className="viewer-note note-three" /><b className="viewer-note note-four" /></div></div><button className="viewer-mark-button" type="button" disabled={viewer.isSample || passage.is_marked_for_practice || savingId === passage.id} onClick={() => saveForPractice(passage)}>{savingId === passage.id ? 'Saving…' : passage.is_marked_for_practice ? 'Saved to review ✓' : 'Mark for practice'}</button></div>}
           emptyMessage="No measures have been added for this page yet. Try another page or section."
         />
+        {!viewer.isSample && score && <form className="viewer-add-measure" onSubmit={addPassage}><strong>Add a measure</strong><span>For a PDF, enter the measure details you see on the page.</span><label>Section<input name="section" defaultValue="Start" required /></label><label>Measure<input name="measure_number" type="number" min="1" required /></label><label>Page<input name="page_number" type="number" min="1" max={score.page_count} defaultValue={viewer.page || 1} required /></label><button type="submit">Add measure</button></form>}
+        {actionMessage && <p className="viewer-action-message" role="status">{actionMessage} <a href="#/practice-review">Open Practice Review →</a></p>}
+        {actionError && <p className="viewer-error" role="alert">{actionError}</p>}
         <div className="viewer-bottom-row">
           <MeasureJump key={viewer.page} onJump={viewer.jumpToMeasure} />
           <p className="viewer-hint">Your place, at a glance. Use the page controls or jump to a section.</p>

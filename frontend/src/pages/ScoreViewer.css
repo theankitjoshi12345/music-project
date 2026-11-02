@@ -27,3 +27,12 @@
 
 .score-viewer .viewer-measure-anchor { border-radius: 10px; scroll-margin-block: 90px; transition: box-shadow .2s ease, transform .2s ease; }
 .score-viewer .viewer-measure-anchor.is-focused { box-shadow: 0 0 0 3px #dcaa2b; transform: translateY(-2px); }
+.score-viewer .viewer-mark-button { background:#e8eefb; border:1px solid #b7c9ee; color:#234db9; font-size:12px; margin-top:10px; width:100%; }
+.score-viewer .viewer-mark-button:disabled { background:#edf4ee; color:#427451; }
+.score-viewer .viewer-add-measure { align-items:end; background:#fff; border:1px solid #d8e1ed; border-radius:12px; display:flex; flex-wrap:wrap; gap:12px; margin-top:22px; padding:16px; }
+.score-viewer .viewer-add-measure strong { flex-basis:100%; }
+.score-viewer .viewer-add-measure > span { color:var(--muted); flex-basis:100%; font-size:13px; }
+.score-viewer .viewer-add-measure label { color:var(--muted); display:grid; font-size:12px; gap:4px; }
+.score-viewer .viewer-add-measure input { max-width:115px; }
+.score-viewer .viewer-add-measure button { background:var(--blue); color:#fff; padding:8px 14px; }
+.score-viewer .viewer-action-message { color:#176d41; font-weight:650; margin:16px 0 0; }

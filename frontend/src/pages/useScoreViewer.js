@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { initialPage, loadViewerData, pagePassages, samplePassages, sampleScore, sectionOptions } from './scoreViewerData'
 
-export default function useScoreViewer() {
+export default function useScoreViewer(user) {
   const [data, setData] = useState(null)
   const [page, setPage] = useState(1)
   const [error, setError] = useState('')
@@ -25,7 +25,7 @@ export default function useScoreViewer() {
       const query = new URLSearchParams(location.split('?')[1] || '')
       const scoreId = query.get('score')
       try {
-        const result = await loadViewerData(scoreId, controller.signal)
+        const result = await loadViewerData(scoreId, controller.signal, fetch, { 'X-Mock-User': user.id })
         if (!controller.signal.aborted) {
           setData(result)
           const startingPage = initialPage(result.passages, result.score.page_count, query.get('passage'))
@@ -40,7 +40,7 @@ export default function useScoreViewer() {
     }
     load()
     return () => controller.abort()
-  }, [location, retry])
+  }, [location, retry, user.id])
 
   const passages = data?.passages ?? []
   const visible = pagePassages(passages, page)
@@ -74,6 +74,27 @@ export default function useScoreViewer() {
       return ''
     },
     retry() { setRetry((value) => value + 1) },
+    async addPassage(values) {
+      if (!data?.score?.id) throw new Error('Open a saved score before adding a measure.')
+      const response = await fetch(`/api/scores/${data.score.id}/passages/`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Mock-User': user.id }, body: JSON.stringify(values),
+      })
+      const passage = await response.json()
+      if (!response.ok) throw new Error(passage.detail || 'The measure could not be added.')
+      setData((current) => ({ ...current, passages: [...current.passages, passage] }))
+      setPage(passage.page_number)
+      setFocusedPassageId(passage.id)
+      return passage
+    },
+    async saveForPractice(passage) {
+      const response = await fetch('/api/practice-marks/', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Mock-User': user.id }, body: JSON.stringify({ passage_id: passage.id }),
+      })
+      const mark = await response.json()
+      if (!response.ok) throw new Error(mark.passage_id?.[0] || 'The practice mark could not be saved.')
+      setData((current) => ({ ...current, passages: current.passages.map((item) => item.id === passage.id ? { ...item, is_marked_for_practice: true } : item) }))
+      return mark
+    },
     showSample() {
       setData({ score: sampleScore, passages: samplePassages, isSample: true })
       setPage(2)

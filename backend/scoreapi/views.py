@@ -9,7 +9,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Passage, PracticeMark, Score
-from .serializers import PassageSerializer, PracticeMarkSerializer, ScoreSerializer
+from .score_extract import extract_musicxml_measures
+from .serializers import PassageCreateSerializer, PassageSerializer, PracticeMarkSerializer, ScoreSerializer
 
 
 @api_view(["GET"])
@@ -50,18 +51,24 @@ class ScoreUploadView(APIView):
         except (TypeError, ValueError):
             raise ValidationError({"page_count": "Enter a whole number of pages."})
 
+        try:
+            extracted_measures = extract_musicxml_measures(score_file)
+        except ValueError as error:
+            raise ValidationError({"score_file": str(error)})
+        extracted_page_count = max((page for _, _, page in extracted_measures), default=1)
         score = Score.objects.create(
             title=title,
             movement=movement,
             instrument=instrument,
-            page_count=page_count,
+            page_count=max(page_count, extracted_page_count),
             available_offline=True,
             source_file=score_file,
         )
-        # Files are stored locally; detailed passage extraction is intentionally a
-        # later concern. The first measure lets the uploaded part enter the same
-        # practice workflow immediately.
-        Passage.objects.create(score=score, section="Start", measure_number=1, page_number=1)
+        if extracted_measures:
+            Passage.objects.bulk_create([
+                Passage(score=score, section=section, measure_number=number, page_number=page)
+                for section, number, page in extracted_measures
+            ])
         score = Score.objects.annotate(passage_count=Count("passages")).get(pk=score.pk)
         return Response(ScoreSerializer(score, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
@@ -79,6 +86,13 @@ class ScorePassageListView(APIView):
         score = get_object_or_404(Score, pk=score_id)
         passages = score.passages.prefetch_related("practice_marks")
         return Response(PassageSerializer(passages, many=True, context={"request": request}).data)
+
+    def post(self, request, score_id):
+        score = get_object_or_404(Score, pk=score_id)
+        serializer = PassageCreateSerializer(data=request.data, context={"score": score})
+        serializer.is_valid(raise_exception=True)
+        passage = serializer.save(score=score)
+        return Response(PassageSerializer(passage, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
 class PracticeMarkListCreateView(APIView):

@@ -54,11 +54,11 @@ class ScoreApiTests(APITestCase):
         self.assertEqual(detail.status_code, 200)
         self.assertEqual(detail.json()["movement"], "Movement I")
 
-    def test_upload_score_creates_an_offline_library_entry_and_starting_passage(self):
+    def test_pdf_upload_creates_an_offline_library_entry_for_manual_measure_setup(self):
         response = self.client.post(
             "/api/scores/upload/",
             {
-                "score_file": SimpleUploadedFile("winter-song.musicxml", b"<score-partwise />"),
+                "score_file": SimpleUploadedFile("winter-song.pdf", b"%PDF-1.4 placeholder"),
                 "instrument": "Clarinet",
                 "page_count": "3",
             },
@@ -70,7 +70,28 @@ class ScoreApiTests(APITestCase):
         self.assertEqual(response.json()["page_count"], 3)
         uploaded = Score.objects.get(pk=response.json()["id"])
         self.assertTrue(uploaded.available_offline)
-        self.assertEqual(uploaded.passages.get().measure_number, 1)
+        self.assertEqual(uploaded.passages.count(), 0)
+
+    def test_musicxml_upload_extracts_real_measures_and_can_be_marked_for_practice(self):
+        musicxml = b'''<score-partwise><part id="P1"><measure number="1"/><measure number="2"><direction><direction-type><rehearsal>A</rehearsal></direction-type></direction></measure><measure number="3"><print new-page="yes"/></measure></part></score-partwise>'''
+        response = self.client.post(
+            "/api/scores/upload/",
+            {"score_file": SimpleUploadedFile("three-measures.musicxml", musicxml)},
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 201)
+        score = Score.objects.get(pk=response.json()["id"])
+        self.assertEqual(score.page_count, 2)
+        self.assertEqual(list(score.passages.order_by("page_number", "measure_number").values_list("section", "measure_number", "page_number")), [("Start", 1, 1), ("A", 2, 1), ("A", 3, 2)])
+
+        created = self.client.post(
+            f"/api/scores/{score.id}/passages/",
+            {"section": "B", "measure_number": 4, "page_number": 2},
+            format="json",
+        )
+        self.assertEqual(created.status_code, 201)
+        mark = self.client.post("/api/practice-marks/", {"passage_id": created.json()["id"]}, format="json")
+        self.assertEqual(mark.status_code, 201)
 
     def test_passages_are_limited_to_the_requested_score(self):
         response = self.client.get(f"/api/scores/{self.score.id}/passages/")

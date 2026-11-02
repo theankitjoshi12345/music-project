@@ -39,6 +39,25 @@ class PassageSerializer(serializers.ModelSerializer):
         return passage.practice_marks.filter(owner=owner).exists()
 
 
+class PassageCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Passage
+        fields = ["id", "section", "measure_number", "page_number"]
+
+    def validate_section(self, value):
+        return value.strip() or "Start"
+
+    def validate(self, attrs):
+        score = self.context["score"]
+        if Passage.objects.filter(
+            score=score,
+            section=attrs["section"],
+            measure_number=attrs["measure_number"],
+        ).exists():
+            raise serializers.ValidationError({"measure_number": "This section already has that measure."})
+        return attrs
+
+
 class PracticeMarkPassageSerializer(PassageSerializer):
     movement = serializers.CharField(source="score.movement", read_only=True)
     score_id = serializers.IntegerField(read_only=True)
