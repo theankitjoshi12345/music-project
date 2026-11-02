@@ -134,27 +134,28 @@ function OfflineScoreLibrary() {
         </aside>
 
         <main className="offline-library__content">
-          <h1>Your offline score library</h1>
+          <p className="library-kicker">YOUR REHEARSAL SPACE</p>
+          <h1>Open a score. Stay in the music.</h1>
           <p className="offline-library__subtitle">
-            Select a score saved for {user.name}'s rehearsal.
+            Add a score once, then return to it whenever rehearsal starts.
           </p>
 
           <section className="offline-library__upload" aria-labelledby="upload-score-heading">
-            <div><h2 id="upload-score-heading">Add a score</h2><p>MusicXML extracts measures automatically. PDF uploads are saved for manual measure entry.</p></div>
+            <div><h2 id="upload-score-heading">Add a score</h2><p>Choose a PDF or MusicXML file from this device.</p></div>
             <form onSubmit={uploadScore}>
               <label>Score file<input name="score_file" type="file" accept=".pdf,.musicxml,.xml,.mxl,application/pdf,application/vnd.recordare.musicxml+xml" required /></label>
               <label>Instrument<input name="instrument" placeholder="e.g. Clarinet" /></label>
               <label>Pages<input name="page_count" type="number" min="1" defaultValue="1" /></label>
-              <button type="submit" disabled={uploading}>{uploading ? 'Uploading…' : 'Upload score'}</button>
+              <button type="submit" disabled={uploading}>{uploading ? 'Adding…' : 'Add to library'}</button>
             </form>
             {uploadMessage && <p className="offline-library__upload-message" role="status">{uploadMessage}</p>}
           </section>
 
           <section className="offline-library__parts" aria-labelledby="downloaded-parts-heading">
-            <h2 id="downloaded-parts-heading">Your downloaded parts</h2>
+            <h2 id="downloaded-parts-heading">Your scores</h2>
             {!parts && !error && <p className="offline-library__message" role="status">Loading your downloaded scores…</p>}
             {error && <p className="offline-library__message offline-library__message--error" role="alert">{error}</p>}
-            {parts && parts.length === 0 && <p className="offline-library__message">No scores are available offline for this demo user yet.</p>}
+            {parts && parts.length === 0 && <p className="offline-library__message library-empty">No scores yet. Add one above, then open it here.</p>}
             {parts && parts.length > 0 && <ul>
               {parts.map((part) => (
                 <li className="offline-library__part" key={part.id}>
@@ -162,8 +163,8 @@ function OfflineScoreLibrary() {
                     <MusicNoteIcon />
                   </div>
                   <div className="offline-library__part-details">
-                    <h3>{part.movement} — {part.instrument}</h3>
-                    <p>{part.title} <span>·</span> {part.page_count} pages <span>·</span> {part.extraction_status === 'extracted' ? `${part.passage_count} measures extracted` : 'Manual measure entry required'}</p>
+                    <h3>{part.title}</h3>
+                    <p>{part.instrument} <span>·</span> {part.page_count} pages <span>·</span> ready to open</p>
                   </div>
                   <div className="offline-library__part-actions"><a className="offline-library__open-button" href={`#/score-viewer?score=${part.id}`}>Open score <span aria-hidden="true">→</span></a>{part.source_file?.toLowerCase().endsWith('.pdf') && <button className="offline-library__extract-button" type="button" disabled={extractingId === part.id} onClick={() => extractMeasures(part)}>{extractingId === part.id ? 'Extracting…' : 'Extract measures'}</button>}<button className="offline-library__delete-button" type="button" disabled={deletingId === part.id} onClick={() => deleteScore(part)}>{deletingId === part.id ? 'Deleting…' : 'Delete score'}</button></div>
                 </li>
