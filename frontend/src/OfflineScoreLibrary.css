@@ -201,7 +201,18 @@
   gap: 5px;
   height: 38px;
   justify-content: center;
+  text-decoration: none;
 }
+
+.offline-library__message {
+  color: #536a84;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.offline-library__message--error { color: #a52b2b; }
+
+.offline-library .mock-user-control { color: #fff; }
 
 .offline-library__open-button:hover {
   background: #244fc2;

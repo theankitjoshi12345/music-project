@@ -1,9 +1,9 @@
+import { useEffect, useState } from 'react'
+import MockUserControl from './MockUserControl'
+import { mockUserHeaders, useMockSession } from './mockSession'
 import './OfflineScoreLibrary.css'
 
-const downloadedParts = [
-  { title: 'Movement I — Percussion', pages: 4 },
-  { title: 'Movement II — Percussion', pages: 4 },
-]
+const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
 function MusicNoteIcon() {
   return (
@@ -14,6 +14,31 @@ function MusicNoteIcon() {
 }
 
 function OfflineScoreLibrary() {
+  const { user } = useMockSession()
+  const [parts, setParts] = useState(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const controller = new AbortController()
+    async function loadParts() {
+      try {
+        setError('')
+        const response = await fetch(`${apiBase}/scores/`, {
+          headers: mockUserHeaders(user),
+          signal: controller.signal,
+        })
+        if (!response.ok) throw new Error(`The score library could not load (${response.status}).`)
+        const data = await response.json()
+        if (!Array.isArray(data)) throw new Error('The score library returned an invalid response.')
+        setParts(data.filter((part) => part.available_offline))
+      } catch (loadError) {
+        if (loadError.name !== 'AbortError') setError(loadError.message)
+      }
+    }
+    loadParts()
+    return () => controller.abort()
+  }, [user])
+
   return (
     <div className="offline-library">
       <header className="offline-library__header">
@@ -25,6 +50,7 @@ function OfflineScoreLibrary() {
           <span aria-hidden="true" />
           Offline ready
         </p>
+        <MockUserControl />
       </header>
 
       <div className="offline-library__layout">
@@ -42,27 +68,30 @@ function OfflineScoreLibrary() {
         <main className="offline-library__content">
           <h1>Your offline score library</h1>
           <p className="offline-library__subtitle">
-            Select the percussion score saved for rehearsal.
+            Select a score saved for {user.name}'s rehearsal.
           </p>
 
           <section className="offline-library__parts" aria-labelledby="downloaded-parts-heading">
             <h2 id="downloaded-parts-heading">Your downloaded parts</h2>
-            <ul>
-              {downloadedParts.map((part) => (
-                <li className="offline-library__part" key={part.title}>
+            {!parts && !error && <p className="offline-library__message" role="status">Loading your downloaded scores…</p>}
+            {error && <p className="offline-library__message offline-library__message--error" role="alert">{error}</p>}
+            {parts && parts.length === 0 && <p className="offline-library__message">No scores are available offline for this demo user yet.</p>}
+            {parts && parts.length > 0 && <ul>
+              {parts.map((part) => (
+                <li className="offline-library__part" key={part.id}>
                   <div className="offline-library__part-icon">
                     <MusicNoteIcon />
                   </div>
                   <div className="offline-library__part-details">
-                    <h3>{part.title}</h3>
-                    <p>PDF <span>·</span> {part.pages} pages <span>·</span> Available offline</p>
+                    <h3>{part.movement} — {part.instrument}</h3>
+                    <p>{part.title} <span>·</span> {part.page_count} pages <span>·</span> Available offline</p>
                   </div>
-                  <button className="offline-library__open-button" type="button">
+                  <a className="offline-library__open-button" href={`#/score-viewer?score=${part.id}`}>
                     Open score <span aria-hidden="true">→</span>
-                  </button>
+                  </a>
                 </li>
               ))}
-            </ul>
+            </ul>}
           </section>
         </main>
       </div>
