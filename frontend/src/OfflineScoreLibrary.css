@@ -242,6 +242,31 @@
   outline-offset: 3px;
 }
 
+/* The library is the home screen: one obvious next action, not a dashboard. */
+.offline-library { background:linear-gradient(135deg,#f6f8fc 0%,#edf2fb 100%); }
+.offline-library__header { background:#172335; border-bottom:1px solid rgba(255,255,255,.12); height:76px; padding-left:max(24px, calc((100% - 1160px)/2)); padding-right:max(24px, calc((100% - 1160px)/2)); }
+.offline-library__brand { font-size:17px; letter-spacing:-.02em; text-transform:none; }
+.offline-library__status { color:#b8c7d9; font-weight:600; text-transform:none; }
+.offline-library__layout { display:block; margin:0 auto; max-width:1160px; min-height:auto; padding:68px 28px 84px; }
+.offline-library__sidebar { display:none; }
+.offline-library__content { max-width:none; padding:0; }
+.library-kicker { color:#526fae; font-size:12px; font-weight:800; letter-spacing:.12em; margin:0 0 14px; }
+.offline-library__content h1 { color:#18253a; font-size:clamp(36px,5vw,58px); letter-spacing:-.06em; line-height:1.02; max-width:700px; }
+.offline-library__subtitle { font-size:17px; line-height:1.55; margin-top:18px; max-width:560px; }
+.offline-library__upload { border:0; border-radius:18px; box-shadow:0 18px 45px rgba(32,53,88,.10); margin-top:48px; padding:26px; }
+.offline-library__upload h2 { font-size:18px; }
+.offline-library__upload p { font-size:13px; }
+.offline-library__upload button { background:#315fc8; border-radius:9px; min-height:42px; }
+.offline-library__parts { margin-top:64px; max-width:920px; }
+.offline-library__parts h2 { font-size:22px; letter-spacing:-.035em; margin-bottom:20px; text-transform:none; }
+.offline-library__part { border:1px solid #e0e7f0; border-radius:16px; min-height:112px; padding:18px; transition:box-shadow .2s, transform .2s; }
+.offline-library__part:hover { box-shadow:0 16px 32px rgba(39,62,102,.10); transform:translateY(-2px); }
+.offline-library__part-icon { background:#eaf0fd; border-radius:12px; }
+.offline-library__part-details h3 { font-size:18px; }
+.offline-library__open-button { background:#315fc8; border-radius:9px; height:40px; }
+.offline-library__delete-button { border-color:#e5bcc0; color:#9c3d46; }
+.library-empty { background:#fff; border:1px dashed #bdc9d9; border-radius:14px; padding:30px; text-align:center; }
+
 @media (max-width: 680px) {
   .offline-library__header {
     padding-right: 20px;

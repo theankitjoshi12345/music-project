@@ -28,7 +28,7 @@ test('integrated routing renders all four screens and preserves viewer score lin
   try {
     Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: () => null } })
     for (const [hash, expected] of [
-      ['#/score-library', /Your offline score library/],
+      ['#/score-library', /Open a score\. Stay in the music\./],
       ['#/score-viewer?score=42', /Score viewer &amp; navigation · Ankit Joshi/],
       ['#/measure-marker', /Select a measure to mark/],
       ['#/practice-review', /<h1>Practice review<\/h1>/],

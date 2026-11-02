@@ -42,3 +42,8 @@
 .score-viewer .viewer-pdf-heading span { color:var(--muted); font-size:12px; }
 .score-viewer .viewer-pdf-heading a { color:var(--blue); font-size:13px; font-weight:700; }
 .score-viewer .viewer-pdf iframe { border:0; display:block; height:min(78vh, 920px); width:100%; }
+
+.score-viewer .viewer-pdf { border-radius:18px; box-shadow:0 18px 45px rgba(28,48,80,.10); }
+.score-viewer .viewer-pdf-heading { background:#fff; padding:15px 18px; }
+.score-viewer .viewer-pdf-heading strong { font-size:15px; }
+.score-viewer .viewer-pdf-heading a { background:#edf3ff; border-radius:7px; padding:8px 10px; text-decoration:none; }
