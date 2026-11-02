@@ -14,6 +14,9 @@ The library reports whether extraction completed or manual entry is required. Us
 **Delete score** to remove an uploaded score, its local file, its measures, and
 any practice marks attached to those measures.
 
+Uploaded PDFs display in the Score Viewer itself. Use the viewer page controls
+to move through the PDF, then add and mark visible measures for practice.
+
 ## Tech stack
 
 | Area | Choice |
