@@ -1,0 +1,33 @@
+[
+  {
+    "model": "scoreapi.score",
+    "pk": 1,
+    "fields": {
+      "title": "Symphony No. 1",
+      "movement": "Movement I",
+      "instrument": "Percussion",
+      "page_count": 2,
+      "available_offline": true
+    }
+  },
+  {
+    "model": "scoreapi.passage",
+    "pk": 1,
+    "fields": {"score": 1, "section": "A", "measure_number": 1, "page_number": 1}
+  },
+  {
+    "model": "scoreapi.passage",
+    "pk": 2,
+    "fields": {"score": 1, "section": "A", "measure_number": 8, "page_number": 1}
+  },
+  {
+    "model": "scoreapi.passage",
+    "pk": 3,
+    "fields": {"score": 1, "section": "B", "measure_number": 17, "page_number": 2}
+  },
+  {
+    "model": "scoreapi.passage",
+    "pk": 4,
+    "fields": {"score": 1, "section": "B", "measure_number": 24, "page_number": 2}
+  }
+]
