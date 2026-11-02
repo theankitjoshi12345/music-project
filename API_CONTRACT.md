@@ -14,8 +14,8 @@ authentication.
 
 | Screen owner | Screen | Endpoints |
 | --- | --- | --- |
-| Logan | Offline Score Library | GET /scores/, GET /scores/{id}/ |
-| Ankit | Score Viewer & Navigation | GET /scores/{id}/, GET /scores/{id}/passages/ |
+| Logan | Offline Score Library | GET /scores/, POST /scores/upload/, GET /scores/{id}/ |
+| Ankit | Score Viewer & Navigation | GET/POST /scores/{id}/passages/, POST /practice-marks/ |
 | Matthew | Measure Marker | GET /scores/{id}/passages/, POST /practice-marks/ |
 | Jonathan | Practice Review | GET /practice-marks/, PATCH /practice-marks/{id}/ |
 
@@ -34,6 +34,7 @@ authentication.
 | instrument | string | Instrument or section |
 | page_count | integer | Positive total page count |
 | available_offline | boolean | Offline-library availability |
+| source_file | string | Locally stored uploaded file path, when supplied |
 
 ### Passage
 
@@ -95,6 +96,14 @@ Lists downloaded parts for the Offline Score Library.
 
 Returns one score and its library/viewer context. A missing score returns 404 Not Found.
 
+### POST /api/scores/upload/
+
+Accepts multipart form data with `score_file` (PDF, MusicXML, XML, or MXL),
+plus optional `instrument`, `title`, `movement`, and `page_count`. Files are
+limited to 10 MB. MusicXML/XML/MXL inputs extract measures, rehearsal labels,
+and MusicXML page breaks into Passages. PDFs are stored but do not claim
+measure extraction; add their visible measures with the passage endpoint.
+
 ### GET /api/scores/{id}/passages/
 
 Returns passages for the requested score in page/measure order. Used by the Score Viewer and Measure Marker.
@@ -108,6 +117,12 @@ Returns passages for the requested score in page/measure order. Used by the Scor
         "is_marked_for_practice": false
       }
     ]
+
+### POST /api/scores/{id}/passages/
+
+Adds one visible measure to a score, primarily for manually mapping a PDF.
+
+    {"section": "B", "measure_number": 24, "page_number": 2}
 
 ### GET /api/practice-marks/
 
@@ -168,4 +183,6 @@ Returns the updated practice-mark representation with 200 OK.
 | Attempt to move a mark | 400 | {"passage_id": ["A practice mark cannot be moved to another passage."]} |
 | Invalid review status | 400 | {"status": "Use 'unresolved' or 'resolved'."} |
 
-The API deliberately excludes authentication, cloud synchronization, file/PDF storage, tuner/metronome tools, social features, and automatic error detection.
+The API deliberately excludes production authentication, cloud synchronization,
+PDF optical-music recognition, tuner/metronome tools, social features, and
+automatic error detection.

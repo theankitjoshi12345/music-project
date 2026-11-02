@@ -8,7 +8,7 @@ The shared REST API and all four assigned screens are present in `main`: Logan's
 
 The app uses local mock authentication, not production security. Choose **Alex Rivera** or **Sam Lee** in the Demo user selector. Practice marks are isolated by the selected mock user so the same passage can be marked independently for each demo user.
 
-Use **Add a score** in the Score Library to upload a PDF, MusicXML, XML, or MXL file (up to 10 MB). The local development server stores the file under `backend/media/scores/` and creates a first measure so the uploaded part can immediately enter the marker and review flow. It does not yet extract full notation or every measure from the uploaded file.
+Use **Add a score** in the Score Library to upload a PDF, MusicXML, XML, or MXL file (up to 10 MB). The local development server stores the file under `backend/media/scores/`. MusicXML/XML/MXL uploads extract their measures, rehearsal marks, and page breaks into the app. A PDF is visual notation rather than structured score data, so Score Companion does not claim to extract its measure boundaries; add the measures you see through the viewer's **Add a measure** form, then use **Mark for practice** to send each one to Practice Review. Automatic PDF measure extraction requires an optical-music-recognition service.
 
 ## Tech stack
 

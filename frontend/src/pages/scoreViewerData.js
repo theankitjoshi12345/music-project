@@ -36,9 +36,9 @@ export function sectionOptions(passages) {
   return [...new Set(passages.map((passage) => passage.section))]
 }
 
-export async function loadViewerData(scoreId, signal, request = fetch) {
+export async function loadViewerData(scoreId, signal, request = fetch, headers = {}) {
   async function get(path) {
-    const response = await request('/api/' + path, { signal })
+    const response = await request('/api/' + path, { signal, headers })
     if (!response.ok) {
       throw new Error(response.status === 404 ? 'That score could not be found.' : 'The score service could not load this part.')
     }
