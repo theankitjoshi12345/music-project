@@ -10,6 +10,10 @@ The app uses local mock authentication, not production security. Choose **Alex R
 
 Use **Add a score** in the Score Library to upload a PDF, MusicXML, XML, or MXL file (up to 10 MB). The local development server stores the file under `backend/media/scores/`. MusicXML/XML/MXL uploads extract their measures, rehearsal marks, and page breaks into the app. A PDF is visual notation rather than structured score data, so Score Companion does not claim to extract its measure boundaries; add the measures you see through the viewer's **Add a measure** form, then use **Mark for practice** to send each one to Practice Review. Automatic PDF measure extraction requires an optical-music-recognition service.
 
+The library reports whether extraction completed or manual entry is required. Use
+**Delete score** to remove an uploaded score, its local file, its measures, and
+any practice marks attached to those measures.
+
 ## Tech stack
 
 | Area | Choice |

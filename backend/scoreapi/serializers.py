@@ -5,6 +5,7 @@ from .models import Passage, PracticeMark, Score
 
 class ScoreSerializer(serializers.ModelSerializer):
     passage_count = serializers.IntegerField(read_only=True)
+    extraction_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Score
@@ -17,7 +18,19 @@ class ScoreSerializer(serializers.ModelSerializer):
             "available_offline",
             "source_file",
             "passage_count",
+            "extraction_status",
         ]
+
+    def get_extraction_status(self, score):
+        extension = score.source_file.name.rsplit(".", 1)[-1].lower() if score.source_file else ""
+        if extension == "pdf":
+            return "manual_required"
+        if extension in {"musicxml", "xml", "mxl"}:
+            passage_count = getattr(score, "passage_count", None)
+            if passage_count is None:
+                passage_count = score.passages.count()
+            return "extracted" if passage_count else "no_measures"
+        return "manual_required"
 
 
 class PassageSerializer(serializers.ModelSerializer):
