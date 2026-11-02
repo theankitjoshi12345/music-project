@@ -82,12 +82,25 @@ marks for the same passage. The frontend suite checks routing and score/passage
 link construction. Lint completes with Fast Refresh advisory warnings for the
 shared session module; it reports no lint errors.
 
-## Demo and screenshot checklist
+## Clean clone evidence
+
+On November 2, 2026, GitLab `main` at commit `930086a` was cloned into a fresh
+temporary directory. A new Python virtual environment was created, backend
+requirements were installed, migrations ran, and `demo_scores` loaded five
+objects (one score and four passages). `scoreapi` then passed all 9 tests.
+
+In the same clean clone, `npm ci` completed with no vulnerabilities reported;
+the frontend test suite passed all 14 tests, `npm run lint` reported only the
+documented Fast Refresh advisories, and `npm run build` completed successfully.
+
+## Demo and screenshot evidence
 
 Use a 60–90 second local demo: select Alex, open a score, save one measure,
 resolve it in review, return to the passage, then switch to Sam to show the
-user-scoped empty state. Capture screenshots only after the final merged
-`main` smoke test so they show the same route, user, and data as the demo.
+user-scoped empty state. The fresh-clone smoke test produced these captures:
+
+- [Offline Score Library](P10-library.png): the demo score for Alex with its working viewer handoff.
+- [Practice Review](P10-practice-review.png): Alex's unresolved Measure 24 mark with the open-passage and resolve actions.
 
 ## AI usage
 
@@ -98,10 +111,8 @@ development was replacing an automatic Django uniqueness error with the
 project's intended `passage_id` validation response, then adding a two-user
 isolation test.
 
-## Remaining submission evidence
+## Submission note
 
-- Run and record one clean-clone check from the final GitLab `main` branch.
-- Capture the golden-path screenshots and add them to the supplied Word report
-  template if that template is the required submission format.
-- Add only verified reviewer and teammate contribution details to the final
-  course submission.
+If the supplied Word template is the required submission format, transfer only
+the verified content and the two captures above into it. Add reviewer and
+teammate contribution details only when they are supported by GitLab history.
