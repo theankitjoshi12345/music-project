@@ -248,6 +248,7 @@
 .offline-library__brand { font-size:17px; letter-spacing:-.02em; text-transform:none; }
 .offline-library__status { color:#b8c7d9; font-weight:600; text-transform:none; }
 .offline-library__layout { display:block; margin:0 auto; max-width:1160px; min-height:auto; padding:68px 28px 84px; }
+.offline-library__content { margin:0 auto; max-width:1104px; }
 .offline-library__sidebar { display:none; }
 .offline-library__content { max-width:none; padding:0; }
 .library-kicker { color:#526fae; font-size:12px; font-weight:800; letter-spacing:.12em; margin:0 0 14px; }

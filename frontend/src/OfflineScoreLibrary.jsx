@@ -121,19 +121,7 @@ function OfflineScoreLibrary() {
         <MockUserControl />
       </header>
 
-      <div className="offline-library__layout">
-        <aside className="offline-library__sidebar">
-          <nav aria-label="Score Companion">
-            <a className="offline-library__nav-link is-active" href="#/score-library" aria-current="page">
-              Score library
-            </a>
-            <a className="offline-library__nav-link" href="#/practice-review">
-              Practice review
-            </a>
-          </nav>
-        </aside>
-
-        <main className="offline-library__content">
+      <main className="offline-library__content">
           <p className="library-kicker">YOUR REHEARSAL SPACE</p>
           <h1>Open a score. Stay in the music.</h1>
           <p className="offline-library__subtitle">
@@ -144,8 +132,8 @@ function OfflineScoreLibrary() {
             <div><h2 id="upload-score-heading">Add a score</h2><p>Choose a PDF or MusicXML file from this device.</p></div>
             <form onSubmit={uploadScore}>
               <label>Score file<input name="score_file" type="file" accept=".pdf,.musicxml,.xml,.mxl,application/pdf,application/vnd.recordare.musicxml+xml" required /></label>
-              <label>Instrument<input name="instrument" placeholder="e.g. Clarinet" /></label>
-              <label>Pages<input name="page_count" type="number" min="1" defaultValue="1" /></label>
+              <input name="instrument" type="hidden" value="" readOnly />
+              <input name="page_count" type="hidden" value="1" readOnly />
               <button type="submit" disabled={uploading}>{uploading ? 'Adding…' : 'Add to library'}</button>
             </form>
             {uploadMessage && <p className="offline-library__upload-message" role="status">{uploadMessage}</p>}
@@ -171,8 +159,7 @@ function OfflineScoreLibrary() {
               ))}
             </ul>}
           </section>
-        </main>
-      </div>
+      </main>
     </div>
   )
 }
