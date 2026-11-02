@@ -5,7 +5,10 @@
 **Base URL:** http://127.0.0.1:8000/api
 
 **Format:** JSON request and response bodies
-**Authentication:** None for the P#9 local-development API.
+**Mock authentication:** The local app sends the selected demo user in the
+`X-Mock-User` request header. Supported demo users are `alex` and `sam`.
+This is a structural placeholder for local multi-user flows, not production
+authentication.
 
 ## Screen-to-endpoint map
 
@@ -18,13 +21,14 @@
 
 ## Data models and relationships
 
-    Score 1 -- * Passage 1 -- 0..1 PracticeMark
+    User 1 -- * PracticeMark * -- 1 Passage * -- 1 Score
 
 ### Score
 
 | Field | Type | Notes |
 | --- | --- | --- |
 | id | integer | Generated primary key |
+| owner | string | Mock-user ID that owns this mark; response only |
 | title | string | Score or work title |
 | movement | string | Movement or part name |
 | instrument | string | Instrument or section |
@@ -60,7 +64,8 @@ passage's page, with the normal initial-page fallback for an unknown passage ID.
 | is_resolved | boolean | Defaults to false |
 | created_at, updated_at | ISO 8601 string | Server-managed timestamps |
 
-There can be only one practice mark per passage. A mark cannot be moved to a different passage after creation.
+There can be one practice mark per passage for each mock user. A mark cannot
+be moved to a different passage after creation.
 
 ## Endpoints
 

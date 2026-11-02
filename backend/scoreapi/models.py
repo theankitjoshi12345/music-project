@@ -39,10 +39,11 @@ class Passage(models.Model):
 
 
 class PracticeMark(models.Model):
-    """A saved correction or practice reminder linked to exactly one passage."""
+    """A mock-user-scoped correction or practice reminder for one passage."""
 
-    passage = models.OneToOneField(
-        Passage, on_delete=models.CASCADE, related_name="practice_mark"
+    owner = models.CharField(max_length=64, default="alex")
+    passage = models.ForeignKey(
+        Passage, on_delete=models.CASCADE, related_name="practice_marks"
     )
     note = models.CharField(max_length=500, blank=True)
     is_resolved = models.BooleanField(default=False)
@@ -51,6 +52,11 @@ class PracticeMark(models.Model):
 
     class Meta:
         ordering = ["is_resolved", "-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["passage", "owner"], name="unique_mark_per_passage_owner"
+            )
+        ]
 
     def __str__(self):
         return f"Practice mark: {self.passage}"

@@ -1,3 +1,5 @@
+import MockUserControl from '../../MockUserControl'
+
 const defaultNavigation = [
   { href: '#/score-library', label: 'Score library' },
   { href: '#/practice-review', label: 'Practice review' },
@@ -7,7 +9,10 @@ export function AppHeader({ status = 'Score Companion', homeHref = '#/score-libr
   return (
     <header className="score-topbar">
       <a className="viewer-brand" href={homeHref}><span aria-hidden="true">♫</span> Score Companion</a>
-      <span className="viewer-status"><i aria-hidden="true" /> {status}</span>
+      <div className="viewer-header-meta">
+        <MockUserControl />
+        <span className="viewer-status"><i aria-hidden="true" /> {status}</span>
+      </div>
     </header>
   )
 }
