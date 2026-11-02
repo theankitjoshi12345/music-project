@@ -1,4 +1,5 @@
 .measure-marker { min-height:100vh; background:#eff4fa; color:#25364a; }
+.measure-marker .mock-user-control { color:#fff; }
 .measure-marker * { box-sizing:border-box; }
 .measure-marker .mm-header { min-height:95px; margin:0; padding:25px 3%; background:#172c40; color:white; display:flex; align-items:center; justify-content:space-between; gap:20px; }
 .mm-header a { color:white; font-size:24px; font-weight:750; text-decoration:none; }
@@ -24,6 +25,7 @@
 .mm-feedback { min-height:25px; line-height:1.6; }
 .mm-save { border:0; border-radius:12px; padding:18px 22px; background:#2858db; color:white; font:inherit; font-weight:700; cursor:pointer; }
 .mm-save:disabled { background:#65748e; cursor:not-allowed; }
+.mm-review-link { color:#245de5; display:inline-block; font-weight:700; margin:14px 0 0; }
 .measure-marker :focus-visible { outline:3px solid #aa6500; outline-offset:4px; }
 @media(max-width:900px) { .mm-layout { grid-template-columns:180px minmax(0,1fr); gap:20px; } .mm-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:600px) { .measure-marker .mm-header { padding:20px 16px; flex-wrap:wrap; } .mm-header a { font-size:20px; } .mm-layout { display:block; padding:16px; } .mm-sidebar { padding:8px; margin-bottom:24px; } .mm-sidebar nav { flex-direction:row; flex-wrap:wrap; gap:4px; } .mm-content h1 { font-size:28px; } .mm-score { padding:16px; } .mm-grid { gap:12px 8px; } .mm-save { width:100%; } }
