@@ -5,3 +5,4 @@ body {
   color: #172b4d;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
+html { scroll-behavior: smooth; }

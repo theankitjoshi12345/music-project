@@ -17,6 +17,8 @@ function OfflineScoreLibrary() {
   const { user } = useMockSession()
   const [parts, setParts] = useState(null)
   const [error, setError] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadMessage, setUploadMessage] = useState('')
 
   useEffect(() => {
     const controller = new AbortController()
@@ -38,6 +40,35 @@ function OfflineScoreLibrary() {
     loadParts()
     return () => controller.abort()
   }, [user])
+
+  async function uploadScore(event) {
+    event.preventDefault()
+    const form = event.currentTarget
+    const file = form.elements.score_file.files[0]
+    if (!file) {
+      setError('Choose a PDF, MusicXML, XML, or MXL score file first.')
+      return
+    }
+    setUploading(true)
+    setError('')
+    setUploadMessage('')
+    try {
+      const response = await fetch(`${apiBase}/scores/upload/`, {
+        method: 'POST',
+        headers: mockUserHeaders(user),
+        body: new FormData(form),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.score_file?.[0] || data.page_count?.[0] || 'The score could not be uploaded.')
+      setParts((current) => [...(current || []), data])
+      setUploadMessage(`${data.title} is saved to your offline library.`)
+      form.reset()
+    } catch (uploadError) {
+      setError(uploadError.message)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   return (
     <div className="offline-library">
@@ -70,6 +101,17 @@ function OfflineScoreLibrary() {
           <p className="offline-library__subtitle">
             Select a score saved for {user.name}'s rehearsal.
           </p>
+
+          <section className="offline-library__upload" aria-labelledby="upload-score-heading">
+            <div><h2 id="upload-score-heading">Add a score</h2><p>Upload a PDF or MusicXML score to add it to this local library.</p></div>
+            <form onSubmit={uploadScore}>
+              <label>Score file<input name="score_file" type="file" accept=".pdf,.musicxml,.xml,.mxl,application/pdf,application/vnd.recordare.musicxml+xml" required /></label>
+              <label>Instrument<input name="instrument" placeholder="e.g. Clarinet" /></label>
+              <label>Pages<input name="page_count" type="number" min="1" defaultValue="1" /></label>
+              <button type="submit" disabled={uploading}>{uploading ? 'Uploading…' : 'Upload score'}</button>
+            </form>
+            {uploadMessage && <p className="offline-library__upload-message" role="status">{uploadMessage}</p>}
+          </section>
 
           <section className="offline-library__parts" aria-labelledby="downloaded-parts-heading">
             <h2 id="downloaded-parts-heading">Your downloaded parts</h2>

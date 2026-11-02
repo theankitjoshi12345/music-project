@@ -8,6 +8,8 @@ The shared REST API and all four assigned screens are present in `main`: Logan's
 
 The app uses local mock authentication, not production security. Choose **Alex Rivera** or **Sam Lee** in the Demo user selector. Practice marks are isolated by the selected mock user so the same passage can be marked independently for each demo user.
 
+Use **Add a score** in the Score Library to upload a PDF, MusicXML, XML, or MXL file (up to 10 MB). The local development server stores the file under `backend/media/scores/` and creates a first measure so the uploaded part can immediately enter the marker and review flow. It does not yet extract full notation or every measure from the uploaded file.
+
 ## Tech stack
 
 | Area | Choice |
@@ -87,8 +89,9 @@ Vite serves the app at `http://localhost:5173/`. Use the navigation links to vis
 ### P#10 smoke test
 
 With both servers running, open `http://localhost:5173/#/score-library` on the
-`main` branch. Choose Alex Rivera, open the available score, visit Measure
-Marker, save one measure, and open Practice Review. Resolve the mark and use
+`main` branch. Optionally upload a score, choose Alex Rivera, open the available
+score, visit Measure Marker, select a measure, use the persistent **Save measure**
+action, and open Practice Review. Resolve the mark and use
 **Open passage** to return to the correct score context. Switch to Sam Lee to
 confirm that Alex's practice mark does not appear for the other mock user.
 
@@ -110,6 +113,9 @@ Notation is illustrative: the current API provides measure metadata, not music
 notation or score-file contents. PDF rendering, actual offline file caching,
 and measure-marking actions are outside this screen's implementation. The
 viewer does not claim a score is offline-ready.
+
+Page, section, and measure jumps smoothly scroll and highlight the destination
+measure so it remains easy to keep visual context while navigating a score.
 
 Run `npm test --prefix frontend`, `npm run lint --prefix frontend`, and
 `npm run build --prefix frontend` to verify the viewer's data integration and build.

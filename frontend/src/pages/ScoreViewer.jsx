@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { AppLayout, FeedbackPanel, MeasureJump, ScoreContext, ScoreNavigation, ScoreSheet, ScreenHeading } from '../components/score-companion'
 import useScoreViewer from './useScoreViewer'
 import './ScoreViewer.css'
@@ -7,6 +8,11 @@ export default function ScoreViewer() {
   const { score, visible, currentSections } = viewer
   const context = score && <ScoreContext movement={score.movement} instrument={score.instrument} sections={currentSections} />
   const measureRange = visible.length ? 'Measures ' + visible[0].measure_number + '–' + visible.at(-1).measure_number : 'No measures on this page'
+
+  useEffect(() => {
+    if (!viewer.focusedPassageId) return
+    document.getElementById(`measure-${viewer.focusedPassageId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [viewer.focusedPassageId, viewer.page])
 
   return (
     <AppLayout className="score-viewer" status={viewer.isSample ? 'Sample score' : 'Score viewer'} activeHref="#/score-library" headingId="score-title" busy={viewer.loading}>
@@ -39,6 +45,7 @@ export default function ScoreViewer() {
           label={'Score page ' + viewer.page}
           heading={<ScoreContext movement={score.movement} instrument={score.instrument} sections={currentSections} separator=" / " />}
           passages={visible}
+          focusedPassageId={viewer.focusedPassageId}
           emptyMessage="No measures have been added for this page yet. Try another page or section."
         />
         <div className="viewer-bottom-row">

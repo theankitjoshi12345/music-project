@@ -12,6 +12,9 @@
 .mm-content h1 { font-size:34px; letter-spacing:-.025em; color:#25364a; }
 .mm-subtitle { color:#5c718e; line-height:1.6; }
 .mm-meta { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:14px; margin:26px 0 16px; color:#52677f; }
+.mm-save-panel { align-items:center; background:#fff; border:1px solid #cddaf0; border-radius:14px; display:flex; gap:18px; justify-content:space-between; margin:24px 0; padding:16px 18px; position:sticky; top:12px; z-index:2; box-shadow:0 5px 18px rgba(37,54,74,.10); }
+.mm-save-panel div { display:grid; gap:4px; }
+.mm-save-panel span { color:#5c718e; font-size:13px; }
 .mm-score { background:white; border-radius:18px; padding:24px; }
 .mm-score h2 { font-size:17px; color:#2757db; margin:0 0 26px; }
 .mm-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:24px 12px; }

@@ -9,6 +9,7 @@ class Score(models.Model):
     instrument = models.CharField(max_length=120)
     page_count = models.PositiveIntegerField()
     available_offline = models.BooleanField(default=True)
+    source_file = models.FileField(upload_to="scores/", blank=True)
 
     class Meta:
         ordering = ["title", "movement", "instrument"]

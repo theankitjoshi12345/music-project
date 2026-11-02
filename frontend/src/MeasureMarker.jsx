@@ -84,6 +84,10 @@ export default function MeasureMarker() {
       <main className="mm-content">
         <h1>{count ? 'Select another measure' : 'Select a measure to mark'}</h1>
         <p className="mm-subtitle">{count ? 'Your saved measures remain marked for this demo user. Choose another measure, then mark it.' : 'Tap a measure, then choose Mark for practice.'}</p>
+        {passages && <section className="mm-save-panel" aria-live="polite">
+          <div><strong>{selected ? `Measure ${selected.measure_number} selected` : 'No measure selected'}</strong><span>{selected?.is_marked_for_practice ? 'This measure is already in practice review.' : 'Choose a measure, then save it to practice review.'}</span></div>
+          <button className="mm-save" type="button" disabled={!selected || selected.is_marked_for_practice || saving} onClick={save}>{saving ? 'Saving…' : selected ? `Save measure ${selected.measure_number}` : 'Save selected measure'}</button>
+        </section>}
         {passages && <><div className="mm-meta"><span>{user.name} | {score.movement} | Saved to practice review</span><strong>{count} marked {count === 1 ? 'measure' : 'measures'}</strong></div>
         <section className="mm-score" aria-labelledby="mm-score-title">
           <h2 id="mm-score-title">{score.movement.toUpperCase()} · {score.instrument.toUpperCase()}</h2>
@@ -99,7 +103,6 @@ export default function MeasureMarker() {
         {!passages && !error && <p className="mm-feedback" role="status">Loading your score…</p>}
         {error && <p className="mm-feedback" role="alert">{error}</p>}
         {passages && <><p className="mm-feedback" role="status">{message || (selected ? `Measure ${selected.measure_number} ${selected.is_marked_for_practice ? 'is already saved for practice.' : 'selected.'}` : 'Select a measure above.')}</p>
-        <button className="mm-save" type="button" disabled={!selected || selected.is_marked_for_practice || saving} onClick={save}>{saving ? 'Saving…' : `Mark ${selected ? `measure ${selected.measure_number} ` : ''}for practice →`}</button>
         {message && <a className="mm-review-link" href="#/practice-review">Open practice review →</a>}</>}
       </main>
     </div>

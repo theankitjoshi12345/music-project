@@ -15,6 +15,7 @@ class ScoreSerializer(serializers.ModelSerializer):
             "instrument",
             "page_count",
             "available_offline",
+            "source_file",
             "passage_count",
         ]
 
