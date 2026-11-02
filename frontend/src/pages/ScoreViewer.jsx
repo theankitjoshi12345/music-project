@@ -56,7 +56,7 @@ export default function ScoreViewer() {
 
       {score && <>
         {viewer.isSample && <p className="viewer-sample">Sample score · No downloaded scores yet. This preview is not saved to your library.</p>}
-        <ScoreNavigation
+        {!sourceIsPdf && <ScoreNavigation
           page={viewer.page}
           pageCount={score.page_count}
           onPageChange={viewer.changePage}
@@ -65,10 +65,10 @@ export default function ScoreViewer() {
           onSectionChange={viewer.changeSection}
           context={context}
           measureRange={sourceIsPdf ? undefined : measureRange}
-        />
+        />}
         {sourceIsPdf ? <section className="viewer-pdf" aria-label={`Uploaded PDF page ${viewer.page}`}>
-          <div className="viewer-pdf-heading"><div><strong>Uploaded score</strong><span>Page {viewer.page} of {score.page_count}</span></div><a href={score.source_file} target="_blank" rel="noreferrer">Open PDF in a new tab ↗</a></div>
-          <iframe key={pdfPageUrl} src={pdfPageUrl} title={`${score.title}, page ${viewer.page}`}>
+          <div className="viewer-pdf-heading"><div><a className="viewer-back" href="#/score-library">← Library</a><strong>{score.title}</strong><span>Your score is ready to read.</span></div><a href={score.source_file} target="_blank" rel="noreferrer">Open in new tab ↗</a></div>
+          <iframe key={pdfPageUrl} src={score.source_file} title={`${score.title}`}>
             <a href={score.source_file}>Open the uploaded PDF.</a>
           </iframe>
         </section> : <>
@@ -84,10 +84,10 @@ export default function ScoreViewer() {
         {actionMessage && <p className="viewer-action-message" role="status">{actionMessage} <a href="#/practice-review">Open Practice Review →</a></p>}
         {actionError && <p className="viewer-error" role="alert">{actionError}</p>}
         </>}
-        <div className="viewer-bottom-row">
+        {!sourceIsPdf && <div className="viewer-bottom-row">
           <MeasureJump key={viewer.page} onJump={viewer.jumpToMeasure} />
           <p className="viewer-hint">Your place, at a glance. Use the page controls or jump to a section.</p>
-        </div>
+        </div>}
       </>}
     </AppLayout>
   )
