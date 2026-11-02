@@ -100,6 +100,27 @@ class ScoreApiTests(APITestCase):
             "status": "Use 'unresolved' or 'resolved'."
         })
 
+    def test_mock_users_have_separate_marks_for_the_same_passage(self):
+        alex = self.client.post(
+            "/api/practice-marks/", {"passage_id": self.passage.id}, format="json"
+        )
+        sam = self.client.post(
+            "/api/practice-marks/",
+            {"passage_id": self.passage.id, "note": "Sam practice plan"},
+            format="json",
+            HTTP_X_MOCK_USER="sam",
+        )
+
+        self.assertEqual(alex.status_code, 201)
+        self.assertEqual(sam.status_code, 201)
+        self.assertEqual(alex.json()["owner"], "alex")
+        self.assertEqual(sam.json()["owner"], "sam")
+
+        alex_marks = self.client.get("/api/practice-marks/")
+        sam_marks = self.client.get("/api/practice-marks/", HTTP_X_MOCK_USER="sam")
+        self.assertEqual([mark["owner"] for mark in alex_marks.json()], ["alex"])
+        self.assertEqual([mark["owner"] for mark in sam_marks.json()], ["sam"])
+
     def test_practice_review_preserves_each_scores_context_and_resolves_a_mark(self):
         first_mark = PracticeMark.objects.create(passage=self.passage, note="Keep rhythm even")
         second_mark = PracticeMark.objects.create(passage=self.other_passage, note="Review opening")

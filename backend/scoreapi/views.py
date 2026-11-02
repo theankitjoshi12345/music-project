@@ -33,13 +33,14 @@ class ScoreDetailView(APIView):
 class ScorePassageListView(APIView):
     def get(self, request, score_id):
         score = get_object_or_404(Score, pk=score_id)
-        passages = score.passages.select_related("practice_mark")
-        return Response(PassageSerializer(passages, many=True).data)
+        passages = score.passages.prefetch_related("practice_marks")
+        return Response(PassageSerializer(passages, many=True, context={"request": request}).data)
 
 
 class PracticeMarkListCreateView(APIView):
     def get(self, request):
-        marks = PracticeMark.objects.select_related("passage").all()
+        owner = request.headers.get("X-Mock-User", "alex")
+        marks = PracticeMark.objects.select_related("passage").filter(owner=owner)
         score_id = request.query_params.get("score")
         mark_status = request.query_params.get("status")
 
@@ -52,19 +53,20 @@ class PracticeMarkListCreateView(APIView):
         elif mark_status:
             raise ValidationError({"status": "Use 'unresolved' or 'resolved'."})
 
-        return Response(PracticeMarkSerializer(marks, many=True).data)
+        return Response(PracticeMarkSerializer(marks, many=True, context={"request": request}).data)
 
     def post(self, request):
-        serializer = PracticeMarkSerializer(data=request.data)
+        serializer = PracticeMarkSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        mark = serializer.save()
-        return Response(PracticeMarkSerializer(mark).data, status=status.HTTP_201_CREATED)
+        mark = serializer.save(owner=request.headers.get("X-Mock-User", "alex"))
+        return Response(PracticeMarkSerializer(mark, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
 class PracticeMarkDetailView(APIView):
     def patch(self, request, mark_id):
-        mark = get_object_or_404(PracticeMark, pk=mark_id)
-        serializer = PracticeMarkSerializer(mark, data=request.data, partial=True)
+        owner = request.headers.get("X-Mock-User", "alex")
+        mark = get_object_or_404(PracticeMark, pk=mark_id, owner=owner)
+        serializer = PracticeMarkSerializer(mark, data=request.data, partial=True, context={"request": request})
         serializer.is_valid(raise_exception=True)
         mark = serializer.save()
-        return Response(PracticeMarkSerializer(mark).data)
+        return Response(PracticeMarkSerializer(mark, context={"request": request}).data)

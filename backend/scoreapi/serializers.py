@@ -33,7 +33,9 @@ class PassageSerializer(serializers.ModelSerializer):
         ]
 
     def get_is_marked_for_practice(self, passage):
-        return hasattr(passage, "practice_mark")
+        request = self.context.get("request")
+        owner = request.headers.get("X-Mock-User", "alex") if request else "alex"
+        return passage.practice_marks.filter(owner=owner).exists()
 
 
 class PracticeMarkPassageSerializer(PassageSerializer):
@@ -57,6 +59,7 @@ class PracticeMarkSerializer(serializers.ModelSerializer):
         model = PracticeMark
         fields = [
             "id",
+            "owner",
             "passage",
             "passage_id",
             "note",
@@ -64,7 +67,8 @@ class PracticeMarkSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "passage", "created_at", "updated_at"]
+        read_only_fields = ["id", "owner", "passage", "created_at", "updated_at"]
+        validators = []
 
     def validate_note(self, value):
         return value.strip()
@@ -75,7 +79,9 @@ class PracticeMarkSerializer(serializers.ModelSerializer):
         if (
             self.instance is None
             and "passage" in attrs
-            and PracticeMark.objects.filter(passage=attrs["passage"]).exists()
+            and PracticeMark.objects.filter(
+                passage=attrs["passage"], owner=self.context["request"].headers.get("X-Mock-User", "alex")
+            ).exists()
         ):
             raise serializers.ValidationError(
                 {"passage_id": "This passage already has a practice mark."}

@@ -22,6 +22,9 @@
 
 .score-companion .viewer-brand { color: inherit; font-size: 22px; font-weight: 800; letter-spacing: -.02em; text-decoration: none; text-transform: uppercase; }
 .score-companion .viewer-brand span { margin-right: 6px; }
+.score-companion .viewer-header-meta { align-items: center; display: flex; gap: 18px; }
+.score-companion .mock-user-control { color: #fff; }
+.score-companion .mock-user-control select { border-color: #91a5ba; }
 .score-companion .viewer-status { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .score-companion .viewer-status i { background: #fff; border-radius: 50%; display: inline-block; height: 8px; margin-right: 7px; width: 8px; }
 .score-companion .viewer-layout { display: grid; gap: 36px; grid-template-columns: 196px minmax(0, 1fr); margin: 28px auto 0; max-width: 1440px; padding: 0 24px 36px; }
