@@ -1,5 +1,7 @@
 from django.test import SimpleTestCase
+from django.test import override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from unittest.mock import patch
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
@@ -100,6 +102,18 @@ class ScoreApiTests(APITestCase):
         self.assertFalse(Score.objects.filter(pk=self.score.id).exists())
         self.assertFalse(Passage.objects.filter(pk=self.passage.id).exists())
         self.assertFalse(PracticeMark.objects.filter(pk=mark.id).exists())
+
+    @override_settings(AUDIVERIS_COMMAND="/opt/audiveris")
+    @patch("scoreapi.views.extract_pdf_measures", return_value=[("Page 1", 1, 1), ("Page 1", 2, 1), ("Page 2", 3, 2)])
+    def test_pdf_extraction_replaces_passages_with_omr_result(self, extract_pdf):
+        score = Score.objects.create(title="Scan", movement="Scan", instrument="Piano", page_count=1, available_offline=True, source_file=SimpleUploadedFile("scan.pdf", b"%PDF"))
+        Passage.objects.create(score=score, section="Old", measure_number=1, page_number=1)
+        response = self.client.post(f"/api/scores/{score.id}/extract-measures/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["passage_count"], 3)
+        self.assertEqual(response.json()["page_count"], 2)
+        self.assertEqual(Passage.objects.filter(score=score).count(), 3)
+        extract_pdf.assert_called_once()
 
     def test_passages_are_limited_to_the_requested_score(self):
         response = self.client.get(f"/api/scores/{self.score.id}/passages/")

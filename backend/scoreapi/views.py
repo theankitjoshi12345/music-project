@@ -1,5 +1,7 @@
 from pathlib import Path
+import subprocess
 
+from django.conf import settings
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -9,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Passage, PracticeMark, Score
-from .score_extract import extract_musicxml_measures
+from .score_extract import OMRUnavailable, extract_musicxml_measures, extract_pdf_measures
 from .serializers import PassageCreateSerializer, PassageSerializer, PracticeMarkSerializer, ScoreSerializer
 
 
@@ -88,6 +90,27 @@ class ScoreDetailView(APIView):
             score.source_file.delete(save=False)
         score.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ScorePdfExtractionView(APIView):
+    """Replace a PDF score's passages with locally recognized OMR measures."""
+
+    def post(self, request, score_id):
+        score = get_object_or_404(Score, pk=score_id)
+        if not score.source_file.name.lower().endswith(".pdf"):
+            raise ValidationError({"score": "PDF measure extraction is only available for PDF scores."})
+        try:
+            measures = extract_pdf_measures(score.source_file.path, settings.AUDIVERIS_COMMAND)
+        except OMRUnavailable as error:
+            return Response({"detail": str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as error:
+            return Response({"detail": f"Could not extract measures: {error}"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        score.passages.all().delete()
+        Passage.objects.bulk_create([Passage(score=score, section=section, measure_number=number, page_number=page) for section, number, page in measures])
+        score.page_count = max(page for _, _, page in measures)
+        score.save(update_fields=["page_count"])
+        score = Score.objects.annotate(passage_count=Count("passages")).get(pk=score.pk)
+        return Response(ScoreSerializer(score).data)
 
 
 class ScorePassageListView(APIView):

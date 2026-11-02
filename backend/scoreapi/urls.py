@@ -5,6 +5,7 @@ from .views import (
     PracticeMarkListCreateView,
     ScoreDetailView,
     ScoreListView,
+    ScorePdfExtractionView,
     ScoreUploadView,
     ScorePassageListView,
     health_check,
@@ -17,6 +18,7 @@ urlpatterns = [
     path("scores/", ScoreListView.as_view(), name="score-list"),
     path("scores/upload/", ScoreUploadView.as_view(), name="score-upload"),
     path("scores/<int:score_id>/", ScoreDetailView.as_view(), name="score-detail"),
+    path("scores/<int:score_id>/extract-measures/", ScorePdfExtractionView.as_view(), name="score-pdf-extraction"),
     path(
         "scores/<int:score_id>/passages/",
         ScorePassageListView.as_view(),
