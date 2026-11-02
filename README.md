@@ -2,9 +2,11 @@
 
 Score Companion is a CMPS 453 team project for helping musicians open downloaded score parts, mark passages for practice, add a practice note, and review unresolved corrections.
 
-## P#9 status
+## P#10 local MVP
 
-The shared REST API and all four assigned screens are present in `main`: Logan's Offline Score Library, Ankit's Score Viewer & Navigation, Matthew's Measure Marker, and Jonathan's Practice Review. The revised Figma PDF is the primary UI reference.
+The shared REST API and all four assigned screens are present in `main`: Logan's Offline Score Library, Ankit's Score Viewer & Navigation, Matthew's Measure Marker, and Jonathan's Practice Review. The P#10 golden path is: open the downloaded score in the library, view the selected score, mark a measure for practice, then review or resolve that measure and return to its score context.
+
+The app uses local mock authentication, not production security. Choose **Alex Rivera** or **Sam Lee** in the Demo user selector. Practice marks are isolated by the selected mock user so the same passage can be marked independently for each demo user.
 
 ## Tech stack
 
@@ -62,6 +64,7 @@ API_CONTRACT.md           Shared REST endpoint and data contract
 python3.12 -m venv backend/.venv
 backend/.venv/bin/pip install -r backend/requirements.txt
 backend/.venv/bin/python backend/manage.py migrate
+backend/.venv/bin/python backend/manage.py loaddata demo_scores
 backend/.venv/bin/python backend/manage.py runserver
 ```
 
@@ -80,6 +83,14 @@ npm run dev
 ```
 
 Vite serves the app at `http://localhost:5173/`. Use the navigation links to visit each reserved route.
+
+### P#10 smoke test
+
+With both servers running, open `http://localhost:5173/#/score-library` on the
+`main` branch. Choose Alex Rivera, open the available score, visit Measure
+Marker, save one measure, and open Practice Review. Resolve the mark and use
+**Open passage** to return to the correct score context. Switch to Sam Lee to
+confirm that Alex's practice mark does not appear for the other mock user.
 
 ### Score Viewer (#24)
 
