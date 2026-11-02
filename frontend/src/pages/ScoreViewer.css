@@ -36,3 +36,9 @@
 .score-viewer .viewer-add-measure input { max-width:115px; }
 .score-viewer .viewer-add-measure button { background:var(--blue); color:#fff; padding:8px 14px; }
 .score-viewer .viewer-action-message { color:#176d41; font-weight:650; margin:16px 0 0; }
+.score-viewer .viewer-pdf { background:#fff; border:1px solid #d8e1ed; border-radius:16px; margin:22px 0; overflow:hidden; }
+.score-viewer .viewer-pdf-heading { align-items:center; background:#f5f8fc; border-bottom:1px solid #d8e1ed; display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; padding:12px 16px; }
+.score-viewer .viewer-pdf-heading div { display:grid; gap:2px; }
+.score-viewer .viewer-pdf-heading span { color:var(--muted); font-size:12px; }
+.score-viewer .viewer-pdf-heading a { color:var(--blue); font-size:13px; font-weight:700; }
+.score-viewer .viewer-pdf iframe { border:0; display:block; height:min(78vh, 920px); width:100%; }
