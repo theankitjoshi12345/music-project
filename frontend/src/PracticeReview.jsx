@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import './PracticeReview.css'
 import { scoreViewerHref } from './pages/scoreViewerData'
+import MockUserControl from './MockUserControl'
+import { mockUserHeaders, useMockSession } from './mockSession'
 
 const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
@@ -21,6 +23,7 @@ async function responseJson(response) {
 }
 
 function PracticeReview() {
+  const { user } = useMockSession()
   const [marks, setMarks] = useState(null)
   const [error, setError] = useState('')
   const [savingId, setSavingId] = useState(null)
@@ -31,6 +34,7 @@ function PracticeReview() {
     async function loadMarks() {
       try {
         const response = await fetch(`${apiBase}/practice-marks/`, {
+          headers: mockUserHeaders(user),
           signal: controller.signal,
         })
         const data = await responseJson(response)
@@ -49,7 +53,7 @@ function PracticeReview() {
 
     loadMarks()
     return () => controller.abort()
-  }, [])
+  }, [user])
 
   async function markResolved(mark) {
     setSavingId(mark.id)
@@ -58,7 +62,7 @@ function PracticeReview() {
     try {
       const response = await fetch(`${apiBase}/practice-marks/${mark.id}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...mockUserHeaders(user) },
         body: JSON.stringify({ is_resolved: true }),
       })
       const updatedMark = await responseJson(response)
@@ -96,6 +100,7 @@ function PracticeReview() {
           <span aria-hidden="true" />
           Offline ready
         </p>
+        <MockUserControl />
       </header>
 
       <div className="practice-review__layout">
@@ -117,7 +122,7 @@ function PracticeReview() {
         <main className="practice-review__content">
           <h1>Practice review</h1>
           <p className="practice-review__subtitle">
-            Review saved passages, practice, then resolve.
+            Review {user.name}'s saved passages, practice, then resolve.
           </p>
 
           {marks && (
