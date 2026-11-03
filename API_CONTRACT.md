@@ -1,8 +1,12 @@
 # Score Companion API Contract
 
-**Status:** Implemented on the 28-shared-api-contract feature branch. This is the shared backend contract for the P#9 React screens.
+**Status:** Implemented shared backend contract for the score library, reader,
+measure marker, and practice review.
 
-**Base URL:** http://127.0.0.1:8000/api
+**Base URL:** http://127.0.0.1:8000/api for the native Django server, or
+http://localhost:8080/api through Docker's Nginx frontend. The browser uses
+same-origin /api requests in both setups; Vite proxies them during native
+development. Docker does not publish the backend port separately.
 
 **Format:** JSON request and response bodies
 **Mock authentication:** The local app sends the selected demo user in the

@@ -5,11 +5,15 @@ measure-image pipeline in [MR !26](https://gitlab.com/ull-gitlab/453/fa26/fa26-t
 
 ## System boundaries
 
-Score Companion runs a React/Vite browser client and a Django REST Framework API.
+Score Companion runs a React browser client and a Django REST Framework API.
 SQLite stores score metadata, detected measures, extraction state, and practice
 marks. Original uploads live on the backend filesystem. Audiveris and Poppler
 run locally as subprocesses; there is no paid recognition API or deployed cloud
 worker in the current implementation.
+
+There are two supported startup options: native development with Vite and Django,
+and Docker Compose with a built React frontend behind Nginx and a Gunicorn API.
+Both use the same application code and recognition pipeline.
 
 ~~~mermaid
 flowchart LR
@@ -32,6 +36,56 @@ flowchart LR
 During development Vite serves the browser on port 5173 and proxies both /api
 and /media to Django at 127.0.0.1:8000. The browser therefore uses one origin,
 including when opening the app through Vite's private-network address.
+
+## Docker startup and service boundaries
+
+From the repository root, `docker compose up --build -d --wait` builds and starts
+the complete application at http://localhost:8080/. Docker is the only required
+host runtime for this option. The Compose file defines:
+
+| Service | Responsibilities | Network and storage |
+| --- | --- | --- |
+| frontend | Node build stage; Nginx serves the built React assets, original uploads and Django static files; proxies /api and /admin | Host port 8080 by default; read-only app-data mount |
+| backend | Python 3.12, Django/Gunicorn, Poppler, Audiveris 5.11.0 and bundled Java | Internal port 8000 only; writable app-data mount |
+
+The frontend starts after the backend health check succeeds. Both services have
+health checks, and Compose's wait option checks API readiness through the proxy.
+The port and bind address can be changed without editing application code.
+The default bind address is 127.0.0.1; LAN use requires changing it and including
+the private IP in Django's allowed hosts. No Vite server runs in Docker.
+
+The backend uses the official checksum-verified Ubuntu 24.04 x86_64 Audiveris
+installer. Its bundled Java and native libraries stay in the Linux image.
+Because this release has no Linux ARM installer, Compose sets the backend
+platform to linux/amd64. Apple Silicon Docker Desktop runs that service through
+emulation; the frontend image is built for the host architecture.
+
+The backend runs as an unprivileged app user. Its entrypoint creates persistent
+media and static directories, generates a Django secret key once, applies
+migrations, collects static files, and starts Gunicorn with one process and four
+threads. Docker allows 600 seconds for Audiveris, with 720-second Gunicorn/Nginx
+timeouts for the current synchronous recognition flow. Native development keeps
+the 300-second Audiveris default. They do not introduce a background queue or a global OMR
+concurrency limit. The JVM heap is capped at 1 GB and uses two logical processors.
+Java runs headless with fixed display scaling so Audiveris skips GTK monitor
+detection in the container. The build checks that its CLI starts as the app user.
+
+The named app-data volume stores /data/db.sqlite3, /data/media, /data/static,
+and /data/django-secret-key. Container replacement and Compose down preserve the
+volume. Explicit volume removal erases this Docker state. Native development
+continues to use backend/db.sqlite3 and backend/media by default, so the two
+startup options can run concurrently with independent libraries.
+
+Django settings accept DJANGO_DEBUG, DJANGO_ALLOWED_HOSTS, DJANGO_DATA_DIR,
+DJANGO_SECRET_KEY and DJANGO_SECRET_KEY_FILE. The file setting takes precedence
+when provided. Compose disables DEBUG and uses the generated secret file;
+the native defaults retain the existing development behavior. Nginx serves media
+and collected static files when DEBUG is false.
+
+The build context excludes host data, the Mac .local-tools runtime, environment
+files, virtual environments, node_modules and course reports. The source remains
+the same checkout; the container gets its own Linux runtime. See
+[third-party notices](THIRD_PARTY_NOTICES.md) for the installer and source links.
 
 ## User flow
 
@@ -86,8 +140,10 @@ detected notes.
 - Repeated manual passage creation returns the existing passage on the same page.
   A conflicting page returns 409; an out-of-range page returns 400.
 
-SQLite and backend/media are local state and are excluded from Git. Tests use a
-temporary media directory and do not populate the live library with sample files.
+SQLite and uploaded media are runtime state and are excluded from Git and Docker
+builds. Native development stores them under backend; Compose stores them in the
+app-data volume. Tests use separate database and media storage and do not populate
+the user's library with sample files.
 
 ## PDF recognition and layout import
 
@@ -174,17 +230,20 @@ permits same-origin embedding.
 | PDF recognition | Maximum 10 pages |
 | Page-count inspection | 15-second timeout |
 | PDF rasterization | 60-second timeout |
-| Audiveris recognition | 300-second timeout |
+| Audiveris recognition | 300-second native timeout; 600 seconds in Docker for emulation headroom |
 | One image render | 30-second timeout |
 
-Audiveris discovery checks AUDIVERIS_COMMAND, then PATH, then the macOS application
+Native Audiveris discovery checks AUDIVERIS_COMMAND, then PATH, then the macOS application
 paths configured in backend/config/settings.py. A mounted installer is not the
 runtime. Local binaries under .local-tools are excluded from Git and must be
-installed separately on another machine.
+installed separately for native development on another machine. Docker sets
+AUDIVERIS_COMMAND to /opt/audiveris/bin/Audiveris inside its backend image, so the
+Docker host does not need a separate Audiveris, Java or Poppler installation.
 
 Audiveris is an external AGPL-3.0 application; its source and license are available
 in the [upstream repository](https://github.com/Audiveris/audiveris). No Audiveris
-binary is bundled in this repository.
+binary is committed to this repository. The Docker build downloads the official
+installer and retains its license material in the resulting image.
 
 ## Implementation map
 
@@ -202,25 +261,35 @@ binary is bundled in this repository.
 | backend/scoreapi/pdf_render.py | Original PDF page and measure PNG rendering |
 | backend/scoreapi/views.py | API operations and image responses |
 | backend/scoreapi/migrations/ | Persistent schema changes |
+| Dockerfile, compose.yaml | Frontend/backend image builds, health checks, networking and persistent volume |
+| docker/entrypoint.sh | First-run setup, migrations and Gunicorn startup |
+| docker/nginx.conf | Built frontend, same-origin API proxy and persistent media/static serving |
+| backend/config/settings.py | Native defaults and Docker environment overrides |
 
 See [README.md](README.md) for startup and user testing, and
 [API_CONTRACT.md](API_CONTRACT.md) for endpoint payloads and error responses.
 
 ## Verification and remaining boundaries
 
-A Playwright browser acceptance check uploaded the real two-page demo PDF into
-an isolated database and ran actual Audiveris recognition. It clicked every
-detected measure and verified all 56 distinct notation images loaded. Both
-full-page images and their clickable measure regions worked. Selected crops
-were visually compared with the original notation.
+On November 3, 2026, both startup options passed browser acceptance with the real
+two-page demo PDF. Native testing started fresh Django and Vite processes with an
+isolated data directory. Docker testing built and started both Compose services,
+then exercised the same flow through Nginx and Gunicorn with DEBUG disabled.
+Both ran actual Audiveris recognition, clicked every detected measure, and loaded
+all 56 distinct notation images. Both full-page images and their clickable
+regions worked. Selected crops and browser screenshots were visually checked.
 
 The browser check also saved and resolved a practice mark, returned from Practice
 Review to its exact measure and page, verified demo-user isolation, reused an
 identical upload without losing practice data, and deleted the disposable score,
 its source file, passages, and marks. No browser exceptions or failed application
-requests occurred. The user's database and uploads were kept separate from this
-fresh-upload check. All 30 backend tests, 17 frontend tests, migration checks,
-and the production build pass.
+requests occurred in the passing acceptance runs. Compose down followed by a
+fresh one-command startup preserved the exact PDF, all 56 passages, the resolved
+practice mark and the generated secret key. The saved passage loaded in the
+browser after recreation. Nginx served original PDFs and collected admin assets
+with DEBUG disabled. Disposable test records were deleted afterward; the native
+library stayed separate from test data. All 30 backend tests pass in both
+runtimes; 17 frontend tests, migration checks and the production build pass.
 
 Production authentication, durable cloud storage, cloud deployment, a background
 queue, guaranteed OMR accuracy, actual offline browser caching, and note-level
