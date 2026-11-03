@@ -37,7 +37,9 @@ export default function useScoreViewer(user) {
           setPage(startingPage)
           setFocusedPassageId(Number(query.get('passage')) || result.passages.find((item) => item.page_number === startingPage)?.id || null)
           setLoading(false)
-          if (query.get('extract') === '1' && result.score?.extraction_status === 'not_started' && result.score.source_file?.toLowerCase().endsWith('.pdf')) {
+          const pdfNeedsPreviews = result.score?.source_file?.toLowerCase().endsWith('.pdf') &&
+            (result.score.extraction_status === 'not_started' || (result.score.extraction_status === 'complete' && !result.score.measure_layout_version))
+          if (pdfNeedsPreviews) {
             setExtracting(true)
             try {
               await requestExtraction(result.score.id, { 'X-Mock-User': user.id })
@@ -107,6 +109,10 @@ export default function useScoreViewer(user) {
       setPage(match.page_number)
       setFocusedPassageId(match.id)
       return ''
+    },
+    selectPassage(passage) {
+      setPage(passage.page_number)
+      setFocusedPassageId(passage.id)
     },
     retry() { setRetry((value) => value + 1) },
     async extractMeasures() {

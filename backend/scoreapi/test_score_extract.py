@@ -1,5 +1,6 @@
 from pathlib import Path
 import subprocess
+import struct
 from unittest.mock import patch
 from zipfile import ZipFile
 
@@ -26,6 +27,9 @@ class PDFExtractionTests(SimpleTestCase):
                     folder.mkdir()
                     with ZipFile(folder / f"{stem}.mxl", "w") as archive:
                         archive.writestr("score.xml", '<score-partwise><part><measure number="1"/></part></score-partwise>')
+                    with ZipFile(folder / f"{stem}.omr", "w") as archive:
+                        archive.writestr("sheet#1/sheet#1.xml", '<sheet><page><system><stack id="1" left="100" right="500"/><part><staff><lines><line><point x="100" y="300"/><point x="500" y="300"/></line><line><point x="100" y="320"/><point x="500" y="320"/></line></lines></staff></part></system></page></sheet>')
+                        archive.writestr("sheet#1/BINARY.png", b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR" + struct.pack(">II", 1000, 1400))
             return subprocess.CompletedProcess(args, 0, stdout="")
 
         run.side_effect = command
@@ -33,6 +37,8 @@ class PDFExtractionTests(SimpleTestCase):
         self.assertEqual(result.page_count, 10)
         self.assertEqual(result.measures[1], ("Page 2", 2, 2))
         self.assertEqual(result.measures[-1], ("Page 10", 10, 10))
+        self.assertAlmostEqual(result.regions[("Page 2", 2, 2)]["x"], 0.09)
+        self.assertGreater(result.regions[("Page 2", 2, 2)]["height"], 0)
 
     @patch("scoreapi.score_extract.shutil.which", side_effect=lambda command: command)
     @patch("scoreapi.score_extract.subprocess.run")

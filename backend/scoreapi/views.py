@@ -1,6 +1,8 @@
 from pathlib import Path
+import subprocess
 
 from django.db import IntegrityError
+from django.http import HttpResponse
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -14,6 +16,7 @@ from .extraction_service import ExtractionBusy, extract_score_measures
 from .score_extract import OMRUnavailable, extract_musicxml_measures
 from .serializers import PassageCreateSerializer, PassageSerializer, PracticeMarkSerializer, ScoreSerializer, ScoreUploadMetadataSerializer
 from .upload_service import store_upload
+from .pdf_render import render_pdf
 
 
 @api_view(["GET"])
@@ -131,6 +134,32 @@ class ScorePassageListView(APIView):
             return Response({"detail": "That measure is already saved on a different page."}, status=status.HTTP_409_CONFLICT)
         return Response(PassageSerializer(passage, context={"request": request}).data,
                         status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+class ScorePageImageView(APIView):
+    def get(self, request, score_id, page_number):
+        score = get_object_or_404(Score, pk=score_id)
+        if not score.source_file.name.lower().endswith(".pdf") or not 1 <= page_number <= score.page_count:
+            return Response({"detail": "That PDF page is not available."}, status=404)
+        return pdf_image_response(score, page_number)
+
+
+class PassagePreviewView(APIView):
+    def get(self, request, passage_id):
+        passage = get_object_or_404(Passage.objects.select_related("score"), pk=passage_id)
+        if not passage.bounding_box:
+            return Response({"detail": "This measure has no saved position. Extract measure previews first."}, status=409)
+        return pdf_image_response(passage.score, passage.page_number, passage.bounding_box)
+
+
+def pdf_image_response(score, page_number, region=None):
+    try:
+        image = render_pdf(score.source_file.path, page_number, region)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return Response({"detail": "The score image could not be loaded. Check the PDF and retry."}, status=422)
+    response = HttpResponse(image, content_type="image/png")
+    response["Cache-Control"] = "private, max-age=300"
+    return response
 
 
 class PracticeMarkListCreateView(APIView):

@@ -47,6 +47,8 @@ authentication.
 | page_number | integer | Positive score page number |
 | movement | string | Included in practice-mark passage context for review display |
 | score_id | integer | Included in practice-mark passage context so Open passage targets the correct score |
+| bounding_box | object or null | Normalized x/y/width/height and recognition image dimensions for the actual PDF measure |
+| preview_url | string or null | PNG crop of the original notation; null until layout extraction is complete |
 
 A score cannot have duplicate section and measure_number combinations.
 
@@ -113,6 +115,21 @@ Score responses include `extraction_status` (`not_started`, `processing`,
 `complete`, or `failed`) and `extraction_error`. Clients may poll the score detail
 while processing and retry after failure. The browser starts extraction after
 a PDF upload and displays the returned passages next to the PDF.
+The importer retains Audiveris measure-stack geometry. `measure_layout_version`
+is 1 after these regions are stored. Older imports with version 0 are upgraded
+on the next extraction, preserving passage IDs and practice notes.
+
+### GET /api/passages/{id}/preview/
+
+Renders the selected measure's notation from the original PDF as image/png.
+Returns 409 when no saved region exists, 404 for an unknown passage, and 422
+when the original PDF cannot render. The serialized URL includes a geometry
+version query so updated crops cannot reuse an older browser-cached image.
+
+### GET /api/scores/{id}/pages/{page_number}/image/
+
+Renders one complete PDF page as image/png for consistent in-app viewing and
+measure overlays. A page outside the score returns 404.
 
 ### POST /api/scores/upload/
 

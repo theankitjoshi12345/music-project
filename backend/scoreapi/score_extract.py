@@ -5,13 +5,14 @@ guessing. A PDF is visual notation and needs an OMR engine to identify measures;
 the upload workflow keeps those parts available for manual measure setup instead.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from io import BytesIO
 from pathlib import Path
 import re
 import shutil
 import subprocess
 import tempfile
+import struct
 from zipfile import BadZipFile, ZipFile
 from xml.etree import ElementTree
 
@@ -24,6 +25,51 @@ class OMRUnavailable(RuntimeError):
 class PDFExtraction:
     measures: list
     page_count: int
+    regions: dict = field(default_factory=dict)
+
+
+def extract_measure_regions(omr_path):
+    """Read original-image coordinates from Audiveris measure stacks.
+
+    Stack IDs match the exported MusicXML measure numbers. A stack spans all
+    staves in a system, so piano previews include both hands. Coordinates are
+    normalized to the PNG size used for recognition.
+    """
+    with ZipFile(omr_path) as archive:
+        sheet_path = next((name for name in archive.namelist()
+                           if re.fullmatch(r"sheet#\d+/sheet#\d+\.xml", name)), None)
+        if not sheet_path:
+            raise ValueError("Recognition did not provide a page layout.")
+        root = ElementTree.fromstring(archive.read(sheet_path))
+        png_name = sheet_path.rsplit("/", 1)[0] + "/BINARY.png"
+        image = archive.read(png_name)
+        if image[:8] != b"\x89PNG\r\n\x1a\n":
+            raise ValueError("Recognition returned an invalid page image.")
+        width, height = struct.unpack(">II", image[16:24])
+    regions = {}
+    for system in root.findall("./page/system"):
+        staves = system.findall("./part/staff")
+        points = [point for staff in staves for point in staff.findall("./lines/line/point")]
+        if not points:
+            continue
+        ys = [float(point.get("y")) for point in points]
+        lines = staves[0].findall("./lines/line")
+        line_ys = [sum(float(point.get("y")) for point in line.findall("point")) / len(line.findall("point"))
+                   for line in lines if line.findall("point")]
+        interline = (max(line_ys) - min(line_ys)) / max(1, len(line_ys) - 1)
+        # Include ledger lines, dynamics and articulation marks around the staff.
+        top = max(0, min(ys) - 8 * interline)
+        bottom = min(height, max(ys) + 5 * interline)
+        for stack in system.findall("stack"):
+            if stack.get("special") == "CAUTIONARY":
+                continue
+            left = max(0, float(stack.get("left")) - interline / 2)
+            right = min(width, float(stack.get("right")) + interline / 2)
+            if right > left and bottom > top:
+                regions[stack.get("id")] = {"x": left / width, "y": top / height,
+                    "width": (right - left) / width, "height": (bottom - top) / height,
+                    "image_width": width, "image_height": height}
+    return regions
 
 
 def _xml_bytes(uploaded_file, suffix):
@@ -109,8 +155,9 @@ def extract_pdf_measures(pdf_path, audiveris_command, *, timeout=300, max_pages=
             raise ValueError("The PDF did not contain any renderable pages.")
         output = work_path / "output"
         output.mkdir()
-        subprocess.run([executable, "-batch", "-transcribe", "-export", "-output", str(output), "--", *map(str, images)], check=True, capture_output=True, text=True, timeout=timeout)
+        subprocess.run([executable, "-batch", "-save", "-transcribe", "-export", "-output", str(output), "--", *map(str, images)], check=True, capture_output=True, text=True, timeout=timeout)
         extracted = []
+        regions = {}
         number = 0
         for image in images:
             page_number = int(image.stem.split("-")[-1])
@@ -120,9 +167,21 @@ def extract_pdf_measures(pdf_path, audiveris_command, *, timeout=300, max_pages=
             path = exports[0]
             with path.open("rb") as musicxml:
                 page_measures = extract_musicxml_measures(musicxml)
-            for _ in page_measures:
+                musicxml.seek(0)
+                xml_root = ElementTree.fromstring(_xml_bytes(musicxml, ".mxl"))
+            part = next(element for element in xml_root if element.tag.rsplit("}", 1)[-1] == "part")
+            measure_ids = [element.get("number", "") for element in part if element.tag.rsplit("}", 1)[-1] == "measure"]
+            layouts = list(output.rglob(f"{image.stem}.omr"))
+            if not layouts:
+                raise ValueError(f"No measure positions were saved for PDF page {page_number}.")
+            page_regions = extract_measure_regions(layouts[0])
+            for measure_id, _ in zip(measure_ids, page_measures, strict=True):
+                if measure_id not in page_regions:
+                    raise ValueError(f"The position of measure {measure_id} on page {page_number} could not be found.")
                 number += 1
-                extracted.append((f"Page {page_number}", number, page_number))
+                key = (f"Page {page_number}", number, page_number)
+                extracted.append(key)
+                regions[key] = page_regions[measure_id]
         if not extracted:
             raise ValueError("Audiveris did not identify any measures in this PDF.")
-        return PDFExtraction(extracted, page_count)
+        return PDFExtraction(extracted, page_count, regions)

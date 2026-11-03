@@ -20,19 +20,19 @@ class ExtractionBusy(RuntimeError):
 
 def extract_score_measures(score_id):
     score = Score.objects.get(pk=score_id)
-    if score.extraction_state == "complete":
+    if score.extraction_state == "complete" and score.measure_layout_version >= 1:
         return score
 
     now = timezone.now()
     stale_before = now - timedelta(seconds=settings.OMR_TIMEOUT_SECONDS + 90)
     # A conditional UPDATE is atomic on SQLite too. A second tab cannot launch
     # a second OMR job for this score. Crashed requests can retry after expiry.
-    claimed = Score.objects.filter(pk=score_id).exclude(extraction_state="complete").exclude(
+    claimed = Score.objects.filter(pk=score_id).exclude(extraction_state="complete", measure_layout_version__gte=1).exclude(
         extraction_state="processing", extraction_updated_at__gt=stale_before,
     ).update(extraction_state="processing", extraction_error="", extraction_updated_at=now)
     if not claimed:
         latest = Score.objects.get(pk=score_id)
-        if latest.extraction_state == "complete":
+        if latest.extraction_state == "complete" and latest.measure_layout_version >= 1:
             return latest
         raise ExtractionBusy("Measures are already being extracted for this score.")
 
@@ -46,11 +46,12 @@ def extract_score_measures(score_id):
                 # Preserve passage IDs and attached notes on retry/import.
                 Passage.objects.update_or_create(
                     score_id=score_id, section=section, measure_number=number,
-                    defaults={"page_number": page},
+                    defaults={"page_number": page, "bounding_box": result.regions.get((section, number, page))},
                 )
             Score.objects.filter(pk=score_id).update(
                 page_count=result.page_count, extraction_state="complete",
                 extraction_error="", extraction_updated_at=timezone.now(),
+                measure_layout_version=1 if result.regions else 0,
             )
     except Score.DoesNotExist:
         raise

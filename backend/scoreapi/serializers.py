@@ -1,4 +1,6 @@
 from rest_framework import serializers
+import hashlib
+import json
 
 from .models import Passage, PracticeMark, Score
 
@@ -29,6 +31,7 @@ class ScoreSerializer(serializers.ModelSerializer):
             "passage_count",
             "extraction_status",
             "extraction_error",
+            "measure_layout_version",
         ]
 
     def get_extraction_status(self, score):
@@ -42,6 +45,7 @@ class ScoreSerializer(serializers.ModelSerializer):
 
 class PassageSerializer(serializers.ModelSerializer):
     is_marked_for_practice = serializers.SerializerMethodField()
+    preview_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Passage
@@ -51,7 +55,15 @@ class PassageSerializer(serializers.ModelSerializer):
             "measure_number",
             "page_number",
             "is_marked_for_practice",
+            "bounding_box",
+            "preview_url",
         ]
+
+    def get_preview_url(self, passage):
+        if not passage.bounding_box:
+            return None
+        version = hashlib.sha256(json.dumps(passage.bounding_box, sort_keys=True).encode()).hexdigest()[:12]
+        return f"/api/passages/{passage.id}/preview/?v={version}"
 
     def get_is_marked_for_practice(self, passage):
         request = self.context.get("request")
