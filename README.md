@@ -11,9 +11,11 @@ The app uses local mock authentication, not production security. Choose **Alex R
 Use **Add to library** to upload a PDF, MusicXML, XML, or MXL file (up to 10 MB).
 PDF uploads open the reader and start local Audiveris recognition automatically.
 Detected measures appear next to the PDF, grouped by page. Use **+ Practice** to
-save a measure, then **Practice review** to revisit it. Check recognition results
-against the original score; the detected list does not locate precise clickable
-regions inside the PDF. MusicXML/XML/MXL uploads import structured metadata directly.
+save a measure, then **Practice review** to revisit it. Selecting a measure opens
+its actual music cropped from the uploaded PDF, including all instrument staves
+in that measure. **Full page** displays the original page with clickable measure
+regions. Check recognition boundaries and numbering against the original score.
+MusicXML/XML/MXL uploads import structured metadata directly.
 
 The reader reports extraction progress and provides a retry action on failure. Use
 **Delete score** to remove an uploaded score, its local file, its measures, and
@@ -25,6 +27,8 @@ are stored separately. Database failures clean up the newly written file.
 
 Uploaded PDFs display directly in the Score Viewer. Use the viewer page controls
 to move through the document or open the original PDF in a new tab.
+Existing PDFs imported without page coordinates automatically prepare previews
+when opened. Existing practice marks retain their passage IDs during this upgrade.
 
 ### Optional local PDF measure extraction
 

@@ -101,11 +101,13 @@ test('multiple measure-jump forms keep distinct accessible label associations', 
 
 test('PDF reader exposes actual detected measures, saved state, and the correct PDF page', () => {
   const html = renderToStaticMarkup(h(PdfScoreReader, {
-    score: { id: 6, title: 'Uploaded part', source_file: '/media/part.pdf', page_count: 2, extraction_status: 'complete' },
-    passages: [{ id: 40, measure_number: 29, page_number: 1 }, { id: 41, measure_number: 30, page_number: 2, is_marked_for_practice: true }],
+    score: { id: 6, title: 'Uploaded part', source_file: '/media/part.pdf', page_count: 2, extraction_status: 'complete', measure_layout_version: 1 },
+    passages: [{ id: 40, measure_number: 29, page_number: 1 }, { id: 41, measure_number: 30, page_number: 2, is_marked_for_practice: true, preview_url: '/api/passages/41/preview/' }],
     page: 2, savingId: null, onPageChange() {}, onSelect() {}, onSave() {},
   }))
-  assert.match(html, /src="\/media\/part.pdf#page=2&amp;view=FitH"/)
+  assert.match(html, /href="\/media\/part.pdf#page=2&amp;view=FitH"/)
+  assert.match(html, /src="\/api\/passages\/41\/preview\/"/)
+  assert.match(html, /Music notation for measure 30, page 2/)
   assert.match(html, /2 measures detected/)
   assert.match(html, /Measure 30 saved to practice/)
   assert.doesNotMatch(html, /Measure 29|Illustrative notation|Extract measures/)

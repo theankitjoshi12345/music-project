@@ -15,6 +15,11 @@ from .score_extract import OMRUnavailable, PDFExtraction
 from .upload_service import store_upload
 
 
+def recognized_pdf(measures, page_count):
+    box = {"x": 0.1, "y": 0.2, "width": 0.3, "height": 0.4, "image_width": 1000, "image_height": 1400}
+    return PDFExtraction(measures, page_count, {measure: box for measure in measures})
+
+
 class HealthCheckTests(SimpleTestCase):
     def test_health_check_endpoint(self):
         response = self.client.get(reverse("scoreapi:health-check"))
@@ -189,7 +194,7 @@ class ScoreApiTests(APITestCase):
         self.assertFalse(PracticeMark.objects.filter(pk=mark.id).exists())
 
     @override_settings(AUDIVERIS_COMMAND="/opt/audiveris")
-    @patch("scoreapi.extraction_service.extract_pdf_measures", return_value=PDFExtraction([("Page 1", 1, 1), ("Page 1", 2, 1), ("Page 2", 3, 2)], 2))
+    @patch("scoreapi.extraction_service.extract_pdf_measures", return_value=recognized_pdf([("Page 1", 1, 1), ("Page 1", 2, 1), ("Page 2", 3, 2)], 2))
     def test_pdf_extraction_preserves_existing_passages_and_practice_marks(self, extract_pdf):
         score = Score.objects.create(title="Scan", movement="Scan", instrument="Piano", page_count=1, available_offline=True, source_file=SimpleUploadedFile("scan.pdf", b"%PDF"))
         passage = Passage.objects.create(score=score, section="Page 1", measure_number=1, page_number=1)
@@ -199,6 +204,9 @@ class ScoreApiTests(APITestCase):
         self.assertEqual(response.json()["passage_count"], 3)
         self.assertEqual(response.json()["page_count"], 2)
         self.assertEqual(response.json()["extraction_status"], "complete")
+        self.assertEqual(response.json()["measure_layout_version"], 1)
+        passage.refresh_from_db()
+        self.assertIsNotNone(passage.bounding_box)
         self.assertEqual(Passage.objects.filter(score=score).count(), 3)
         mark.refresh_from_db()
         self.assertEqual(mark.passage_id, passage.id)
@@ -234,7 +242,7 @@ class ScoreApiTests(APITestCase):
         response = self.client.get(f"/api/scores/{self.score.id}/")
         self.assertEqual(response.json()["extraction_status"], "not_started")
 
-    @patch("scoreapi.extraction_service.extract_pdf_measures", return_value=PDFExtraction([("Page 1", 1, 1)], 1))
+    @patch("scoreapi.extraction_service.extract_pdf_measures", return_value=recognized_pdf([("Page 1", 1, 1)], 1))
     def test_interrupted_job_can_be_retried_instead_of_showing_progress_forever(self, extract_pdf):
         self.score.source_file = "scores/scan.pdf"
         self.score.extraction_state = "processing"
@@ -257,8 +265,37 @@ class ScoreApiTests(APITestCase):
                 "measure_number": 24,
                 "page_number": 2,
                 "is_marked_for_practice": False,
+                "bounding_box": None,
+                "preview_url": None,
             }
         ])
+
+    @patch("scoreapi.views.render_pdf", return_value=b"\x89PNG\r\n\x1a\npreview")
+    def test_measure_preview_serves_the_original_score_region(self, render):
+        self.score.source_file = "scores/part.pdf"
+        self.score.save()
+        box = recognized_pdf([("B", 24, 2)], 4).regions[("B", 24, 2)]
+        self.passage.bounding_box = box
+        self.passage.save()
+        response = self.client.get(f"/api/passages/{self.passage.id}/preview/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/png")
+        self.assertEqual(response.content, b"\x89PNG\r\n\x1a\npreview")
+        render.assert_called_once_with(self.score.source_file.path, 2, box)
+
+    def test_unmapped_measure_reports_missing_position_instead_of_fake_notation(self):
+        response = self.client.get(f"/api/passages/{self.passage.id}/preview/")
+        self.assertEqual(response.status_code, 409)
+
+    @patch("scoreapi.views.render_pdf", return_value=b"\x89PNG\r\n\x1a\npage")
+    def test_score_page_images_validate_page_number(self, render):
+        self.score.source_file = "scores/part.pdf"
+        self.score.save()
+        response = self.client.get(f"/api/scores/{self.score.id}/pages/2/image/")
+        self.assertEqual(response.status_code, 200)
+        invalid = self.client.get(f"/api/scores/{self.score.id}/pages/9/image/")
+        self.assertEqual(invalid.status_code, 404)
+        render.assert_called_once_with(self.score.source_file.path, 2, None)
 
     def test_create_mark_and_filter_unresolved_marks(self):
         response = self.client.post(

@@ -52,7 +52,7 @@
 
 .score-viewer .pdf-reader { align-items:start; display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:20px; margin-top:24px; }
 .score-viewer .pdf-reader .viewer-pdf { margin:0; }
-.score-viewer .pdf-page-controls { align-items:center; display:flex; flex-direction:row; gap:8px; }
+.score-viewer .viewer-pdf-heading .pdf-page-controls { align-items:center; display:flex; flex-direction:row; gap:8px; }
 .score-viewer .pdf-page-controls label { color:var(--muted); font-size:13px; white-space:nowrap; }
 .score-viewer .pdf-page-controls select { padding:5px; }
 .score-viewer .pdf-page-controls button { font-size:22px; padding:2px 10px; }
@@ -69,3 +69,17 @@
 .score-viewer .pdf-review-link { color:var(--blue); display:block; font-size:13px; font-weight:700; margin-top:18px; text-decoration:none; }
 .score-viewer .pdf-measures .pdf-extract { background:#315fc8; color:white; padding:10px 14px; width:100%; }
 @media(max-width:850px) { .score-viewer .pdf-reader { grid-template-columns:1fr; } .score-viewer .pdf-measure-list { max-height:320px; } .score-viewer .viewer-pdf iframe { height:65vh; } }
+.score-viewer .pdf-view-options { display:flex; gap:8px; border-bottom:1px solid #e1e7ef; padding:12px 16px; }
+.score-viewer .pdf-view-options button { background:#f1f5fa; color:#52677f; padding:8px 12px; }
+.score-viewer .pdf-view-options button[aria-current="true"] { background:#315fc8; color:white; }
+.score-viewer .pdf-selected-measure { min-height:350px; padding:24px; }
+.score-viewer .pdf-selected-measure h2 { font-size:18px; margin:0 0 24px; }
+.score-viewer .pdf-selected-measure img { display:block; height:auto; width:auto; max-width:100%; max-height:60vh; margin:0 auto; object-fit:contain; }
+.score-viewer .pdf-image-status { color:#64748b; font-size:13px; padding:8px 0; }
+.score-viewer .pdf-page-image { position:relative; background:white; }
+.score-viewer .pdf-page-image img { display:block; height:auto; width:100%; }
+.score-viewer .pdf-page-image > .pdf-image-status { position:absolute; left:16px; top:0; }
+.score-viewer .pdf-measure-overlays { position:absolute; inset:0; pointer-events:none; }
+.score-viewer .pdf-measure-overlays button { position:absolute; background:transparent; border:1px solid transparent; border-radius:2px; padding:0; pointer-events:auto; }
+.score-viewer .pdf-measure-overlays button.is-selected { border:2px solid #315fc8; background:rgba(49,95,200,.07); }
+.score-viewer .pdf-measure-overlays button:hover { border:2px solid #315fc8; background:rgba(49,95,200,.12); }

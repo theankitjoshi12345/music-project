@@ -26,6 +26,7 @@ class Score(models.Model):
     ])
     extraction_error = models.CharField(max_length=500, blank=True)
     extraction_updated_at = models.DateTimeField(null=True, blank=True)
+    measure_layout_version = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ["title", "movement", "instrument"]
@@ -48,6 +49,7 @@ class Passage(models.Model):
     section = models.CharField(max_length=80)
     measure_number = models.PositiveIntegerField()
     page_number = models.PositiveIntegerField()
+    bounding_box = models.JSONField(null=True, blank=True)
 
     class Meta:
         ordering = ["page_number", "section", "measure_number"]

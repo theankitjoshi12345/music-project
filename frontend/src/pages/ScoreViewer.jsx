@@ -18,8 +18,8 @@ export default function ScoreViewer() {
 
   useEffect(() => {
     if (!viewer.focusedPassageId) return
-    document.getElementById(`measure-${viewer.focusedPassageId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [viewer.focusedPassageId, viewer.page])
+    document.getElementById(`measure-${viewer.focusedPassageId}`)?.scrollIntoView({ behavior: 'smooth', block: sourceIsPdf ? 'nearest' : 'center' })
+  }, [viewer.focusedPassageId, viewer.page, sourceIsPdf])
 
   async function saveForPractice(passage) {
     setSavingId(passage.id); setActionError(''); setActionMessage('')
@@ -43,9 +43,9 @@ export default function ScoreViewer() {
     <AppLayout className="score-viewer" status={viewer.isSample ? 'Sample score' : 'Score viewer'} activeHref="#/score-library" headingId="score-title" busy={viewer.loading}>
       <ScreenHeading
         id="score-title"
-        byline="Score viewer & navigation · Ankit Joshi"
-        title={score ? score.movement + ' — ' + score.instrument : 'Your score'}
-        subtitle={score ? (score.title === score.movement ? 'Find your place. Pick up where rehearsal left off.' : score.title) : 'Open a part and find your place.'}
+        byline={sourceIsPdf ? 'Score' : 'Score viewer & navigation · Ankit Joshi'}
+        title={sourceIsPdf ? score.title : score ? score.movement + ' — ' + score.instrument : 'Your score'}
+        subtitle={sourceIsPdf ? 'Select a measure to open its music, or read the full page.' : score ? (score.title === score.movement ? 'Find your place. Pick up where rehearsal left off.' : score.title) : 'Open a part and find your place.'}
       />
 
       {viewer.loading && <FeedbackPanel>Loading your score…</FeedbackPanel>}
@@ -69,7 +69,7 @@ export default function ScoreViewer() {
         />}
         {sourceIsPdf ? <PdfScoreReader score={score} passages={viewer.passages} page={viewer.page}
           focusedPassageId={viewer.focusedPassageId} onPageChange={viewer.changePage}
-          onSelect={(passage) => viewer.jumpToMeasure(passage.measure_number)}
+          onSelect={viewer.selectPassage}
           onExtract={viewer.extractMeasures} extracting={viewer.extracting} extractionError={viewer.extractionError}
           onSave={saveForPractice} savingId={savingId} /> : <>
         <ScoreSheet
