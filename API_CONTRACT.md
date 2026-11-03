@@ -103,10 +103,16 @@ practice marks attached to those passages. Returns 204 No Content.
 
 ### POST /api/scores/{id}/extract-measures/
 
-For a stored PDF, runs the configured local Audiveris command after rendering
-each page with `pdftoppm`, then replaces existing passages with the imported
-MusicXML measure list. It returns 503 when the optional local OMR runtime is
-not configured and 422 when recognition cannot produce measures.
+For a stored PDF (up to 10 pages), runs local Audiveris after rendering each page
+with `pdftoppm`. Imported measures retain their PDF page numbers. Matching
+passages are updated without deleting IDs or practice notes. Completed imports
+are returned from storage. Returns 409 while another request is processing,
+503 when the local runtime is unavailable, and 422 when recognition fails.
+
+Score responses include `extraction_status` (`not_started`, `processing`,
+`complete`, or `failed`) and `extraction_error`. Clients may poll the score detail
+while processing and retry after failure. The browser starts extraction after
+a PDF upload and displays the returned passages next to the PDF.
 
 ### POST /api/scores/upload/
 
@@ -147,7 +153,8 @@ Optional query parameters:
 
 ### POST /api/practice-marks/
 
-Creates the explicit Mark for practice state.
+Creates the explicit Mark for practice state. Repeated saves return the existing
+mark with 200 OK, keeping its note and resolved state; new saves return 201.
 
     {
       "passage_id": 24,
@@ -190,7 +197,7 @@ Returns the updated practice-mark representation with 200 OK.
 | Missing score, passage, or mark | 404 | {"detail": "Not found."} |
 | Missing passage_id on create | 400 | {"passage_id": ["This field is required."]} |
 | Nonexistent passage | 400 | {"passage_id": ["Invalid pk ..."]} |
-| Duplicate mark for a passage | 400 | Field-level validation error |
+| Duplicate mark for a passage | 200 | Existing mark (idempotent save) |
 | Note over 500 characters | 400 | Field-level validation error |
 | Attempt to move a mark | 400 | {"passage_id": ["A practice mark cannot be moved to another passage."]} |
 | Invalid review status | 400 | {"status": "Use 'unresolved' or 'resolved'."} |

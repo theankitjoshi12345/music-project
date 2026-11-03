@@ -1,4 +1,7 @@
 from django.db import models
+from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 
 
 class Score(models.Model):
@@ -10,12 +13,25 @@ class Score(models.Model):
     page_count = models.PositiveIntegerField()
     available_offline = models.BooleanField(default=True)
     source_file = models.FileField(upload_to="scores/", blank=True)
+    extraction_state = models.CharField(max_length=20, default="not_started", choices=[
+        ("not_started", "Not started"), ("processing", "Processing"),
+        ("complete", "Complete"), ("failed", "Failed"),
+    ])
+    extraction_error = models.CharField(max_length=500, blank=True)
+    extraction_updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["title", "movement", "instrument"]
 
     def __str__(self):
         return f"{self.title} — {self.movement} ({self.instrument})"
+
+    @property
+    def extraction_expired(self):
+        return self.extraction_state == "processing" and (
+            self.extraction_updated_at is None or self.extraction_updated_at <
+            timezone.now() - timedelta(seconds=settings.OMR_TIMEOUT_SECONDS + 90)
+        )
 
 
 class Passage(models.Model):

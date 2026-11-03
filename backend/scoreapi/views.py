@@ -1,7 +1,5 @@
 from pathlib import Path
-import subprocess
 
-from django.conf import settings
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -11,7 +9,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Passage, PracticeMark, Score
-from .score_extract import OMRUnavailable, extract_musicxml_measures, extract_pdf_measures
+from .extraction_service import ExtractionBusy, extract_score_measures
+from .score_extract import OMRUnavailable, extract_musicxml_measures
 from .serializers import PassageCreateSerializer, PassageSerializer, PracticeMarkSerializer, ScoreSerializer
 
 
@@ -65,6 +64,7 @@ class ScoreUploadView(APIView):
             page_count=max(page_count, extracted_page_count),
             available_offline=True,
             source_file=score_file,
+            extraction_state="complete" if extracted_measures else "not_started",
         )
         if extracted_measures:
             Passage.objects.bulk_create([
@@ -93,22 +93,22 @@ class ScoreDetailView(APIView):
 
 
 class ScorePdfExtractionView(APIView):
-    """Replace a PDF score's passages with locally recognized OMR measures."""
+    """Import PDF measures; duplicate requests retain saved IDs and marks."""
 
     def post(self, request, score_id):
         score = get_object_or_404(Score, pk=score_id)
         if not score.source_file.name.lower().endswith(".pdf"):
             raise ValidationError({"score": "PDF measure extraction is only available for PDF scores."})
         try:
-            measures = extract_pdf_measures(score.source_file.path, settings.AUDIVERIS_COMMAND)
+            extract_score_measures(score.pk)
+        except ExtractionBusy as error:
+            return Response({"detail": str(error)}, status=status.HTTP_409_CONFLICT)
+        except Score.DoesNotExist:
+            return Response({"detail": "That score was deleted."}, status=status.HTTP_404_NOT_FOUND)
         except OMRUnavailable as error:
             return Response({"detail": str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as error:
-            return Response({"detail": f"Could not extract measures: {error}"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-        score.passages.all().delete()
-        Passage.objects.bulk_create([Passage(score=score, section=section, measure_number=number, page_number=page) for section, number, page in measures])
-        score.page_count = max(page for _, _, page in measures)
-        score.save(update_fields=["page_count"])
+        except ValueError as error:
+            return Response({"detail": str(error)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         score = Score.objects.annotate(passage_count=Count("passages")).get(pk=score.pk)
         return Response(ScoreSerializer(score).data)
 
@@ -148,8 +148,13 @@ class PracticeMarkListCreateView(APIView):
     def post(self, request):
         serializer = PracticeMarkSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        mark = serializer.save(owner=request.headers.get("X-Mock-User", "alex"))
-        return Response(PracticeMarkSerializer(mark, context={"request": request}).data, status=status.HTTP_201_CREATED)
+        values = serializer.validated_data
+        mark, created = PracticeMark.objects.get_or_create(
+            passage=values["passage"], owner=request.headers.get("X-Mock-User", "alex"),
+            defaults={key: value for key, value in values.items() if key != "passage"},
+        )
+        return Response(PracticeMarkSerializer(mark, context={"request": request}).data,
+                        status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
 class PracticeMarkDetailView(APIView):

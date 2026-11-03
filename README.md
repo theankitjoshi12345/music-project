@@ -8,9 +8,14 @@ The shared REST API and all four assigned screens are present in `main`: Logan's
 
 The app uses local mock authentication, not production security. Choose **Alex Rivera** or **Sam Lee** in the Demo user selector. Practice marks are isolated by the selected mock user so the same passage can be marked independently for each demo user.
 
-Use **Add a score** in the Score Library to upload a PDF, MusicXML, XML, or MXL file (up to 10 MB). The local development server stores the file under `backend/media/scores/`. MusicXML/XML/MXL uploads extract their measures, rehearsal marks, and page breaks into the app. A PDF is visual notation rather than structured score data, so Score Companion does not claim to extract its measure boundaries; add the measures you see through the viewer's **Add a measure** form, then use **Mark for practice** to send each one to Practice Review. Automatic PDF measure extraction requires an optical-music-recognition service.
+Use **Add to library** to upload a PDF, MusicXML, XML, or MXL file (up to 10 MB).
+PDF uploads open the reader and start local Audiveris recognition automatically.
+Detected measures appear next to the PDF, grouped by page. Use **+ Practice** to
+save a measure, then **Practice review** to revisit it. Check recognition results
+against the original score; the detected list does not locate precise clickable
+regions inside the PDF. MusicXML/XML/MXL uploads import structured metadata directly.
 
-The library reports whether extraction completed or manual entry is required. Use
+The reader reports extraction progress and provides a retry action on failure. Use
 **Delete score** to remove an uploaded score, its local file, its measures, and
 any practice marks attached to those measures.
 
@@ -19,11 +24,17 @@ to move through the document or open the original PDF in a new tab.
 
 ### Optional local PDF measure extraction
 
-Set `AUDIVERIS_COMMAND` to a local Audiveris executable and ensure `pdftoppm`
-is installed. The library's **Extract measures** action renders PDF pages to
-images, runs Audiveris in batch mode, imports its MusicXML output, and saves
-the resulting measure list. OMR results should be reviewed before musical use.
-Audiveris is licensed under AGPL-3.0.
+Install Poppler (`pdftoppm` and `pdfinfo`) and Audiveris. Set `AUDIVERIS_COMMAND`
+to the executable, or install it on PATH. On macOS the app also checks
+`/Applications/Audiveris.app` and `.local-tools/Audiveris.app` in this checkout.
+The mounted installer is not used as the runtime. The binary is local-only and
+excluded from Git; a new deployment must install it separately.
+
+The demo limits recognition to PDFs with at most 10 pages and bounds rendering
+and recognition time. A second request for the same score shares the processing
+state; completed imports are reused. Failed/repeated extraction preserves
+existing measures and practice notes. Audiveris is licensed under AGPL-3.0;
+upstream source and license: https://github.com/Audiveris/audiveris.
 
 ## Tech stack
 
@@ -49,7 +60,9 @@ See [architecture.md](architecture.md) for the planned architecture and boundari
 | Jonathan Dempsey | Practice Review | Medium | [`#/practice-review`](http://localhost:5173/#/practice-review) |
 | Logan Broussard | Offline Score Library | Easiest | [`#/score-library`](http://localhost:5173/#/score-library) |
 
-All four screen routes are implemented. The Score Viewer supports page controls, section selection, and jumping to a measure. The Measure Marker uses local demo data and browser storage; its marks are not yet shared with the backend or Practice Review. See [Measure Marker notes](p9/MEASURE_MARKER.md) for its scope. Practice Review reads and resolves backend practice marks.
+All four screen routes are implemented. The Score Viewer displays uploaded PDFs
+and their detected measures with practice actions. Measure Marker and Practice
+Review use the shared backend for the selected demo user's practice marks.
 
 ## Project structure
 
@@ -81,7 +94,6 @@ API_CONTRACT.md           Shared REST endpoint and data contract
 python3.12 -m venv backend/.venv
 backend/.venv/bin/pip install -r backend/requirements.txt
 backend/.venv/bin/python backend/manage.py migrate
-backend/.venv/bin/python backend/manage.py loaddata demo_scores
 backend/.venv/bin/python backend/manage.py runserver
 ```
 
@@ -120,14 +132,12 @@ within its original score.
 
 The viewer requests the selected score and its passages through `/api/`; Vite
 proxies these requests to Django at `127.0.0.1:8000`. Start both servers for
-live data. An empty library displays a clearly labeled sample reproducing
-Section B, measures 17–24 from page 2 of the revised PDF. Failed requests show
-a retry action and an explicit option to view the sample.
+live data. An empty library asks you to add a score; it does not insert demo
+content. Failed requests show a retry action and a return link to the library.
 
-Notation is illustrative: the current API provides measure metadata, not music
-notation or score-file contents. PDF rendering, actual offline file caching,
-and measure-marking actions are outside this screen's implementation. The
-viewer does not claim a score is offline-ready.
+The original PDF provides the music notation. OMR supplies a detected measure
+list for navigation and saving practice marks. Actual offline caching is not
+implemented. Non-PDF metadata previews use illustrative notation.
 
 Page, section, and measure jumps smoothly scroll and highlight the destination
 measure so it remains easy to keep visual context while navigating a score.

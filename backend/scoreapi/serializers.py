@@ -6,6 +6,7 @@ from .models import Passage, PracticeMark, Score
 class ScoreSerializer(serializers.ModelSerializer):
     passage_count = serializers.IntegerField(read_only=True)
     extraction_status = serializers.SerializerMethodField()
+    extraction_error = serializers.SerializerMethodField()
 
     class Meta:
         model = Score
@@ -19,21 +20,16 @@ class ScoreSerializer(serializers.ModelSerializer):
             "source_file",
             "passage_count",
             "extraction_status",
+            "extraction_error",
         ]
 
     def get_extraction_status(self, score):
-        extension = score.source_file.name.rsplit(".", 1)[-1].lower() if score.source_file else ""
-        if extension == "pdf":
-            passage_count = getattr(score, "passage_count", None)
-            if passage_count is None:
-                passage_count = score.passages.count()
-            return "extracted" if passage_count else "manual_required"
-        if extension in {"musicxml", "xml", "mxl"}:
-            passage_count = getattr(score, "passage_count", None)
-            if passage_count is None:
-                passage_count = score.passages.count()
-            return "extracted" if passage_count else "no_measures"
-        return "manual_required"
+        return "failed" if score.extraction_expired else score.extraction_state
+
+    def get_extraction_error(self, score):
+        if score.extraction_expired:
+            return "The previous extraction was interrupted. Please retry."
+        return score.extraction_error
 
 
 class PassageSerializer(serializers.ModelSerializer):
@@ -112,16 +108,6 @@ class PracticeMarkSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if self.instance is None and "passage" not in attrs:
             raise serializers.ValidationError({"passage_id": "This field is required."})
-        if (
-            self.instance is None
-            and "passage" in attrs
-            and PracticeMark.objects.filter(
-                passage=attrs["passage"], owner=self.context["request"].headers.get("X-Mock-User", "alex")
-            ).exists()
-        ):
-            raise serializers.ValidationError(
-                {"passage_id": "This passage already has a practice mark."}
-            )
         if self.instance is not None and "passage" in attrs:
             raise serializers.ValidationError(
                 {"passage_id": "A practice mark cannot be moved to another passage."}

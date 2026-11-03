@@ -2,10 +2,14 @@ from django.test import SimpleTestCase
 from django.test import override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from unittest.mock import patch
+import tempfile
+from datetime import timedelta
+from django.utils import timezone
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from .models import Passage, PracticeMark, Score
+from .score_extract import OMRUnavailable, PDFExtraction
 
 
 class HealthCheckTests(SimpleTestCase):
@@ -17,6 +21,15 @@ class HealthCheckTests(SimpleTestCase):
 
 
 class ScoreApiTests(APITestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        media = tempfile.TemporaryDirectory(prefix="score-api-tests-")
+        cls.addClassCleanup(media.cleanup)
+        settings = override_settings(MEDIA_ROOT=media.name)
+        settings.enable()
+        cls.addClassCleanup(settings.disable)
+
     def setUp(self):
         self.score = Score.objects.create(
             title="Symphony No. 1",
@@ -104,16 +117,63 @@ class ScoreApiTests(APITestCase):
         self.assertFalse(PracticeMark.objects.filter(pk=mark.id).exists())
 
     @override_settings(AUDIVERIS_COMMAND="/opt/audiveris")
-    @patch("scoreapi.views.extract_pdf_measures", return_value=[("Page 1", 1, 1), ("Page 1", 2, 1), ("Page 2", 3, 2)])
-    def test_pdf_extraction_replaces_passages_with_omr_result(self, extract_pdf):
+    @patch("scoreapi.extraction_service.extract_pdf_measures", return_value=PDFExtraction([("Page 1", 1, 1), ("Page 1", 2, 1), ("Page 2", 3, 2)], 2))
+    def test_pdf_extraction_preserves_existing_passages_and_practice_marks(self, extract_pdf):
         score = Score.objects.create(title="Scan", movement="Scan", instrument="Piano", page_count=1, available_offline=True, source_file=SimpleUploadedFile("scan.pdf", b"%PDF"))
-        Passage.objects.create(score=score, section="Old", measure_number=1, page_number=1)
+        passage = Passage.objects.create(score=score, section="Page 1", measure_number=1, page_number=1)
+        mark = PracticeMark.objects.create(passage=passage, note="Keep this reminder")
         response = self.client.post(f"/api/scores/{score.id}/extract-measures/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["passage_count"], 3)
         self.assertEqual(response.json()["page_count"], 2)
+        self.assertEqual(response.json()["extraction_status"], "complete")
         self.assertEqual(Passage.objects.filter(score=score).count(), 3)
+        mark.refresh_from_db()
+        self.assertEqual(mark.passage_id, passage.id)
+        self.assertEqual(mark.note, "Keep this reminder")
+        repeated = self.client.post(f"/api/scores/{score.id}/extract-measures/")
+        self.assertEqual(repeated.status_code, 200)
         extract_pdf.assert_called_once()
+
+    @patch("scoreapi.extraction_service.extract_pdf_measures", side_effect=OMRUnavailable("Install Audiveris to retry."))
+    def test_runtime_failure_is_reported_and_does_not_delete_existing_data(self, extract_pdf):
+        self.score.source_file = "scores/scan.pdf"
+        self.score.save()
+        response = self.client.post(f"/api/scores/{self.score.id}/extract-measures/")
+        self.assertEqual(response.status_code, 503)
+        detail = self.client.get(f"/api/scores/{self.score.id}/").json()
+        self.assertEqual(detail["extraction_status"], "failed")
+        self.assertIn("Audiveris", detail["extraction_error"])
+        self.assertTrue(Passage.objects.filter(pk=self.passage.id).exists())
+
+    @patch("scoreapi.extraction_service.extract_pdf_measures")
+    def test_concurrent_extraction_does_not_launch_a_second_job(self, extract_pdf):
+        self.score.source_file = "scores/scan.pdf"
+        self.score.extraction_state = "processing"
+        self.score.extraction_updated_at = timezone.now()
+        self.score.save()
+        response = self.client.post(f"/api/scores/{self.score.id}/extract-measures/")
+        self.assertEqual(response.status_code, 409)
+        extract_pdf.assert_not_called()
+
+    def test_manual_placeholder_does_not_claim_pdf_extraction_succeeded(self):
+        self.score.source_file = "scores/scan.pdf"
+        self.score.save()
+        response = self.client.get(f"/api/scores/{self.score.id}/")
+        self.assertEqual(response.json()["extraction_status"], "not_started")
+
+    @patch("scoreapi.extraction_service.extract_pdf_measures", return_value=PDFExtraction([("Page 1", 1, 1)], 1))
+    def test_interrupted_job_can_be_retried_instead_of_showing_progress_forever(self, extract_pdf):
+        self.score.source_file = "scores/scan.pdf"
+        self.score.extraction_state = "processing"
+        self.score.extraction_updated_at = timezone.now() - timedelta(minutes=20)
+        self.score.save()
+        detail = self.client.get(f"/api/scores/{self.score.id}/").json()
+        self.assertEqual(detail["extraction_status"], "failed")
+        self.assertIn("interrupted", detail["extraction_error"])
+        response = self.client.post(f"/api/scores/{self.score.id}/extract-measures/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["extraction_status"], "complete")
 
     def test_passages_are_limited_to_the_requested_score(self):
         response = self.client.get(f"/api/scores/{self.score.id}/passages/")
@@ -146,8 +206,8 @@ class ScoreApiTests(APITestCase):
         self.assertEqual(listing.status_code, 200)
         self.assertEqual(len(listing.json()), 1)
 
-    def test_duplicate_mark_and_invalid_status_are_rejected(self):
-        PracticeMark.objects.create(passage=self.passage)
+    def test_duplicate_save_is_idempotent_and_invalid_status_is_rejected(self):
+        mark = PracticeMark.objects.create(passage=self.passage, note="Preserve my note")
         duplicate = self.client.post(
             "/api/practice-marks/",
             {"passage_id": self.passage.id},
@@ -155,8 +215,9 @@ class ScoreApiTests(APITestCase):
         )
         invalid_status = self.client.get("/api/practice-marks/?status=pending")
 
-        self.assertEqual(duplicate.status_code, 400)
-        self.assertIn("passage_id", duplicate.json())
+        self.assertEqual(duplicate.status_code, 200)
+        self.assertEqual(duplicate.json()["id"], mark.id)
+        self.assertEqual(duplicate.json()["note"], "Preserve my note")
         self.assertEqual(invalid_status.status_code, 400)
         self.assertEqual(invalid_status.json(), {
             "status": "Use 'unresolved' or 'resolved'."

@@ -48,7 +48,7 @@ export async function loadViewerData(scoreId, signal, request = fetch, headers =
   let id = scoreId
   if (!id) {
     const scores = await get('scores/')
-    if (!scores.length) return { score: sampleScore, passages: samplePassages, isSample: true }
+    if (!scores.length) return { score: null, passages: [], isSample: false }
     id = scores[0].id
   }
   if (!/^\d+$/.test(String(id))) throw new Error('The score link needs a numeric score ID.')

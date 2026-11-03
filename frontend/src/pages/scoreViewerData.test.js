@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { initialPage, loadViewerData, pagePassages, samplePassages, sectionOptions, scoreViewerHref } from './scoreViewerData.js'
+import { requestExtraction } from './extractionRequest.js'
 
 test('practice review links identify the exact score and passage', () => {
   const link = scoreViewerHref({ id: 70, score_id: 42 })
@@ -16,12 +17,9 @@ test('opening a saved passage selects its page before the default practice measu
   assert.equal(initialPage(passages, 4, 'unknown'), 2)
 })
 
-test('empty library returns an explicitly identified sample at Section B, measure 24', async () => {
+test('empty library stays empty instead of inventing sample score data', async () => {
   const result = await loadViewerData(null, undefined, async () => ({ ok: true, json: async () => [] }))
-  assert.equal(result.isSample, true)
-  assert.equal(result.score.id, null)
-  assert.equal(initialPage(result.passages, 4), 2)
-  assert.deepEqual(pagePassages(result.passages, 2).map((item) => item.measure_number), [17, 18, 19, 20, 21, 22, 23, 24])
+  assert.deepEqual(result, { score: null, passages: [], isSample: false })
 })
 
 test('requested score loads details and passages without choosing another library entry', async () => {
@@ -62,4 +60,18 @@ test('page navigation handles empty pages and derives the real sections', () => 
   assert.equal(initialPage([], 4), 1)
   assert.deepEqual(sectionOptions(samplePassages), ['A', 'B', 'C'])
   assert.deepEqual(pagePassages(samplePassages, 4).map((item) => item.measure_number), [33, 34, 35, 36, 37, 38, 39, 40])
+})
+
+test('extraction deduplicates simultaneous requests and permits a retry after failure', async () => {
+  let finish
+  let calls = 0
+  const request = () => { calls++; return new Promise((resolve) => { finish = resolve }) }
+  const first = requestExtraction(123, {}, request)
+  const second = requestExtraction(123, {}, request)
+  assert.equal(calls, 1)
+  finish({ ok: true, json: async () => ({ extraction_status: 'complete' }) })
+  assert.deepEqual(await first, await second)
+  await assert.rejects(requestExtraction(123, {}, async () => ({ ok: false, json: async () => ({ detail: 'Try again' }) })), /Try again/)
+  const retried = await requestExtraction(123, {}, async () => ({ ok: true, json: async () => ({ extraction_status: 'complete' }) }))
+  assert.equal(retried.extraction_status, 'complete')
 })
