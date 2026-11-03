@@ -6,10 +6,13 @@ import tempfile
 from datetime import timedelta
 from django.utils import timezone
 from django.urls import reverse
+from django.conf import settings
+from pathlib import Path
 from rest_framework.test import APITestCase
 
 from .models import Passage, PracticeMark, Score
 from .score_extract import OMRUnavailable, PDFExtraction
+from .upload_service import store_upload
 
 
 class HealthCheckTests(SimpleTestCase):
@@ -107,6 +110,75 @@ class ScoreApiTests(APITestCase):
         self.assertEqual(created.status_code, 201)
         mark = self.client.post("/api/practice-marks/", {"passage_id": created.json()["id"]}, format="json")
         self.assertEqual(mark.status_code, 201)
+
+    def test_reupload_reuses_file_measures_and_practice_notes(self):
+        original = self.client.post("/api/scores/upload/", {
+            "score_file": SimpleUploadedFile("part.pdf", b"%PDF original part"),
+        }, format="multipart")
+        score = Score.objects.get(pk=original.json()["id"])
+        passage = Passage.objects.create(score=score, section="Page 1", measure_number=1, page_number=1)
+        mark = PracticeMark.objects.create(passage=passage, note="Keep this note")
+        score.extraction_state = "complete"
+        score.save()
+        before_files = set(Path(settings.MEDIA_ROOT).rglob("*.*"))
+        repeated = self.client.post("/api/scores/upload/", {
+            "score_file": SimpleUploadedFile("renamed-part.pdf", b"%PDF original part"),
+            "title": "Do not overwrite the original title",
+        }, format="multipart")
+        self.assertEqual(repeated.status_code, 200)
+        self.assertTrue(repeated.json()["already_uploaded"])
+        self.assertEqual(repeated.json()["id"], score.id)
+        self.assertEqual(repeated.json()["extraction_status"], "complete")
+        self.assertEqual(repeated.json()["passage_count"], 1)
+        self.assertEqual(set(Path(settings.MEDIA_ROOT).rglob("*.*")), before_files)
+        score.refresh_from_db()
+        self.assertEqual(score.title, "part")
+        mark.refresh_from_db()
+        self.assertEqual(mark.note, "Keep this note")
+
+    def test_different_files_with_the_same_name_never_overwrite_each_other(self):
+        responses = [self.client.post("/api/scores/upload/", {
+            "score_file": SimpleUploadedFile("same.pdf", content),
+        }, format="multipart") for content in [b"%PDF first", b"%PDF second"]]
+        self.assertEqual([response.status_code for response in responses], [201, 201])
+        files = [Score.objects.get(pk=response.json()["id"]).source_file for response in responses]
+        self.assertNotEqual(files[0].name, files[1].name)
+        self.assertEqual(files[0].read(), b"%PDF first")
+        self.assertEqual(files[1].read(), b"%PDF second")
+
+    def test_import_database_failure_rolls_back_score_and_cleans_the_file(self):
+        before_files = set(Path(settings.MEDIA_ROOT).rglob("*.*"))
+        before_count = Score.objects.count()
+        response = self.client.post("/api/scores/upload/", {
+            "score_file": SimpleUploadedFile("invalid.musicxml", b'<score-partwise><part><measure number="1"/><measure number="1"/></part></score-partwise>'),
+        }, format="multipart")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Score.objects.count(), before_count)
+        self.assertEqual(set(Path(settings.MEDIA_ROOT).rglob("*.*")), before_files)
+
+    def test_losing_a_duplicate_upload_race_returns_winner_and_cleans_extra_file(self):
+        metadata = {"title": "Winner", "movement": "Part", "instrument": "Piano", "page_count": 1}
+        winner, _ = store_upload(SimpleUploadedFile("winner.pdf", b"%PDF race"), metadata, [])
+        before_files = set(Path(settings.MEDIA_ROOT).rglob("*.*"))
+        with patch("scoreapi.upload_service.Score.objects.filter") as lookup:
+            lookup.return_value.first.side_effect = [None, winner]
+            score, created = store_upload(SimpleUploadedFile("loser.pdf", b"%PDF race"), metadata, [])
+        self.assertFalse(created)
+        self.assertEqual(score.id, winner.id)
+        self.assertEqual(set(Path(settings.MEDIA_ROOT).rglob("*.*")), before_files)
+
+    def test_repeated_measure_save_is_idempotent_and_wrong_pages_are_rejected(self):
+        url = f"/api/scores/{self.score.id}/passages/"
+        values = {"section": "A", "measure_number": 1, "page_number": 1}
+        first = self.client.post(url, values, format="json")
+        repeated = self.client.post(url, values, format="json")
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(repeated.status_code, 200)
+        self.assertEqual(first.json()["id"], repeated.json()["id"])
+        conflict = self.client.post(url, {**values, "page_number": 2}, format="json")
+        self.assertEqual(conflict.status_code, 409)
+        invalid = self.client.post(url, {**values, "measure_number": 2, "page_number": 99}, format="json")
+        self.assertEqual(invalid.status_code, 400)
 
     def test_deleting_a_score_removes_its_passages_and_practice_marks(self):
         mark = PracticeMark.objects.create(passage=self.passage)

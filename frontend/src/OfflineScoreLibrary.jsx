@@ -66,8 +66,8 @@ function OfflineScoreLibrary() {
         const failure = data.score_file || data.page_count || data.detail
         throw new Error((Array.isArray(failure) ? failure[0] : failure) || 'The score could not be uploaded.')
       }
-      setParts((current) => [...(current || []), data])
-      setUploadMessage(data.extraction_status === 'complete'
+      setParts((current) => [...(current || []).filter((part) => part.id !== data.id), data])
+      setUploadMessage(data.already_uploaded ? 'This score is already in your library. Opening it now.' : data.extraction_status === 'complete'
         ? `${data.title} is saved and ${data.passage_count} measures were extracted. Open the score to mark a measure for Practice Review.`
         : `${data.title} is saved. Opening your score…`)
       form.reset()

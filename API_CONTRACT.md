@@ -119,8 +119,15 @@ a PDF upload and displays the returned passages next to the PDF.
 Accepts multipart form data with `score_file` (PDF, MusicXML, XML, or MXL),
 plus optional `instrument`, `title`, `movement`, and `page_count`. Files are
 limited to 10 MB. MusicXML/XML/MXL inputs extract measures, rehearsal labels,
-and MusicXML page breaks into Passages. PDFs are stored but do not claim
-measure extraction; add their visible measures with the passage endpoint.
+and MusicXML page breaks into Passages. PDFs are stored first; the browser then
+starts recognition through `/scores/{id}/extract-measures/` and displays progress
+in the reader.
+
+New files return 201 with `already_uploaded: false`. Identical file contents
+return the original score with 200 and `already_uploaded: true`; original
+metadata, extracted measures, and practice marks are preserved. Different file
+contents get separate storage paths, even when filenames match. Existing local
+files can be indexed once with `manage.py index_score_files` after migration.
 
 ### GET /api/scores/{id}/passages/
 
@@ -141,6 +148,10 @@ Returns passages for the requested score in page/measure order. Used by the Scor
 Adds one visible measure to a score, primarily for manually mapping a PDF.
 
     {"section": "B", "measure_number": 24, "page_number": 2}
+
+Repeated saves of the same section, measure, and page return the existing passage
+with 200. New passages return 201. A different page for an existing measure
+returns 409; a page outside the score returns 400.
 
 ### GET /api/practice-marks/
 

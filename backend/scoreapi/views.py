@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from django.db import IntegrityError
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -11,7 +12,8 @@ from rest_framework.views import APIView
 from .models import Passage, PracticeMark, Score
 from .extraction_service import ExtractionBusy, extract_score_measures
 from .score_extract import OMRUnavailable, extract_musicxml_measures
-from .serializers import PassageCreateSerializer, PassageSerializer, PracticeMarkSerializer, ScoreSerializer
+from .serializers import PassageCreateSerializer, PassageSerializer, PracticeMarkSerializer, ScoreSerializer, ScoreUploadMetadataSerializer
+from .upload_service import store_upload
 
 
 @api_view(["GET"])
@@ -57,22 +59,19 @@ class ScoreUploadView(APIView):
         except ValueError as error:
             raise ValidationError({"score_file": str(error)})
         extracted_page_count = max((page for _, _, page in extracted_measures), default=1)
-        score = Score.objects.create(
-            title=title,
-            movement=movement,
-            instrument=instrument,
-            page_count=max(page_count, extracted_page_count),
-            available_offline=True,
-            source_file=score_file,
-            extraction_state="complete" if extracted_measures else "not_started",
-        )
-        if extracted_measures:
-            Passage.objects.bulk_create([
-                Passage(score=score, section=section, measure_number=number, page_number=page)
-                for section, number, page in extracted_measures
-            ])
+        metadata = ScoreUploadMetadataSerializer(data={
+            "title": title, "movement": movement, "instrument": instrument,
+            "page_count": max(page_count, extracted_page_count), "available_offline": True,
+        })
+        metadata.is_valid(raise_exception=True)
+        try:
+            score, created = store_upload(score_file, metadata.validated_data, extracted_measures)
+        except IntegrityError:
+            raise ValidationError({"score_file": "The score contains duplicate measure identifiers. Check the MusicXML file."})
         score = Score.objects.annotate(passage_count=Count("passages")).get(pk=score.pk)
-        return Response(ScoreSerializer(score, context={"request": request}).data, status=status.HTTP_201_CREATED)
+        data = ScoreSerializer(score).data
+        data["already_uploaded"] = not created
+        return Response(data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
 class ScoreDetailView(APIView):
@@ -123,8 +122,15 @@ class ScorePassageListView(APIView):
         score = get_object_or_404(Score, pk=score_id)
         serializer = PassageCreateSerializer(data=request.data, context={"score": score})
         serializer.is_valid(raise_exception=True)
-        passage = serializer.save(score=score)
-        return Response(PassageSerializer(passage, context={"request": request}).data, status=status.HTTP_201_CREATED)
+        values = serializer.validated_data
+        passage, created = Passage.objects.get_or_create(
+            score=score, section=values["section"], measure_number=values["measure_number"],
+            defaults={"page_number": values["page_number"]},
+        )
+        if passage.page_number != values["page_number"]:
+            return Response({"detail": "That measure is already saved on a different page."}, status=status.HTTP_409_CONFLICT)
+        return Response(PassageSerializer(passage, context={"request": request}).data,
+                        status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
 class PracticeMarkListCreateView(APIView):

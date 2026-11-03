@@ -2,6 +2,12 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
+from pathlib import Path
+from uuid import uuid4
+
+
+def score_upload_path(instance, filename):
+    return f"scores/{uuid4().hex}{Path(filename).suffix.lower()}"
 
 
 class Score(models.Model):
@@ -12,7 +18,8 @@ class Score(models.Model):
     instrument = models.CharField(max_length=120)
     page_count = models.PositiveIntegerField()
     available_offline = models.BooleanField(default=True)
-    source_file = models.FileField(upload_to="scores/", blank=True)
+    source_file = models.FileField(upload_to=score_upload_path, blank=True)
+    content_sha256 = models.CharField(max_length=64, null=True, blank=True, unique=True, editable=False)
     extraction_state = models.CharField(max_length=20, default="not_started", choices=[
         ("not_started", "Not started"), ("processing", "Processing"),
         ("complete", "Complete"), ("failed", "Failed"),

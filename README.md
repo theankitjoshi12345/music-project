@@ -19,6 +19,10 @@ The reader reports extraction progress and provides a retry action on failure. U
 **Delete score** to remove an uploaded score, its local file, its measures, and
 any practice marks attached to those measures.
 
+Uploading an identical file reopens its existing library entry and keeps its
+measures and practice notes. Different files with the same original filename
+are stored separately. Database failures clean up the newly written file.
+
 Uploaded PDFs display directly in the Score Viewer. Use the viewer page controls
 to move through the document or open the original PDF in a new tab.
 
@@ -94,6 +98,7 @@ API_CONTRACT.md           Shared REST endpoint and data contract
 python3.12 -m venv backend/.venv
 backend/.venv/bin/pip install -r backend/requirements.txt
 backend/.venv/bin/python backend/manage.py migrate
+backend/.venv/bin/python backend/manage.py index_score_files
 backend/.venv/bin/python backend/manage.py runserver
 ```
 
