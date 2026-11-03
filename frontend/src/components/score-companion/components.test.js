@@ -8,6 +8,7 @@ import { createServer } from 'vite'
 let server
 let components
 let App
+let PdfScoreReader
 
 before(async () => {
   server = await createServer({
@@ -18,6 +19,7 @@ before(async () => {
   components = await server.ssrLoadModule('/src/components/score-companion/index.js')
   const appModule = await server.ssrLoadModule('/src/App.jsx')
   App = appModule.default
+  PdfScoreReader = (await server.ssrLoadModule('/src/pages/PdfScoreReader.jsx')).default
 })
 
 after(async () => { await server?.close() })
@@ -95,4 +97,25 @@ test('multiple measure-jump forms keep distinct accessible label associations', 
   assert.equal(labels.length, 2)
   assert.notEqual(labels[0], labels[1])
   assert.deepEqual(inputs, labels)
+})
+
+test('PDF reader exposes actual detected measures, saved state, and the correct PDF page', () => {
+  const html = renderToStaticMarkup(h(PdfScoreReader, {
+    score: { id: 6, title: 'Uploaded part', source_file: '/media/part.pdf', page_count: 2, extraction_status: 'complete' },
+    passages: [{ id: 40, measure_number: 29, page_number: 1 }, { id: 41, measure_number: 30, page_number: 2, is_marked_for_practice: true }],
+    page: 2, savingId: null, onPageChange() {}, onSelect() {}, onSave() {},
+  }))
+  assert.match(html, /src="\/media\/part.pdf#page=2&amp;view=FitH"/)
+  assert.match(html, /2 measures detected/)
+  assert.match(html, /Measure 30 saved to practice/)
+  assert.doesNotMatch(html, /Measure 29|Illustrative notation|Extract measures/)
+})
+
+test('PDF reader provides progress and retry instead of an unexplained empty score', () => {
+  const props = { score: { title: 'Part', source_file: '/media/part.pdf', page_count: 1 }, passages: [], page: 1, onPageChange() {}, onExtract() {} }
+  const processing = renderToStaticMarkup(h(PdfScoreReader, { ...props, extracting: true }))
+  assert.match(processing, /Finding measures in your PDF/)
+  const failed = renderToStaticMarkup(h(PdfScoreReader, { ...props, extractionError: 'Recognition unavailable' }))
+  assert.match(failed, /Retry extraction/)
+  assert.match(failed, /role="alert">Recognition unavailable/)
 })

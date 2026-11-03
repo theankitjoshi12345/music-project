@@ -11,12 +11,20 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
+import shutil
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-_bundled_audiveris = "/Volumes/Audiveris/Audiveris.app/Contents/MacOS/Audiveris"
-AUDIVERIS_COMMAND = os.environ.get("AUDIVERIS_COMMAND", _bundled_audiveris if Path(_bundled_audiveris).is_file() else "")
+_audiveris_candidates = [
+    BASE_DIR.parent / ".local-tools/Audiveris.app/Contents/MacOS/Audiveris",
+    Path("/Applications/Audiveris.app/Contents/MacOS/Audiveris"),
+]
+AUDIVERIS_COMMAND = os.environ.get("AUDIVERIS_COMMAND") or shutil.which("audiveris") or next(
+    (str(path) for path in _audiveris_candidates if path.is_file()), ""
+)
+OMR_TIMEOUT_SECONDS = 300
+OMR_MAX_PAGES = 10
 
 
 # Quick-start development settings - unsuitable for production

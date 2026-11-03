@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { initialPage, loadViewerData, pagePassages, samplePassages, sampleScore, sectionOptions } from './scoreViewerData'
+import { initialPage, loadViewerData, pagePassages, sectionOptions } from './scoreViewerData'
+import { requestExtraction } from './extractionRequest'
 
 export default function useScoreViewer(user) {
   const [data, setData] = useState(null)
@@ -9,6 +10,8 @@ export default function useScoreViewer(user) {
   const [retry, setRetry] = useState(0)
   const [location, setLocation] = useState(window.location.hash)
   const [focusedPassageId, setFocusedPassageId] = useState(null)
+  const [extracting, setExtracting] = useState(false)
+  const [extractionError, setExtractionError] = useState('')
 
   useEffect(() => {
     const updateLocation = () => setLocation(window.location.hash)
@@ -22,15 +25,30 @@ export default function useScoreViewer(user) {
       setLoading(true)
       setError('')
       setData(null)
+      setExtracting(false)
+      setExtractionError('')
       const query = new URLSearchParams(location.split('?')[1] || '')
       const scoreId = query.get('score')
       try {
         const result = await loadViewerData(scoreId, controller.signal, fetch, { 'X-Mock-User': user.id })
         if (!controller.signal.aborted) {
           setData(result)
-          const startingPage = initialPage(result.passages, result.score.page_count, query.get('passage'))
+          const startingPage = initialPage(result.passages, result.score?.page_count ?? 1, query.get('passage'))
           setPage(startingPage)
           setFocusedPassageId(Number(query.get('passage')) || result.passages.find((item) => item.page_number === startingPage)?.id || null)
+          setLoading(false)
+          if (query.get('extract') === '1' && result.score?.extraction_status === 'not_started' && result.score.source_file?.toLowerCase().endsWith('.pdf')) {
+            setExtracting(true)
+            try {
+              await requestExtraction(result.score.id, { 'X-Mock-User': user.id })
+              const refreshed = await loadViewerData(result.score.id, controller.signal, fetch, { 'X-Mock-User': user.id })
+              if (!controller.signal.aborted) setData(refreshed)
+            } catch (failure) {
+              if (!controller.signal.aborted) setExtractionError(failure.message)
+            } finally {
+              if (!controller.signal.aborted) setExtracting(false)
+            }
+          }
         }
       } catch (failure) {
         if (!controller.signal.aborted) setError(failure.message || 'Unable to load the score.')
@@ -42,6 +60,20 @@ export default function useScoreViewer(user) {
     return () => controller.abort()
   }, [location, retry, user.id])
 
+  useEffect(() => {
+    if (data?.score?.extraction_status !== 'processing' || extracting) return
+    const controller = new AbortController()
+    const timer = setInterval(async () => {
+      try {
+        const refreshed = await loadViewerData(data.score.id, controller.signal, fetch, { 'X-Mock-User': user.id })
+        if (!controller.signal.aborted) setData(refreshed)
+      } catch (failure) {
+        if (!controller.signal.aborted) setExtractionError(failure.message)
+      }
+    }, 1500)
+    return () => { clearInterval(timer); controller.abort() }
+  }, [data?.score?.id, data?.score?.extraction_status, extracting, user.id])
+
   const passages = data?.passages ?? []
   const visible = pagePassages(passages, page)
 
@@ -52,6 +84,9 @@ export default function useScoreViewer(user) {
     error,
     page,
     visible,
+    passages,
+    extracting: extracting || data?.score?.extraction_status === 'processing',
+    extractionError: extractionError || data?.score?.extraction_error || '',
     focusedPassageId,
     sections: sectionOptions(passages),
     currentSections: sectionOptions(visible),
@@ -74,6 +109,19 @@ export default function useScoreViewer(user) {
       return ''
     },
     retry() { setRetry((value) => value + 1) },
+    async extractMeasures() {
+      if (!data?.score?.id || extracting) return
+      const scoreId = data.score.id
+      setExtracting(true)
+      setExtractionError('')
+      try {
+        await requestExtraction(scoreId, { 'X-Mock-User': user.id })
+        const refreshed = await loadViewerData(scoreId, undefined, fetch, { 'X-Mock-User': user.id })
+        setData((current) => current?.score.id === scoreId ? refreshed : current)
+      } catch (failure) {
+        setExtractionError(failure.message)
+      } finally { setExtracting(false) }
+    },
     async addPassage(values) {
       if (!data?.score?.id) throw new Error('Open a saved score before adding a measure.')
       const response = await fetch(`/api/scores/${data.score.id}/passages/`, {
@@ -94,11 +142,6 @@ export default function useScoreViewer(user) {
       if (!response.ok) throw new Error(mark.passage_id?.[0] || 'The practice mark could not be saved.')
       setData((current) => ({ ...current, passages: current.passages.map((item) => item.id === passage.id ? { ...item, is_marked_for_practice: true } : item) }))
       return mark
-    },
-    showSample() {
-      setData({ score: sampleScore, passages: samplePassages, isSample: true })
-      setPage(2)
-      setError('')
     },
   }
 }

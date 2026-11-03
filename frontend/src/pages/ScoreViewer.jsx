@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AppLayout, FeedbackPanel, MeasureJump, ScoreContext, ScoreNavigation, ScoreSheet, ScreenHeading } from '../components/score-companion'
 import useScoreViewer from './useScoreViewer'
+import PdfScoreReader from './PdfScoreReader'
 import { useMockSession } from '../mockSession'
 import './ScoreViewer.css'
 
@@ -12,7 +13,6 @@ export default function ScoreViewer() {
   const [savingId, setSavingId] = useState(null)
   const { score, visible, currentSections } = viewer
   const sourceIsPdf = score?.source_file?.toLowerCase().endsWith('.pdf')
-  const pdfPageUrl = sourceIsPdf ? `${score.source_file}#page=${viewer.page}&view=FitH` : ''
   const context = score && <ScoreContext movement={score.movement} instrument={score.instrument} sections={currentSections} />
   const measureRange = visible.length ? 'Measures ' + visible[0].measure_number + '–' + visible.at(-1).measure_number : 'No measures on this page'
 
@@ -51,8 +51,9 @@ export default function ScoreViewer() {
       {viewer.loading && <FeedbackPanel>Loading your score…</FeedbackPanel>}
       {viewer.error && <FeedbackPanel title="We couldn’t open this score" tone="error" actions={<>
         <button type="button" onClick={viewer.retry}>Try again</button>
-        <button type="button" onClick={viewer.showSample}>View sample score</button>
+        <a href="#/score-library">Return to library</a>
       </>}><p>{viewer.error}</p></FeedbackPanel>}
+      {!viewer.loading && !viewer.error && !score && <FeedbackPanel title="Your library is empty"><p>Add a score to begin.</p><a href="#/score-library">Go to library →</a></FeedbackPanel>}
 
       {score && <>
         {viewer.isSample && <p className="viewer-sample">Sample score · No downloaded scores yet. This preview is not saved to your library.</p>}
@@ -66,12 +67,11 @@ export default function ScoreViewer() {
           context={context}
           measureRange={sourceIsPdf ? undefined : measureRange}
         />}
-        {sourceIsPdf ? <section className="viewer-pdf" aria-label={`Uploaded PDF page ${viewer.page}`}>
-          <div className="viewer-pdf-heading"><div><a className="viewer-back" href="#/score-library">← Library</a><strong>{score.title}</strong><span>Your score is ready to read.</span></div><a href={score.source_file} target="_blank" rel="noreferrer">Open in new tab ↗</a></div>
-          <iframe key={pdfPageUrl} src={score.source_file} title={`${score.title}`}>
-            <a href={score.source_file}>Open the uploaded PDF.</a>
-          </iframe>
-        </section> : <>
+        {sourceIsPdf ? <PdfScoreReader score={score} passages={viewer.passages} page={viewer.page}
+          focusedPassageId={viewer.focusedPassageId} onPageChange={viewer.changePage}
+          onSelect={(passage) => viewer.jumpToMeasure(passage.measure_number)}
+          onExtract={viewer.extractMeasures} extracting={viewer.extracting} extractionError={viewer.extractionError}
+          onSave={saveForPractice} savingId={savingId} /> : <>
         <ScoreSheet
           label={sourceIsPdf ? `Practice markers for PDF page ${viewer.page}` : 'Score page ' + viewer.page}
           heading={<ScoreContext movement={score.movement} instrument={score.instrument} sections={currentSections} separator=" / " />}
@@ -81,9 +81,9 @@ export default function ScoreViewer() {
           emptyMessage={sourceIsPdf ? 'No practice markers are on this page yet. Add a measure from the PDF below, then mark it for practice.' : 'No measures have been added for this page yet. Try another page or section.'}
         />
         {!viewer.isSample && score && <form className="viewer-add-measure" onSubmit={addPassage}><strong>Add a measure</strong><span>Enter the score position, then mark it for practice.</span><label>Section<input name="section" defaultValue="Start" required /></label><label>Measure<input name="measure_number" type="number" min="1" required /></label><label>Page<input name="page_number" type="number" min="1" max={score.page_count} defaultValue={viewer.page || 1} required /></label><button type="submit">Add measure</button></form>}
+        </>}
         {actionMessage && <p className="viewer-action-message" role="status">{actionMessage} <a href="#/practice-review">Open Practice Review →</a></p>}
         {actionError && <p className="viewer-error" role="alert">{actionError}</p>}
-        </>}
         {!sourceIsPdf && <div className="viewer-bottom-row">
           <MeasureJump key={viewer.page} onJump={viewer.jumpToMeasure} />
           <p className="viewer-hint">Your place, at a glance. Use the page controls or jump to a section.</p>
