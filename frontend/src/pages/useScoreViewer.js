@@ -128,8 +128,8 @@ export default function useScoreViewer(user) {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Mock-User': user.id }, body: JSON.stringify(values),
       })
       const passage = await response.json()
-      if (!response.ok) throw new Error(passage.detail || 'The measure could not be added.')
-      setData((current) => ({ ...current, passages: [...current.passages, passage] }))
+      if (!response.ok) throw new Error(passage.detail || passage.page_number?.[0] || passage.measure_number?.[0] || 'The measure could not be added.')
+      setData((current) => ({ ...current, passages: [...current.passages.filter((item) => item.id !== passage.id), passage] }))
       setPage(passage.page_number)
       setFocusedPassageId(passage.id)
       return passage

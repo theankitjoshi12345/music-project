@@ -3,6 +3,14 @@ from rest_framework import serializers
 from .models import Passage, PracticeMark, Score
 
 
+class ScoreUploadMetadataSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=200)
+    movement = serializers.CharField(max_length=120)
+    instrument = serializers.CharField(max_length=120)
+    page_count = serializers.IntegerField(min_value=1)
+    available_offline = serializers.BooleanField(default=True)
+
+
 class ScoreSerializer(serializers.ModelSerializer):
     passage_count = serializers.IntegerField(read_only=True)
     extraction_status = serializers.SerializerMethodField()
@@ -61,12 +69,10 @@ class PassageCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         score = self.context["score"]
-        if Passage.objects.filter(
-            score=score,
-            section=attrs["section"],
-            measure_number=attrs["measure_number"],
-        ).exists():
-            raise serializers.ValidationError({"measure_number": "This section already has that measure."})
+        if attrs["page_number"] < 1 or attrs["page_number"] > score.page_count:
+            raise serializers.ValidationError({"page_number": "Choose an existing page in this score."})
+        if attrs["measure_number"] < 1:
+            raise serializers.ValidationError({"measure_number": "Measure numbers start at one."})
         return attrs
 
 

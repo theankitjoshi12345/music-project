@@ -4,6 +4,7 @@ import ScoreViewer from './pages/ScoreViewer'
 import OfflineScoreLibrary from './OfflineScoreLibrary.jsx'
 import MeasureMarker from './MeasureMarker.jsx'
 import PracticeReview from './PracticeReview.jsx'
+import { useMockSession } from './mockSession'
 
 const routes = {
   '/score-library': {
@@ -30,34 +31,37 @@ const routes = {
 
 const defaultRoute = '/score-library'
 
-function currentRoute() {
-  const path = window.location.hash.replace('#', '').split('?')[0]
+function currentRoute(hash) {
+  const path = hash.replace('#', '').split('?')[0]
   return routes[path] ? path : defaultRoute
 }
 
 function App() {
-  const [route, setRoute] = useState(currentRoute)
+  const { user } = useMockSession()
+  const [hash, setHash] = useState(window.location.hash)
+  const route = currentRoute(hash)
+  const screenKey = `${user.id}:${hash}`
 
   useEffect(() => {
-    const handleHashChange = () => setRoute(currentRoute())
+    const handleHashChange = () => setHash(window.location.hash)
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
-  if (route === '/measure-marker') return <MeasureMarker />
+  if (route === '/measure-marker') return <MeasureMarker key={screenKey} />
 
   const screen = routes[route]
 
   if (route === '/score-viewer') {
-    return <ScoreViewer />
+    return <ScoreViewer key={screenKey} />
   }
 
   if (route === '/score-library') {
-    return <OfflineScoreLibrary />
+    return <OfflineScoreLibrary key={screenKey} />
   }
 
   if (route === '/practice-review') {
-    return <PracticeReview />
+    return <PracticeReview key={screenKey} />
   }
 
   return (

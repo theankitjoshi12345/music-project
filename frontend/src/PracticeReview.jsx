@@ -33,6 +33,7 @@ function PracticeReview() {
 
     async function loadMarks() {
       try {
+        setError('')
         const response = await fetch(`${apiBase}/practice-marks/`, {
           headers: mockUserHeaders(user),
           signal: controller.signal,
@@ -43,7 +44,7 @@ function PracticeReview() {
           throw new Error('Practice review returned an invalid response.')
         }
 
-        setMarks(data)
+        if (!controller.signal.aborted) setMarks(data)
       } catch (requestError) {
         if (requestError.name !== 'AbortError') {
           setError(requestError.message)
@@ -68,7 +69,7 @@ function PracticeReview() {
       const updatedMark = await responseJson(response)
 
       setMarks((currentMarks) =>
-        currentMarks.map((currentMark) =>
+        currentMarks?.map((currentMark) =>
           currentMark.id === updatedMark.id ? updatedMark : currentMark,
         ),
       )
@@ -114,7 +115,7 @@ function PracticeReview() {
               href="#/practice-review"
               aria-current="page"
             >
-              Practice review - Jonathan Dempsey
+              Practice review
             </a>
           </nav>
         </aside>
