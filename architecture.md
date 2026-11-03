@@ -1,8 +1,7 @@
 # Score Companion architecture
 
 This document describes the implemented local application, including the
-measure-image work under review in [MR !26](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/26).
-The final browser click-through for the new measure renderer remains pending.
+measure-image pipeline in [MR !26](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/26).
 
 ## System boundaries
 
@@ -209,14 +208,19 @@ See [README.md](README.md) for startup and user testing, and
 
 ## Verification and remaining boundaries
 
-The real two-page demo PDF has been recognized and all 56 measure-preview URLs
-returned valid, distinct PNGs. Both full-page image endpoints rendered. Selected
-crops were visually compared with the original notation. Backend, frontend,
-migration, and production-build checks pass.
+A Playwright browser acceptance check uploaded the real two-page demo PDF into
+an isolated database and ran actual Audiveris recognition. It clicked every
+detected measure and verified all 56 distinct notation images loaded. Both
+full-page images and their clickable measure regions worked. Selected crops
+were visually compared with the original notation.
 
-The final browser selection -> image -> Practice Review -> return check has not
-yet passed; it remains the acceptance gate for MR !26. Rendering image endpoints
-successfully is not by itself proof that browser click handling works.
+The browser check also saved and resolved a practice mark, returned from Practice
+Review to its exact measure and page, verified demo-user isolation, reused an
+identical upload without losing practice data, and deleted the disposable score,
+its source file, passages, and marks. No browser exceptions or failed application
+requests occurred. The user's database and uploads were kept separate from this
+fresh-upload check. All 30 backend tests, 17 frontend tests, migration checks,
+and the production build pass.
 
 Production authentication, durable cloud storage, cloud deployment, a background
 queue, guaranteed OMR accuracy, actual offline browser caching, and note-level

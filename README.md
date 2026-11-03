@@ -169,7 +169,8 @@ With both servers and the PDF tools running:
    includes all staves, as well as showing the correct measure and page label.
 3. Move to another page. Switch to **Full page**, select a highlighted measure
    region, and confirm its selected-measure preview loads.
-4. Use **+ Practice**, open **Practice review**, add a note, and resolve the mark.
+4. Use **+ Practice**, open **Practice review**, confirm the saved measure, and
+   resolve the mark.
    Use **Open passage** to return to the exact saved measure and page.
 5. Switch to Sam Lee and confirm Alex's marks do not appear. Reuploading the
    identical PDF should reopen its existing library entry with its data intact.
@@ -200,16 +201,23 @@ measure so it remains easy to keep visual context while navigating a score.
 
 ### Verification status
 
-The measure-image changes are under review in
+The measure-image implementation is tracked in
 [MR !26](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/26).
-The real two-page PDF produced 56 distinct, valid measure PNGs, and both full-page
-images rendered. Selected crops were visually checked. All 30 backend tests,
-17 frontend tests, and the production build pass. Lint reports three existing
-Fast Refresh warnings in `mockSession.jsx`.
+A Playwright browser check uploaded the real two-page PDF into an isolated
+database, ran actual Audiveris recognition, clicked all 56 measures, and confirmed
+that every image loaded. The resulting PNGs were distinct. Both full-page images
+and their clickable regions also worked; selected crops were visually checked.
 
-The final browser click-through (select measure, see its music, save it, open
-Practice Review, return to the same passage) is still pending. Endpoint and unit
-test results alone do not complete that acceptance check.
+The same browser check saved and resolved a practice mark, reopened its exact
+measure and page, verified demo-user isolation, reused an identical upload while
+preserving practice data, and deleted the disposable score and source file.
+There were no browser exceptions or failed application requests. Test database
+and media storage were separate from the user's library.
+
+All 30 backend tests, 17 frontend tests, and the production build pass. Lint
+reports three existing Fast Refresh warnings in `mockSession.jsx`. Recognition
+results still need review for each new score; the successful demo PDF does not
+guarantee OMR accuracy on other files.
 
 To repeat the automated checks:
 
