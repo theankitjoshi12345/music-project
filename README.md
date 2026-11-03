@@ -37,12 +37,13 @@ when opened. Existing practice marks retain their passage IDs during this upgrad
 
 ### PDF recognition and rendering
 
-PDF measure recognition requires local Poppler (`pdftoppm` and `pdfinfo`) and
-Audiveris. Page and measure images also require Poppler. Set `AUDIVERIS_COMMAND`
+Native PDF measure recognition requires local Poppler (`pdftoppm` and `pdfinfo`)
+and Audiveris. Docker installs both in its backend image automatically. Page and
+measure images also require Poppler. For native setup, set `AUDIVERIS_COMMAND`
 to the executable, or install it on PATH. On macOS the app also checks
 `/Applications/Audiveris.app` and `.local-tools/Audiveris.app` in this checkout.
 The mounted installer is not used as the runtime. The binary is local-only and
-excluded from Git; a new deployment must install it separately.
+excluded from Git; another native installation must install it separately.
 
 The demo limits recognition to PDFs with at most 10 pages and bounds rendering
 and recognition time. A second request for the same score shares the processing
@@ -97,7 +98,11 @@ backend/                        Django project
     pdf_render.py               Original PDF page and measure images
   media/                        Local uploaded files (ignored by Git)
   requirements.txt              Backend dependencies
+  requirements-docker.txt       Additional Gunicorn dependency for Docker
 .local-tools/                   Optional local Audiveris install (ignored)
+Dockerfile                      Frontend and backend image stages
+compose.yaml                    One-command startup and persistent volume
+docker/                         Container entrypoint and Nginx configuration
 p9/                             Revised Figma PDF and P#9 instructions
 p10/                            P#10 instructions and report
 architecture.md                 Implemented architecture and limits
@@ -106,7 +111,18 @@ API_CONTRACT.md                 REST endpoints and data contract
 
 ## Local setup
 
-### Prerequisites
+Choose either startup option below. Both run the complete library, PDF measure
+reader, and practice flow. Local development uses two terminals; Docker Compose
+starts both services with one command.
+
+| Option | Install on the host | App URL |
+| --- | --- | --- |
+| Local development | Python, Node.js, Poppler, Audiveris and its Java runtime | http://localhost:5173/ |
+| Docker Compose | Docker with Compose; no separate Python, Node.js, Java, Poppler or Audiveris install | http://localhost:8080/ |
+
+### Option 1: local development
+
+#### Prerequisites
 
 - Python 3.12 or newer
 - Node.js LTS
@@ -123,7 +139,7 @@ location, set the executable before starting Django:
 export AUDIVERIS_COMMAND="/absolute/path/to/Audiveris"
 ```
 
-### Backend
+#### Backend (terminal 1, repository root)
 
 ```bash
 python3.12 -m venv backend/.venv
@@ -143,7 +159,7 @@ The API runs at `http://127.0.0.1:8000/`. Confirm it with:
 curl http://127.0.0.1:8000/api/health/
 ```
 
-### Frontend
+#### Frontend (terminal 2, repository root)
 
 ```bash
 cd frontend
@@ -159,11 +175,98 @@ For access from another device on the same network, start Django with
 with `npm run dev -- --host 0.0.0.0`. Open `http://<your-private-ip>:5173/`
 on that device. This is a local development server with demo authentication.
 
+### Option 2: Docker Compose
+
+Install and start [Docker Desktop](https://docs.docker.com/desktop/) on macOS or
+Windows, or Docker Engine with the Compose plugin on Linux. From the repository
+root, run this single command:
+
+```bash
+docker compose up --build -d --wait
+```
+
+Open **http://localhost:8080/**. No environment file or manual migration is
+required. The first build needs internet access to download images, packages,
+and the verified Audiveris installer and can take several minutes. Later starts
+reuse cached images.
+Docker Desktop must be running before this command.
+
+Compose starts two services:
+
+- `frontend`: builds React with Node, then serves the production files with
+  Nginx and proxies API requests to Django.
+- `backend`: Python 3.12, Django/Gunicorn, Poppler, Audiveris 5.11.0, and the
+  installer's bundled Java runtime. Startup applies migrations, collects static
+  files, and creates a secret key in persistent storage.
+
+Health checks make `--wait` return after the API is ready through Nginx. The API
+has no separate host port. The app binds to localhost by default. Port 8080 is
+separate from the manual setup, so both options can run at the same time.
+
+Audiveris's official Linux installer is x86_64, so the backend explicitly uses
+`linux/amd64`. Docker Desktop runs it through emulation on Apple Silicon; OMR
+can be slower than the native local setup. The frontend uses the host's native
+container architecture. The Mac `.local-tools` application is never copied into
+the Linux image. See [third-party notices](THIRD_PARTY_NOTICES.md).
+
+Database, source PDFs, collected static files, and the generated Django secret
+key live in the named `app-data` volume under `/data`. It starts as an empty
+library and is separate from `backend/db.sqlite3` and `backend/media/` used by
+the manual setup. Changing startup options does not transfer existing data.
+Ordinary container replacement and `docker compose down` retain this volume.
+Do not add `--volumes` to `down` unless you intend to erase the Docker library.
+
+```bash
+docker compose ps                  # Service health and published port
+docker compose logs -f             # API, recognition and proxy logs
+docker compose down                # Stop; keep database and uploads
+docker compose up --build -d --wait # Start again or rebuild after code changes
+```
+
+To use another port:
+
+```bash
+PORT=8081 docker compose up --build -d --wait
+```
+
+For another device on your private network, replace the example address with
+this computer's private IP, start with the following environment values, and
+open `http://<your-private-ip>:8080/`:
+
+```bash
+BIND_ADDRESS=0.0.0.0 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,192.168.1.203 docker compose up --build -d --wait
+```
+
+These environment prefixes use POSIX shell syntax (macOS/Linux/WSL). The default
+one-command startup also works in PowerShell. This remains the local team demo
+with mock users. A public deployment still needs HTTPS, real access control, and
+a durable background queue for recognition. Recognition currently runs inside
+the API request. Docker allows up to 600 seconds for Audiveris and uses
+720-second Nginx/Gunicorn timeouts for the full bounded pipeline; native
+development retains its 300-second Audiveris default.
+
+#### Docker configuration
+
+| Variable | Default / purpose |
+| --- | --- |
+| `PORT` | `8080`; published frontend port |
+| `BIND_ADDRESS` | `127.0.0.1`; set to `0.0.0.0` for LAN access |
+| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1,[::1]`; include your LAN IP or deployment hostname |
+| `DJANGO_DEBUG` | Set to `false` by Compose; manual startup defaults to `true` |
+| `DJANGO_DATA_DIR` | `/data` in Docker; manual startup defaults to `backend/` |
+| `DJANGO_SECRET_KEY_FILE` | `/data/django-secret-key`; created once and reused |
+| `OMR_TIMEOUT_SECONDS` | `600` in Compose; `300` by default for native development |
+
+The Docker build excludes local databases, uploaded music, `.local-tools`, Git
+history, local environment files, and course-report folders. Migrations and
+application source are included. Local environment overrides are optional;
+the defaults preserve the existing manual setup.
+
 ### P#10 smoke test
 
-With both servers and the PDF tools running:
+With either setup running (port 5173 manually, or port 8080 with Docker):
 
-1. Open `http://localhost:5173/#/score-library`, choose Alex Rivera, and upload
+1. Open `/#/score-library` at your chosen app URL, choose Alex Rivera, and upload
    a clear sheet-music PDF of at most 10 pages. Wait for recognition to finish.
 2. Select different measure numbers. Confirm the music image changes and
    includes all staves, as well as showing the correct measure and page label.
@@ -201,20 +304,21 @@ measure so it remains easy to keep visual context while navigating a score.
 
 ### Verification status
 
-The measure-image implementation is tracked in
-[MR !26](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/26).
-A Playwright browser check uploaded the real two-page PDF into an isolated
-database, ran actual Audiveris recognition, clicked all 56 measures, and confirmed
-that every image loaded. The resulting PNGs were distinct. Both full-page images
-and their clickable regions also worked; selected crops were visually checked.
+Both startup options were verified on November 3, 2026:
 
-The same browser check saved and resolved a practice mark, reopened its exact
-measure and page, verified demo-user isolation, reused an identical upload while
-preserving practice data, and deleted the disposable score and source file.
-There were no browser exceptions or failed application requests. Test database
-and media storage were separate from the user's library.
+| Setup | Checks completed |
+| --- | --- |
+| Native | Fresh migrations and separate Django/Vite processes; real PDF upload and Audiveris recognition; all 56 measure buttons loaded distinct images; both page overlays; practice save, resolve, return, user isolation, duplicate upload and deletion |
+| Docker | One-command build/start with both services healthy; the same PDF/browser flow through Nginx; all 56 measure images; original PDF and collected static files served with DEBUG disabled |
+| Docker persistence | Compose down followed by the one-command build/start; exact PDF bytes, 56 passages, saved/resolved mark and generated secret key survived; saved passage reopened in the browser after recreation |
 
-All 30 backend tests, 17 frontend tests, and the production build pass. Lint
+The native browser check used an isolated data directory. The Docker check used
+its separate named volume. Disposable scores and practice marks were deleted
+after testing. The native library was preserved. Selected notation crops and
+browser screenshots were visually checked.
+
+All 30 backend tests pass in both the native and container runtimes. All 17
+frontend tests and the production build pass. Lint
 reports three existing Fast Refresh warnings in `mockSession.jsx`. Recognition
 results still need review for each new score; the successful demo PDF does not
 guarantee OMR accuracy on other files.
@@ -227,6 +331,13 @@ backend/.venv/bin/python backend/manage.py makemigrations --check --dry-run
 npm test --prefix frontend
 npm run lint --prefix frontend
 npm run build --prefix frontend
+```
+
+With Docker running, backend checks can also run inside its installed runtime:
+
+```bash
+docker compose exec backend python manage.py check
+docker compose exec backend python manage.py test scoreapi
 ```
 
 ### Reusing frontend components

@@ -16,6 +16,7 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = Path(os.environ.get("DJANGO_DATA_DIR", BASE_DIR))
 _audiveris_candidates = [
     BASE_DIR.parent / ".local-tools/Audiveris.app/Contents/MacOS/Audiveris",
     Path("/Applications/Audiveris.app/Contents/MacOS/Audiveris"),
@@ -23,7 +24,7 @@ _audiveris_candidates = [
 AUDIVERIS_COMMAND = os.environ.get("AUDIVERIS_COMMAND") or shutil.which("audiveris") or next(
     (str(path) for path in _audiveris_candidates if path.is_file()), ""
 )
-OMR_TIMEOUT_SECONDS = 300
+OMR_TIMEOUT_SECONDS = int(os.environ.get("OMR_TIMEOUT_SECONDS", "300"))
 OMR_MAX_PAGES = 10
 
 
@@ -31,12 +32,16 @@ OMR_MAX_PAGES = 10
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-am054yffs4&j)l#v$f^b$_q^-pi6t(x!c3*ljo)i8as@26!28='
+_secret_key_file = os.environ.get("DJANGO_SECRET_KEY_FILE")
+SECRET_KEY = (Path(_secret_key_file).read_text().strip() if _secret_key_file else
+              os.environ.get("DJANGO_SECRET_KEY", 'django-insecure-am054yffs4&j)l#v$f^b$_q^-pi6t(x!c3*ljo)i8as@26!28='))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() in {"1", "true", "yes"}
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "::1"]
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get(
+    "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]"
+).split(",") if host.strip()]
 
 # Local Vite development server. Tighten this list before production deployment.
 CORS_ALLOWED_ORIGINS = [
@@ -100,7 +105,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DATA_DIR / 'db.sqlite3',
     }
 }
 
@@ -140,8 +145,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = DATA_DIR / 'static'
 MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = DATA_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
