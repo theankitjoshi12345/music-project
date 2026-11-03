@@ -1,10 +1,15 @@
 # Score Companion
 
-Score Companion is a CMPS 453 team project for helping musicians open downloaded score parts, mark passages for practice, add a practice note, and review unresolved corrections.
+Score Companion is a CMPS 453 team project for uploading sheet music, viewing
+individual measures, and saving passages and notes for practice.
 
 ## P#10 local MVP
 
-The shared REST API and all four assigned screens are present in `main`: Logan's Offline Score Library, Ankit's Score Viewer & Navigation, Matthew's Measure Marker, and Jonathan's Practice Review. The P#10 golden path is: open the downloaded score in the library, view the selected score, mark a measure for practice, then review or resolve that measure and return to its score context.
+The app includes Logan's Offline Score Library, Ankit's Score Viewer & Navigation,
+Matthew's Measure Marker, and Jonathan's Practice Review. The current flow is:
+upload a score, select a measure, save it for practice, then review it or return
+to its original score context. Despite the original screen name, browser offline
+caching is not implemented.
 
 The app uses local mock authentication, not production security. Choose **Alex Rivera** or **Sam Lee** in the Demo user selector. Practice marks are isolated by the selected mock user so the same passage can be marked independently for each demo user.
 
@@ -30,9 +35,10 @@ to move through the document or open the original PDF in a new tab.
 Existing PDFs imported without page coordinates automatically prepare previews
 when opened. Existing practice marks retain their passage IDs during this upgrade.
 
-### Optional local PDF measure extraction
+### PDF recognition and rendering
 
-Install Poppler (`pdftoppm` and `pdfinfo`) and Audiveris. Set `AUDIVERIS_COMMAND`
+PDF measure recognition requires local Poppler (`pdftoppm` and `pdfinfo`) and
+Audiveris. Page and measure images also require Poppler. Set `AUDIVERIS_COMMAND`
 to the executable, or install it on PATH. On macOS the app also checks
 `/Applications/Audiveris.app` and `.local-tools/Audiveris.app` in this checkout.
 The mounted installer is not used as the runtime. The binary is local-only and
@@ -41,8 +47,8 @@ excluded from Git; a new deployment must install it separately.
 The demo limits recognition to PDFs with at most 10 pages and bounds rendering
 and recognition time. A second request for the same score shares the processing
 state; completed imports are reused. Failed/repeated extraction preserves
-existing measures and practice notes. Audiveris is licensed under AGPL-3.0;
-upstream source and license: https://github.com/Audiveris/audiveris.
+existing measures and practice notes. Audiveris is an external AGPL-3.0 application;
+see its [source and license](https://github.com/Audiveris/audiveris).
 
 ## Tech stack
 
@@ -52,12 +58,12 @@ upstream source and license: https://github.com/Audiveris/audiveris.
 | Backend | Django + Django REST Framework |
 | Database | SQLite |
 | Runtime | Python 3.12+ and Node.js LTS |
-| IDE | VS Code |
-| Version control | Git + GitLab |
-| API testing | Postman (recommended) |
+| PDF pipeline | Poppler + local Audiveris; original PDF crops rendered as PNG |
+| Version control | GitLab merge requests + GitHub mirror |
 | UI reference | [Score Companion Figma design](https://www.figma.com/design/NSZliKsVC3CiwrjqQfrOHS) and export: `p9/Score_Companion_P8_Revised_Screens.pdf` |
 
-See [architecture.md](architecture.md) for the planned architecture and boundaries.
+See [architecture.md](architecture.md) for the implemented data flow, persistence,
+runtime limits, and remaining boundaries.
 
 ## Screen ownership
 
@@ -75,17 +81,27 @@ Review use the shared backend for the selected demo user's practice marks.
 ## Project structure
 
 ```text
-frontend/                 React + Vite application
-  src/App.jsx             Shared app shell and placeholder hash routes
-  src/pages/ScoreViewer.jsx  Ankit's Score Viewer & Navigation
-  src/components/score-companion/  Shared UI components and teammate usage guide
-backend/                  Django project
-  config/                 Django settings and root routing
-  scoreapi/               Initial REST API app
-  requirements.txt        Backend dependencies
-p9/                       P#9 instructions and revised Figma PDF reference
-architecture.md           Planned technical architecture
-API_CONTRACT.md           Shared REST endpoint and data contract
+frontend/                       React + Vite application
+  src/App.jsx                   Hash routes and demo-user isolation
+  src/OfflineScoreLibrary.jsx    Upload, reopen, and delete scores
+  src/pages/ScoreViewer.jsx      Score navigation and practice actions
+  src/pages/PdfScoreReader.jsx   Measure crops and full-page overlays
+  src/PracticeReview.jsx         Saved passages, notes, and resolution
+  src/components/score-companion/  Shared UI components and usage guide
+backend/                        Django project
+  config/                       Settings and root routing
+  scoreapi/                     REST API, models, migrations, and tests
+    upload_service.py           Deduplication and upload cleanup
+    extraction_service.py       Extraction state and passage persistence
+    score_extract.py            MusicXML and Audiveris layout import
+    pdf_render.py               Original PDF page and measure images
+  media/                        Local uploaded files (ignored by Git)
+  requirements.txt              Backend dependencies
+.local-tools/                   Optional local Audiveris install (ignored)
+p9/                             Revised Figma PDF and P#9 instructions
+p10/                            P#10 instructions and report
+architecture.md                 Implemented architecture and limits
+API_CONTRACT.md                 REST endpoints and data contract
 ```
 
 ## Local setup
@@ -95,6 +111,17 @@ API_CONTRACT.md           Shared REST endpoint and data contract
 - Python 3.12 or newer
 - Node.js LTS
 - Git
+- Poppler and Audiveris for the PDF measure flow described above
+
+Install Poppler through your system package manager (for example, `brew install
+poppler` on macOS). Install Audiveris separately with a compatible Java runtime;
+the local demo was verified with Audiveris 5.11 and its bundled Java runtime.
+The application can discover its macOS installation automatically. For another
+location, set the executable before starting Django:
+
+```bash
+export AUDIVERIS_COMMAND="/absolute/path/to/Audiveris"
+```
 
 ### Backend
 
@@ -102,9 +129,13 @@ API_CONTRACT.md           Shared REST endpoint and data contract
 python3.12 -m venv backend/.venv
 backend/.venv/bin/pip install -r backend/requirements.txt
 backend/.venv/bin/python backend/manage.py migrate
-backend/.venv/bin/python backend/manage.py index_score_files
 backend/.venv/bin/python backend/manage.py runserver
 ```
+
+Migrations include the stored measure-coordinate schema. Existing installations
+can also run `backend/.venv/bin/python backend/manage.py index_score_files` once
+to fingerprint legacy uploads for deduplication; this does not merge or delete
+existing scores. No sample scores are inserted during startup.
 
 The API runs at `http://127.0.0.1:8000/`. Confirm it with:
 
@@ -116,22 +147,36 @@ curl http://127.0.0.1:8000/api/health/
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-Vite serves the app at `http://localhost:5173/`. Use the navigation links to visit each reserved route.
+Vite serves the app at `http://localhost:5173/` and proxies `/api/` and `/media/`
+to Django at `127.0.0.1:8000`. Keep both servers running.
+
+For access from another device on the same network, start Django with
+`backend/.venv/bin/python backend/manage.py runserver 0.0.0.0:8000` and Vite
+with `npm run dev -- --host 0.0.0.0`. Open `http://<your-private-ip>:5173/`
+on that device. This is a local development server with demo authentication.
 
 ### P#10 smoke test
 
-With both servers running, open `http://localhost:5173/#/score-library` on the
-`main` branch. Optionally upload a score, choose Alex Rivera, open the available
-score, visit Measure Marker, select a measure, use the persistent **Save measure**
-action, and open Practice Review. Resolve the mark and use
-**Open passage** to return to the correct score context. Switch to Sam Lee to
-confirm that Alex's practice mark does not appear for the other mock user.
+With both servers and the PDF tools running:
 
-### Score Viewer (#24)
+1. Open `http://localhost:5173/#/score-library`, choose Alex Rivera, and upload
+   a clear sheet-music PDF of at most 10 pages. Wait for recognition to finish.
+2. Select different measure numbers. Confirm the music image changes and
+   includes all staves, as well as showing the correct measure and page label.
+3. Move to another page. Switch to **Full page**, select a highlighted measure
+   region, and confirm its selected-measure preview loads.
+4. Use **+ Practice**, open **Practice review**, add a note, and resolve the mark.
+   Use **Open passage** to return to the exact saved measure and page.
+5. Switch to Sam Lee and confirm Alex's marks do not appear. Reuploading the
+   identical PDF should reopen its existing library entry with its data intact.
+6. With a disposable upload, use **Delete score** and confirm the library entry,
+   original file, passages, and attached practice marks are removed.
+
+### Score Viewer navigation
 
 Open `http://localhost:5173/#/score-viewer`. To open a particular API score,
 use `#/score-viewer?score=1` (replace `1` with its database ID). Library
@@ -144,15 +189,37 @@ proxies these requests to Django at `127.0.0.1:8000`. Start both servers for
 live data. An empty library asks you to add a score; it does not insert demo
 content. Failed requests show a retry action and a return link to the library.
 
-The original PDF provides the music notation. OMR supplies a detected measure
-list for navigation and saving practice marks. Actual offline caching is not
-implemented. Non-PDF metadata previews use illustrative notation.
+The original PDF provides the music notation. Audiveris supplies the measure
+metadata and coordinates; Django renders each selected region from the original
+PDF as a PNG. Full-page overlays use those same coordinates. Non-PDF metadata
+previews use illustrative notation. OMR boundaries and numbering need visual
+review against the source score.
 
 Page, section, and measure jumps smoothly scroll and highlight the destination
 measure so it remains easy to keep visual context while navigating a score.
 
-Run `npm test --prefix frontend`, `npm run lint --prefix frontend`, and
-`npm run build --prefix frontend` to verify the viewer's data integration and build.
+### Verification status
+
+The measure-image changes are under review in
+[MR !26](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/26).
+The real two-page PDF produced 56 distinct, valid measure PNGs, and both full-page
+images rendered. Selected crops were visually checked. All 30 backend tests,
+17 frontend tests, and the production build pass. Lint reports three existing
+Fast Refresh warnings in `mockSession.jsx`.
+
+The final browser click-through (select measure, see its music, save it, open
+Practice Review, return to the same passage) is still pending. Endpoint and unit
+test results alone do not complete that acceptance check.
+
+To repeat the automated checks:
+
+```bash
+backend/.venv/bin/python backend/manage.py test scoreapi
+backend/.venv/bin/python backend/manage.py makemigrations --check --dry-run
+npm test --prefix frontend
+npm run lint --prefix frontend
+npm run build --prefix frontend
+```
 
 ### Reusing frontend components
 
@@ -165,23 +232,19 @@ callbacks; each owner keeps their own API integration and screen behavior.
 ## API
 
 The Django REST API is documented in [API_CONTRACT.md](API_CONTRACT.md).
-After creating data through the Django admin, shell, or fixtures, the primary
-endpoints are scores, score passages, and practice marks under `/api/`.
-
-Run backend API tests with:
-
-```bash
-backend/.venv/bin/python backend/manage.py test scoreapi
-```
+The library upload flow creates scores and imports passages. Endpoints under
+`/api/` provide scores, passage metadata, extraction state, practice marks, full
+PDF page images, and individual measure previews.
 
 ## Development workflow
 
-1. Read the revised Figma PDF before building a screen.
-2. Work only on your assigned GitLab issue and branch.
-3. Build your owned screen; do not modify another owner's screen without coordination.
-4. Test the frontend and relevant API requests.
-5. Open a GitLab merge request with `Closes #<issue-number>`.
-6. Request teammate review before merging.
+1. Work on a focused branch and use the assigned issue for context when available.
+2. Use the revised Figma PDF as a reference alongside the implemented user flow.
+3. Update affected API, README, and architecture documentation with the change.
+4. Run relevant tests and verify the affected browser flow.
+5. Open a GitLab merge request with validation results and issue links.
+6. Merge verified work according to the agreed review process, then synchronize
+   local `main` and the GitHub mirror with GitLab `main`.
 
 ## Prior project work
 
@@ -190,6 +253,7 @@ backend/.venv/bin/python backend/manage.py test scoreapi
 - [P#8 synthesis and implementation decisions](p8/P8_SYNTHESIS_AND_IMPLEMENTATION.md)
 - [P#8 user-testing report](p8/P8_User_Testing_Report.pdf)
 - [P#9 instructions](p9/instruction.md)
+- [P#10 instructions](p10/instruction.md)
 
 ## License
 

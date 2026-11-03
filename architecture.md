@@ -1,159 +1,223 @@
-# Architecture — Score Companion
+# Score Companion architecture
 
-**Status:** P#9 app shell is implemented. The project currently includes a shared React shell, a Django health endpoint, and the planned screen-route structure for future feature work.
-**Status:** Planned architecture for P#9. The shared API contract is implemented
-on feature branch `28-shared-api-contract` and awaits team review; no screen
-implementation is included in that work.
+This document describes the implemented local application, including the
+measure-image work under review in [MR !26](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/26).
+The final browser click-through for the new measure renderer remains pending.
 
-Score Companion is intended to support musicians opening score parts, marking passages for practice, adding contextual notes, and reviewing unresolved passages.
+## System boundaries
 
-## System Overview
+Score Companion runs a React/Vite browser client and a Django REST Framework API.
+SQLite stores score metadata, detected measures, extraction state, and practice
+marks. Original uploads live on the backend filesystem. Audiveris and Poppler
+run locally as subprocesses; there is no paid recognition API or deployed cloud
+worker in the current implementation.
 
-```text
-React + Vite client
-        │ HTTPS / JSON
-        ▼
-Django REST Framework API
-        │ Django ORM
-        ▼
-SQLite database
-```
+~~~mermaid
+flowchart LR
+    Browser["React reader and library"]
+    API["Django REST API"]
+    DB[("SQLite")]
+    Files[("Original uploaded files")]
+    Poppler["Poppler: PDF pages and crops"]
+    OMR["Audiveris: MusicXML and layout"]
+    Browser -->|"JSON requests"| API
+    Browser -->|"PNG image requests"| API
+    API --> DB
+    API --> Files
+    Files --> Poppler
+    Poppler -->|"300 dpi page images"| OMR
+    OMR -->|"Measure metadata and coordinates"| API
+    Poppler -->|"Original notation as PNG"| API
+~~~
 
-The React client will provide the user interface. Django REST Framework will expose application data through a JSON API. Django will use its ORM to persist data in SQLite during development.
+During development Vite serves the browser on port 5173 and proxies both /api
+and /media to Django at 127.0.0.1:8000. The browser therefore uses one origin,
+including when opening the app through Vite's private-network address.
 
-## Technology Decisions
+## User flow
 
-| Area | Planned choice | Classification | Purpose |
-| --- | --- | --- | --- |
-| Frontend | React + Vite (JavaScript) | **Mandatory** | Build the browser-based user interface. |
-| Backend | Django + Django REST Framework | **Mandatory** | Provide server-side application logic and REST API endpoints. |
-| Database | SQLite | **Mandatory** | Persist development data through Django's ORM. |
-| Runtime | Python 3 + Node.js LTS | **Mandatory** | Run the Django backend and React/Vite frontend. |
-| Version control and hosting | Git + GitLab | **Mandatory** | Track source changes and support the P#9 issue and merge-request workflow. |
-| Project tracking | GitLab | **Mandatory** | Source of truth for milestones, issues, branches, merge requests, and reviews. |
-| IDE | VS Code | **Recommended** | Shared development environment for the team. |
-| AI assistant | Codex or GitHub Copilot | **Recommended** | Assist with setup, implementation, and debugging. |
-| API testing | Postman | **Recommended** | Send and inspect requests to the REST API during development. |
-| UI design | Figma | **Recommended** | Maintain the approved screen designs and guide implementation. |
+1. Add a PDF or MusicXML score to Library. Reuploading identical file contents
+   opens the existing score, including its measures and practice marks.
+2. Open the score. PDFs without current layout data start recognition; the
+   reader shows progress and a retry action on failure.
+3. Select a detected measure number to load its original notation as a crop.
+   Full page displays a rendered PDF page with selectable measure regions.
+4. Save a measure with + Practice. Practice Review lists the selected demo
+   user's saved passages and can mark them resolved.
+5. Open passage returns to the exact score and passage ID, selecting its page
+   and measure image.
 
-## Planned Repository Layout
+Library is shared between the demo users. Practice marks are isolated by the
+X-Mock-User header (alex or sam in the UI). This header is a local demonstration
+mechanism, not authentication or an access-control boundary. Screens remount when
+the selected user or hash route changes so late responses cannot populate another
+user's review or another score's reader.
 
-```text
-music-project/
-├── frontend/                 # React + Vite application
-│   ├── src/
-│   │   ├── components/       # Reusable UI components
-│   │   ├── pages/            # Route-level screens
-│   │   ├── services/         # API client functions
-│   │   └── styles/           # Application styles
-│   └── package.json
-├── backend/                  # Django project
-│   ├── config/               # Django settings and root URL routing
-│   ├── scores/               # Score, mark, note, and review domain app
-│   ├── manage.py
-│   └── requirements.txt
-├── architecture.md           # This planned architecture
-└── README.md                 # Setup and project overview
-```
+## Data model and persistence
 
-The exact Django app names and React component structure may evolve during implementation, but the frontend/backend separation is planned.
+| Record | Stored data | Identity and relationships |
+| --- | --- | --- |
+| Score | Title, movement, instrument, page count, source file, SHA-256 content fingerprint, extraction state/error/time, layout version | One score has many passages; a non-null content fingerprint is unique |
+| Passage | Section, measure number, original PDF page, optional bounding box | Belongs to one score; score + section + measure number is unique |
+| PracticeMark | Mock owner, note, resolved state, timestamps | Belongs to a passage; passage + owner is unique |
 
-## Planned Responsibilities
+A passage bounding box contains normalized x, y, width, and height, plus the
+recognition image's pixel width and height. The region covers the measure stack
+across all staves in its system, so a piano preview includes both hands.
 
-### Frontend — React + Vite
+The application does not implement MuseScore's complete Score/Measure/Segment/
+Event hierarchy or a music engraving engine. Passage is the current measure-level
+record. PDF notation is rendered from the original file, not reconstructed from
+detected notes.
 
-The client will implement the Figma-informed screens and user flow:
+### Upload safety
 
-1. Offline score library.
-2. Score viewer with piece, movement, and measure context.
-3. **Mark for practice** action for selected measures.
-4. Practice-note entry for marked passages.
-5. Unresolved-passage review and resolved confirmation.
+- Upload size is limited to 10 MB. Accepted extensions are PDF, MusicXML, XML,
+  and MXL.
+- A SHA-256 fingerprint identifies identical file bytes. Repeated uploads return
+  the existing score without changing its metadata or starting another import.
+- New files use UUID storage names, so different contents with the same original
+  filename cannot overwrite one another.
+- Score and passage database writes are atomic. If an import fails, or an
+  identical concurrent upload wins, the unused newly written file is removed.
+- Existing uploads can be indexed with manage.py index_score_files. The command
+  does not merge or delete existing score records.
+- Deleting a score removes its original source file, its passages, and the
+  passages' practice marks. Repeated practice saves return the existing mark.
+- Repeated manual passage creation returns the existing passage on the same page.
+  A conflicting page returns 409; an out-of-range page returns 400.
 
-The frontend will call the backend API and present loading, success, and error feedback.
+SQLite and backend/media are local state and are excluded from Git. Tests use a
+temporary media directory and do not populate the live library with sample files.
 
-### Backend — Django + Django REST Framework
+## PDF recognition and layout import
 
-The backend will:
+Recognition is coordinated by extraction_service.py and implemented by
+score_extract.py:
 
-- Define models and validation rules.
-- Provide JSON endpoints for score data, practice marks, notes, and review status.
-- Use Django migrations to manage the SQLite schema.
-- Return clear validation and error responses to the frontend.
+1. Read the PDF page count with pdfinfo and reject PDFs over the demo limit.
+2. Render its pages at 300 dpi with pdftoppm into a temporary work directory.
+3. Run Audiveris in batch mode with save, transcribe, and export enabled.
+4. Import MusicXML measure metadata and read the corresponding .omr layout.
+   Audiveris measure-stack IDs are matched to exported measure numbers.
+5. Derive each crop's horizontal bounds from the stack and vertical bounds from
+   the system's staves, adding notation padding. Store normalized coordinates
+   relative to the original recognition image.
+6. Upsert passages in a database transaction. Matching passages keep their IDs,
+   so existing practice notes and links survive re-extraction.
+7. Save the page count and current layout version, then discard the temporary
+   rendered pages and Audiveris output files.
 
-### Database — SQLite
+PDF pages are processed separately by Audiveris. Imported passages receive
+sequential measure numbers across the document and Page N sections. Numbering
+and boundaries are recognition estimates and should be checked against the score.
+The importer rejects a missing page export or missing measure position instead
+of silently assigning that music to a different page.
 
-SQLite is planned for local development. It will store the application's data through Django models. Any future production database decision is outside the P#9 scope.
+MusicXML/XML/MXL uploads bypass PDF recognition and import metadata from the first
+score-partwise part. They do not currently produce original-PDF measure crops;
+their existing metadata view uses illustrative notation.
 
-## Planned API Boundaries
+### Extraction lifecycle
 
-The exact endpoint paths are not final. The initial REST resources are planned as follows:
-
-| Resource | Planned responsibility |
+| State | Reader behavior |
 | --- | --- |
-| Scores | List available score parts and retrieve score context. |
-| Passages | Retrieve passages or measures associated with a score. |
-| Practice marks | Create, list, and update a marked passage. |
-| Practice notes | Attach contextual notes to a marked passage. |
-| Review items | List unresolved passages and mark an item resolved. |
+| not_started | Starts PDF recognition when opened |
+| processing | Shows progress; other readers can poll the score |
+| complete | Uses saved measures and layout coordinates |
+| failed | Shows the stored error and offers retry |
 
-## Development Workflow
+A conditional database update allows one active extraction request per score.
+An additional request for that score returns 409 while recognition is active.
+After the configured timeout plus 90 seconds, an interrupted processing state is
+presented as a retryable failure.
 
-1. Use Figma as the visual reference for each assigned screen.
-2. Create and assign work through GitLab issues.
-3. Create a Git branch from the assigned issue.
-4. Implement one owned screen or scoped feature at a time.
-5. Test API requests with Postman when useful.
-6. Open a GitLab merge request that includes `Closes #<issue-number>`.
-7. Obtain a teammate review, merge the change, and verify that the linked issue closes.
+A completed PDF import with layout version 0 contains metadata only. Opening it
+prepares the layout coordinates; version 1 means measure positions were stored.
+Completed imports with current layout data are reused. Failed extraction leaves
+existing passages and practice marks intact.
 
-> GitLab is the project's authoritative tracker. GitHub may mirror repository files, but it must not be used for issues, milestones, or pull-request workflow for this project.
+This is synchronous processing in the Django request, not a durable job queue.
+Different scores can still run concurrently; a public deployment would need
+worker-level concurrency controls and an appropriate request timeout.
 
-## Local Development Prerequisites
+## PDF and measure rendering
 
-### Mandatory
+pdf_render.py calls Poppler against the stored original PDF:
 
-- Python 3
-- Node.js LTS
-- Git
-- Access to the team GitLab project
+| Request | Rendering behavior |
+| --- | --- |
+| GET /api/scores/{id}/pages/{page}/image/ | Full page PNG at 150 dpi |
+| GET /api/passages/{id}/preview/ | Measure crop at 300 dpi, using stored coordinates |
 
-### Recommended
+The reader loads PNGs as ordinary browser images rather than depending on a
+browser PDF plugin to jump to a measure. Selecting a passage changes the image
+URL and selected-measure heading. Full-page overlay positions use the same
+normalized boxes as the crop endpoint.
 
-- VS Code
-- Codex or GitHub Copilot
-- Postman
-- Access to the team's Figma design file
+Preview URLs include a geometry hash so changed crop bounds do not reuse stale
+browser images. Responses allow private browser caching for five minutes. PNGs
+are generated on request; there is no persistent preview-image store or server
+render cache. The original PDF remains available through Open PDF.
 
-## Planned Local Startup
+Rendering checks the page or region before invoking Poppler and returns a clear
+error when a source file or measure position is unavailable. Local /media serving
+permits same-origin embedding.
 
-These commands describe the intended layout once the application skeleton is created.
+## Runtime requirements and limits
 
-### Backend
+| Component or operation | Current requirement or limit |
+| --- | --- |
+| Backend | Python 3.12+, Django and Django REST Framework from requirements.txt |
+| Frontend | Node.js LTS and dependencies from frontend/package-lock.json |
+| PDF tools | Poppler: pdfinfo and pdftoppm available on PATH |
+| Recognition | Local Audiveris executable; 5.11 tested with its bundled Java runtime |
+| PDF recognition | Maximum 10 pages |
+| Page-count inspection | 15-second timeout |
+| PDF rasterization | 60-second timeout |
+| Audiveris recognition | 300-second timeout |
+| One image render | 30-second timeout |
 
-```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
+Audiveris discovery checks AUDIVERIS_COMMAND, then PATH, then the macOS application
+paths configured in backend/config/settings.py. A mounted installer is not the
+runtime. Local binaries under .local-tools are excluded from Git and must be
+installed separately on another machine.
 
-### Frontend
+Audiveris is an external AGPL-3.0 application; its source and license are available
+in the [upstream repository](https://github.com/Audiveris/audiveris). No Audiveris
+binary is bundled in this repository.
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+## Implementation map
 
-The frontend development server will call the local Django API. Exact ports, environment variables, and CORS configuration will be added when the skeleton is created.
+| Location | Responsibility |
+| --- | --- |
+| frontend/src/App.jsx | Hash routing and user/route screen isolation |
+| frontend/src/OfflineScoreLibrary.jsx | Upload, reopen, extraction action, deletion |
+| frontend/src/pages/useScoreViewer.js | Load score data, extraction progress, selection, practice saves |
+| frontend/src/pages/PdfScoreReader.jsx | Measure images, full-page images, region selection, loading/error feedback |
+| frontend/src/PracticeReview.jsx | Review and resolve the selected user's practice marks |
+| backend/scoreapi/models.py | Score, Passage, PracticeMark and constraints |
+| backend/scoreapi/upload_service.py | Content deduplication and file/database cleanup |
+| backend/scoreapi/extraction_service.py | Extraction claiming, retries and transactional passage import |
+| backend/scoreapi/score_extract.py | MusicXML parsing, Audiveris invocation and layout import |
+| backend/scoreapi/pdf_render.py | Original PDF page and measure PNG rendering |
+| backend/scoreapi/views.py | API operations and image responses |
+| backend/scoreapi/migrations/ | Persistent schema changes |
 
-## Out of Scope for This Planned Architecture
+See [README.md](README.md) for startup and user testing, and
+[API_CONTRACT.md](API_CONTRACT.md) for endpoint payloads and error responses.
 
-- Production hosting and deployment.
-- A production database migration.
-- Authentication and account management.
-- Online score browsing, social features, tuner/metronome tools, or automatic error detection.
-- Claims of implemented offline storage, PDF handling, or saved annotations before those features are built.
+## Verification and remaining boundaries
+
+The real two-page demo PDF has been recognized and all 56 measure-preview URLs
+returned valid, distinct PNGs. Both full-page image endpoints rendered. Selected
+crops were visually compared with the original notation. Backend, frontend,
+migration, and production-build checks pass.
+
+The final browser selection -> image -> Practice Review -> return check has not
+yet passed; it remains the acceptance gate for MR !26. Rendering image endpoints
+successfully is not by itself proof that browser click handling works.
+
+Production authentication, durable cloud storage, cloud deployment, a background
+queue, guaranteed OMR accuracy, actual offline browser caching, and note-level
+music editing remain outside the implemented local demo.
