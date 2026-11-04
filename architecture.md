@@ -95,16 +95,49 @@ the same checkout; the container gets its own Linux runtime. See
    reader shows progress and a retry action on failure.
 3. Select a detected measure number to load its original notation as a crop.
    Full page displays a rendered PDF page with selectable measure regions.
-4. Save a measure with + Practice. Practice Review lists the selected demo
+4. Save a measure with Save for practice. Practice Review lists the selected demo
    user's saved passages and can mark them resolved.
-5. Open passage returns to the exact score and passage ID, selecting its page
+5. Open measure returns to the exact score and passage ID, selecting its page
    and measure image.
+6. Remove from practice deletes the user's saved row and note. Deleting the
+   score through Library's Score options removes the source and related records.
 
 Library is shared between the demo users. Practice marks are isolated by the
 X-Mock-User header (alex or sam in the UI). This header is a local demonstration
 mechanism, not authentication or an access-control boundary. Screens remount when
 the selected user or hash route changes so late responses cannot populate another
 user's review or another score's reader.
+
+## Navigation, loading and removal
+
+All four screens use AppLayout and its shared Library/Practice review header.
+The reader keeps measure navigation and the save/remove action next to the
+selected notation. Full-page mode has separately labelled page controls. A
+global measure jump and Left/Right keyboard handler change both page and selected
+passage; the handler ignores editable fields and modifier shortcuts and stops
+at score boundaries. Only the measure list scrolls when following a selection.
+The native marker uses the same image endpoint and keyboard behavior. It is
+reachable through Library's Score options, alongside the destructive score action.
+
+LoadingSkeleton provides labelled, aria-busy placeholders for library, reader,
+review, marker and notation reads. Placeholder shapes are hidden from assistive
+technology, and animation respects reduced-motion preferences. Write actions
+show pending button states; a failed request preserves the visible record.
+Retry controls recover failed reads and image loads.
+
+Passage responses include the current user's practice_mark_id. DELETE on the
+practice-mark detail endpoint scopes the lookup to X-Mock-User, deletes the row
+and its inline note, and returns 204. There is no separate practice-file store.
+The reader and marker clear their saved flag/ID only after confirmation, while
+Review removes the corresponding card. Reloading any screen fetches authoritative
+state. Another user's practice row is retained; attempting its ID returns 404.
+Removing a mark retains the library score/PDF. Score deletion removes the source
+file and cascades its passages and every attached mark.
+
+The browser walkthrough in frontend/e2e/workflow.mjs checks the complete UI path,
+keyboard/input behavior, failure recovery, ownership, responsive layouts and
+backend/file cleanup against an empty, separate library. See
+[the usability review](docs/UI_REVIEW.md) for tasks and observed fixes.
 
 ## Data model and persistence
 
@@ -178,7 +211,7 @@ their existing metadata view uses illustrative notation.
 | State | Reader behavior |
 | --- | --- |
 | not_started | Starts PDF recognition when opened |
-| processing | Shows progress; other readers can poll the score |
+| processing | Shows an estimated countdown and elapsed time; readers poll the score |
 | complete | Uses saved measures and layout coordinates |
 | failed | Shows the stored error and offers retry |
 
@@ -191,6 +224,28 @@ A completed PDF import with layout version 0 contains metadata only. Opening it
 prepares the layout coordinates; version 1 means measure positions were stored.
 Completed imports with current layout data are reused. Failed extraction leaves
 existing passages and practice marks intact.
+
+### Conversion time estimate
+
+The existing extraction_updated_at field records the claim time while a job is
+processing; page-count updates do not change it. Score responses expose it as
+extraction_started_at for an active job, avoiding a new persistence model.
+The PDF inspection step publishes its real page count before rasterization and
+recognition. The serializer estimates total duration as 15 seconds of setup plus
+page count times OMR_ESTIMATED_SECONDS_PER_PAGE, capped at OMR_TIMEOUT_SECONDS.
+The defaults are 15 seconds per page natively and 150 in Docker for emulation.
+Operators can tune this estimate for their hardware; it is not measured OMR
+progress and does not control the actual timeout.
+
+The reader polls every 1.5 seconds even while its extraction POST is pending.
+ExtractionProgress uses the server start time and updates its clock every second;
+refreshing, remounting or polling therefore does not restart the countdown.
+When the estimate expires it shows a longer-than-estimated message and keeps
+counting elapsed time. Only completion/failure from the API ends the progress
+state. Clock updates are outside the live status announcement to avoid reading
+every second aloud. Spinning feedback respects reduced-motion preferences.
+Library conversion/retry actions enter the reader immediately, and on phones
+progress precedes the PDF image so it remains visible.
 
 This is synchronous processing in the Django request, not a durable job queue.
 Different scores can still run concurrently; a public deployment would need
@@ -253,6 +308,9 @@ installer and retains its license material in the resulting image.
 | frontend/src/OfflineScoreLibrary.jsx | Upload, reopen, extraction action, deletion |
 | frontend/src/pages/useScoreViewer.js | Load score data, extraction progress, selection, practice saves |
 | frontend/src/pages/PdfScoreReader.jsx | Measure images, full-page images, region selection, loading/error feedback |
+| frontend/src/pages/ExtractionProgress.jsx, extractionTiming.js | Estimated countdown, elapsed time, overrun feedback and clock formatting |
+| frontend/src/pages/useMeasureKeyboard.js, measureNavigation.js | Keyboard controls, form-field protection and measure boundaries |
+| frontend/src/components/score-companion/LoadingSkeleton.jsx | Accessible placeholders for data and notation loads |
 | frontend/src/PracticeReview.jsx | Review and resolve the selected user's practice marks |
 | backend/scoreapi/models.py | Score, Passage, PracticeMark and constraints |
 | backend/scoreapi/upload_service.py | Content deduplication and file/database cleanup |
@@ -288,8 +346,8 @@ fresh one-command startup preserved the exact PDF, all 56 passages, the resolved
 practice mark and the generated secret key. The saved passage loaded in the
 browser after recreation. Nginx served original PDFs and collected admin assets
 with DEBUG disabled. Disposable test records were deleted afterward; the native
-library stayed separate from test data. All 30 backend tests pass in both
-runtimes; 17 frontend tests, migration checks and the production build pass.
+library stayed separate from test data. All 34 backend tests pass in both
+runtimes; 23 frontend tests, migration checks and the production build pass.
 
 Production authentication, durable cloud storage, cloud deployment, a background
 queue, guaranteed OMR accuracy, actual offline browser caching, and note-level

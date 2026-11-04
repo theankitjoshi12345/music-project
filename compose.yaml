@@ -13,6 +13,7 @@ services:
       AUDIVERIS_COMMAND: /opt/audiveris/bin/Audiveris
       # Leave headroom for Intel emulation on Apple Silicon.
       OMR_TIMEOUT_SECONDS: "600"
+      OMR_ESTIMATED_SECONDS_PER_PAGE: ${OMR_ESTIMATED_SECONDS_PER_PAGE:-150}
     volumes:
       - app-data:/data
     healthcheck:

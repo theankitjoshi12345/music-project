@@ -3,7 +3,7 @@
 Import from `../components/score-companion` when building a page in `src/pages/`.
 The entry point imports the shared stylesheet. Wrap screen content in
 `AppLayout`: its `.score-companion` class scopes the shared styles so other
-routes keep their existing appearance.
+routes share a consistent header, navigation, user selector and visual language.
 
 These components render UI and call callbacks. They do not fetch or save API
 data, choose an owner, or implement screen-specific workflows. Each screen
@@ -15,9 +15,10 @@ keeps its own data loading and state. Score Viewer does this in
 | Component | Main props | Purpose |
 | --- | --- | --- |
 | `AppLayout` | `status`, `activeHref`, `headingId`, `busy`, `children`, `navigation`, `className` | Header, responsive sidebar, and screen content region. `headingId` must match the screen heading's ID. |
-| `AppHeader` | `status`, `homeHref` | Brand/home link and caller-supplied status text. |
+| `AppHeader` | `status`, `homeHref`, `activeHref` | Shared Library/Practice review navigation, user selector and current screen context. |
 | `SidebarNavigation` | `items`, `activeHref` | Navigation items shaped as `{ href, label }`; marks the active link with `aria-current`. |
-| `ScreenHeading` | `id`, `title`, `subtitle`, `byline` | Screen title, optional supporting text and owner attribution. |
+| `ScreenHeading` | `id`, `title`, `subtitle`, `byline` | Screen title and optional supporting context. |
+| `LoadingSkeleton` | `label`, `kind`, `rows` | Labelled loading state; kinds are cards, reader or notation. Shapes are aria-hidden and motion respects user preferences. |
 | `FeedbackPanel` | `title`, `children`, `actions`, `tone` | Loading/empty feedback (`tone="status"`, default) or an error (`tone="error"`). Pass action buttons as React nodes. |
 | `ScoreContext` | `movement`, `instrument`, `sections`, `separator` | Consistent musical context; `sections` is an array of section names. |
 | `ScoreNavigation` | `page`, `pageCount`, `onPageChange`, `sections`, `section`, `onSectionChange`, `context`, `measureRange` | Controlled previous/next and section controls. Page numbers are 1-based; buttons disable at boundaries. Callbacks receive the new page number or section name. |
@@ -31,7 +32,7 @@ This is an integration example, not a replacement for an owner's assigned screen
 
 ```jsx
 import {
-  AppLayout, FeedbackPanel, ScreenHeading,
+  AppLayout, FeedbackPanel, LoadingSkeleton, ScreenHeading,
 } from '../components/score-companion'
 
 export default function ExamplePage({ loading, error, children }) {
@@ -43,7 +44,7 @@ export default function ExamplePage({ loading, error, children }) {
       busy={loading}
     >
       <ScreenHeading id="review-title" title="Practice review" />
-      {loading && <FeedbackPanel>Loading saved passages…</FeedbackPanel>}
+      {loading && <LoadingSkeleton label="Loading saved passages…" />}
       {error && <FeedbackPanel tone="error">{error}</FeedbackPanel>}
       {!loading && !error && children}
     </AppLayout>
@@ -81,6 +82,12 @@ Suggested adoption:
 Use truthful status labels. `AppHeader` displays the supplied text; it does not
 detect offline file availability. Pass `Offline ready` only when the screen
 has actually established that the score is cached and accessible offline.
+
+PDF measures use ScoreImage in PdfScoreReader, which shows a notation skeleton
+until the backend PNG loads and provides Retry image on failure. The generic
+MeasurePreview illustration is for non-PDF metadata only. Save/remove actions
+stay with the selected measure; do not duplicate them beside every list row.
+Mutations keep existing UI data until the backend confirms the change.
 
 Run `npm test` from `frontend/` for shared-component rendering and viewer data
 tests. `npm run lint` and `npm run build` check the complete frontend.

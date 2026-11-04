@@ -193,6 +193,37 @@ class ScoreApiTests(APITestCase):
         self.assertFalse(Passage.objects.filter(pk=self.passage.id).exists())
         self.assertFalse(PracticeMark.objects.filter(pk=mark.id).exists())
 
+    def test_deleting_practice_removes_note_and_updates_passage_without_deleting_score(self):
+        self.score.source_file = SimpleUploadedFile("retained.pdf", b"%PDF retained score")
+        self.score.save()
+        source = Path(self.score.source_file.path)
+        mark = PracticeMark.objects.create(passage=self.passage, owner="alex", note="Remove this note")
+        other = PracticeMark.objects.create(passage=self.passage, owner="sam", note="Keep Sam's note")
+        response = self.client.delete(f"/api/practice-marks/{mark.id}/", HTTP_X_MOCK_USER="alex")
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(PracticeMark.objects.filter(pk=mark.id).exists())
+        self.assertTrue(PracticeMark.objects.filter(pk=other.id).exists())
+        self.assertTrue(Score.objects.filter(pk=self.score.id).exists())
+        self.assertTrue(Passage.objects.filter(pk=self.passage.id).exists())
+        self.assertTrue(source.is_file())
+        passage = self.client.get(f"/api/scores/{self.score.id}/passages/", HTTP_X_MOCK_USER="alex").json()[0]
+        self.assertFalse(passage["is_marked_for_practice"])
+        self.assertIsNone(passage["practice_mark_id"])
+        sam = self.client.get(f"/api/scores/{self.score.id}/passages/", HTTP_X_MOCK_USER="sam").json()[0]
+        self.assertTrue(sam["is_marked_for_practice"])
+        self.assertEqual(sam["practice_mark_id"], other.id)
+        saved = self.client.post("/api/practice-marks/", {"passage_id": self.passage.id}, format="json", HTTP_X_MOCK_USER="alex")
+        self.assertEqual(saved.status_code, 201)
+        self.assertNotEqual(saved.json()["id"], mark.id)
+        self.assertEqual(saved.json()["note"], "")
+
+    def test_deleting_practice_cannot_remove_another_users_record(self):
+        mark = PracticeMark.objects.create(passage=self.passage, owner="sam", note="Keep")
+        response = self.client.delete(f"/api/practice-marks/{mark.id}/", HTTP_X_MOCK_USER="alex")
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(PracticeMark.objects.filter(pk=mark.id, note="Keep").exists())
+        self.assertEqual(self.client.delete("/api/practice-marks/99999/").status_code, 404)
+
     @override_settings(AUDIVERIS_COMMAND="/opt/audiveris")
     @patch("scoreapi.extraction_service.extract_pdf_measures", return_value=recognized_pdf([("Page 1", 1, 1), ("Page 1", 2, 1), ("Page 2", 3, 2)], 2))
     def test_pdf_extraction_preserves_existing_passages_and_practice_marks(self, extract_pdf):
@@ -242,6 +273,45 @@ class ScoreApiTests(APITestCase):
         response = self.client.get(f"/api/scores/{self.score.id}/")
         self.assertEqual(response.json()["extraction_status"], "not_started")
 
+    @override_settings(OMR_ESTIMATED_SECONDS_PER_PAGE=150, OMR_TIMEOUT_SECONDS=600)
+    @patch("scoreapi.extraction_service.extract_pdf_measures")
+    def test_conversion_publishes_page_count_and_stable_timing_before_completion(self, extract_pdf):
+        self.score.source_file = "scores/scan.pdf"
+        self.score.page_count = 1
+        self.score.save()
+        url = f"/api/scores/{self.score.id}/"
+
+        def recognize(*args, on_page_count, **kwargs):
+            started = self.client.get(url).json()["extraction_started_at"]
+            self.assertIsNotNone(started)
+            on_page_count(2)
+            running = self.client.get(url).json()
+            self.assertEqual(running["extraction_status"], "processing")
+            self.assertEqual(running["page_count"], 2)
+            self.assertEqual(running["extraction_estimated_seconds"], 315)
+            self.assertEqual(running["extraction_started_at"], started)
+            return recognized_pdf([("Page 1", 1, 1), ("Page 2", 2, 2)], 2)
+
+        extract_pdf.side_effect = recognize
+        response = self.client.post(url + "extract-measures/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["extraction_started_at"])
+
+    @override_settings(OMR_ESTIMATED_SECONDS_PER_PAGE=150, OMR_TIMEOUT_SECONDS=600)
+    def test_estimate_is_bounded_and_interrupted_jobs_do_not_keep_a_live_clock(self):
+        self.score.source_file = "scores/scan.pdf"
+        self.score.page_count = 10
+        self.score.extraction_state = "processing"
+        self.score.extraction_updated_at = timezone.now() - timedelta(minutes=20)
+        self.score.save()
+        detail = self.client.get(f"/api/scores/{self.score.id}/").json()
+        self.assertEqual(detail["extraction_estimated_seconds"], 600)
+        self.assertEqual(detail["extraction_status"], "failed")
+        self.assertIsNone(detail["extraction_started_at"])
+        self.score.source_file = "scores/part.musicxml"
+        self.score.save()
+        self.assertIsNone(self.client.get(f"/api/scores/{self.score.id}/").json()["extraction_estimated_seconds"])
+
     @patch("scoreapi.extraction_service.extract_pdf_measures", return_value=recognized_pdf([("Page 1", 1, 1)], 1))
     def test_interrupted_job_can_be_retried_instead_of_showing_progress_forever(self, extract_pdf):
         self.score.source_file = "scores/scan.pdf"
@@ -265,6 +335,7 @@ class ScoreApiTests(APITestCase):
                 "measure_number": 24,
                 "page_number": 2,
                 "is_marked_for_practice": False,
+                "practice_mark_id": None,
                 "bounding_box": None,
                 "preview_url": None,
             }

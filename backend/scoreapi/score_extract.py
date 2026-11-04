@@ -126,7 +126,7 @@ def extract_musicxml_measures(uploaded_file):
     return measures
 
 
-def extract_pdf_measures(pdf_path, audiveris_command, *, timeout=300, max_pages=10):
+def extract_pdf_measures(pdf_path, audiveris_command, *, timeout=300, max_pages=10, on_page_count=None):
     """Run a local PDF → image → Audiveris → MXL pipeline.
 
     Results are globally numbered because each OMR page is exported separately
@@ -145,6 +145,8 @@ def extract_pdf_measures(pdf_path, audiveris_command, *, timeout=300, max_pages=
     page_count = int(match.group(1))
     if page_count > max_pages:
         raise ValueError(f"This demo supports extraction of PDFs up to {max_pages} pages.")
+    if on_page_count:
+        on_page_count(page_count)
 
     with tempfile.TemporaryDirectory(prefix="score-companion-omr-") as work:
         work_path = Path(work)

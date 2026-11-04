@@ -38,7 +38,9 @@ export default function useScoreViewer(user) {
           setFocusedPassageId(Number(query.get('passage')) || result.passages.find((item) => item.page_number === startingPage)?.id || null)
           setLoading(false)
           const pdfNeedsPreviews = result.score?.source_file?.toLowerCase().endsWith('.pdf') &&
-            (result.score.extraction_status === 'not_started' || (result.score.extraction_status === 'complete' && !result.score.measure_layout_version))
+            (result.score.extraction_status === 'not_started' ||
+              (result.score.extraction_status === 'complete' && !result.score.measure_layout_version) ||
+              (result.score.extraction_status === 'failed' && query.get('extract') === '1'))
           if (pdfNeedsPreviews) {
             setExtracting(true)
             try {
@@ -63,12 +65,15 @@ export default function useScoreViewer(user) {
   }, [location, retry, user.id])
 
   useEffect(() => {
-    if (data?.score?.extraction_status !== 'processing' || extracting) return
+    if (!data?.score?.id || (!extracting && data.score.extraction_status !== 'processing')) return
     const controller = new AbortController()
     const timer = setInterval(async () => {
       try {
         const refreshed = await loadViewerData(data.score.id, controller.signal, fetch, { 'X-Mock-User': user.id })
-        if (!controller.signal.aborted) setData(refreshed)
+        if (!controller.signal.aborted) {
+          setData(refreshed)
+          setExtractionError('')
+        }
       } catch (failure) {
         if (!controller.signal.aborted) setExtractionError(failure.message)
       }
@@ -88,7 +93,7 @@ export default function useScoreViewer(user) {
     visible,
     passages,
     extracting: extracting || data?.score?.extraction_status === 'processing',
-    extractionError: extractionError || data?.score?.extraction_error || '',
+    extractionError: extracting ? '' : extractionError || data?.score?.extraction_error || '',
     focusedPassageId,
     sections: sectionOptions(passages),
     currentSections: sectionOptions(visible),
@@ -146,8 +151,16 @@ export default function useScoreViewer(user) {
       })
       const mark = await response.json()
       if (!response.ok) throw new Error(mark.passage_id?.[0] || 'The practice mark could not be saved.')
-      setData((current) => ({ ...current, passages: current.passages.map((item) => item.id === passage.id ? { ...item, is_marked_for_practice: true } : item) }))
+      setData((current) => ({ ...current, passages: current.passages.map((item) => item.id === passage.id ? { ...item, is_marked_for_practice: true, practice_mark_id: mark.id } : item) }))
       return mark
+    },
+    async removeFromPractice(passage) {
+      if (!passage.practice_mark_id) throw new Error('Reload this score to refresh its practice state.')
+      const response = await fetch(`/api/practice-marks/${passage.practice_mark_id}/`, {
+        method: 'DELETE', headers: { 'X-Mock-User': user.id },
+      })
+      if (!response.ok && response.status !== 404) throw new Error('The practice item could not be removed. Please try again.')
+      setData(current => ({ ...current, passages: current.passages.map(item => item.id === passage.id ? { ...item, is_marked_for_practice: false, practice_mark_id: null } : item) }))
     },
   }
 }

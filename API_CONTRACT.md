@@ -18,10 +18,10 @@ authentication.
 
 | Screen owner | Screen | Endpoints |
 | --- | --- | --- |
-| Logan | Offline Score Library | GET /scores/, POST /scores/upload/, GET /scores/{id}/ |
-| Ankit | Score Viewer & Navigation | GET/POST /scores/{id}/passages/, POST /practice-marks/ |
-| Matthew | Measure Marker | GET /scores/{id}/passages/, POST /practice-marks/ |
-| Jonathan | Practice Review | GET /practice-marks/, PATCH /practice-marks/{id}/ |
+| Logan | Score Library | GET /scores/, POST /scores/upload/, GET/DELETE /scores/{id}/ |
+| Ankit | Score Viewer & Navigation | GET/POST /scores/{id}/passages/, POST /practice-marks/, DELETE /practice-marks/{id}/, PDF image endpoints |
+| Matthew | Measure Marker | GET /scores/{id}/passages/, POST /practice-marks/, DELETE /practice-marks/{id}/ |
+| Jonathan | Practice Review | GET /practice-marks/, PATCH/DELETE /practice-marks/{id}/ |
 
 ## Data models and relationships
 
@@ -32,13 +32,14 @@ authentication.
 | Field | Type | Notes |
 | --- | --- | --- |
 | id | integer | Generated primary key |
-| owner | string | Mock-user ID that owns this mark; response only |
 | title | string | Score or work title |
 | movement | string | Movement or part name |
 | instrument | string | Instrument or section |
 | page_count | integer | Positive total page count |
 | available_offline | boolean | Offline-library availability |
 | source_file | string | Locally stored uploaded file path, when supplied |
+| extraction_started_at | string or null | ISO-8601 server start time for an active conversion; null when inactive, completed or interrupted |
+| extraction_estimated_seconds | integer or null | Approximate total PDF conversion duration for this runtime and page count; null for non-PDF scores |
 
 ### Passage
 
@@ -53,6 +54,8 @@ authentication.
 | score_id | integer | Included in practice-mark passage context so Open passage targets the correct score |
 | bounding_box | object or null | Normalized x/y/width/height and recognition image dimensions for the actual PDF measure |
 | preview_url | string or null | PNG crop of the original notation; null until layout extraction is complete |
+| is_marked_for_practice | boolean | Whether the selected mock user has a saved practice item |
+| practice_mark_id | integer or null | That user's practice row ID, used for DELETE; another user's ID is never returned |
 
 A score cannot have duplicate section and measure_number combinations.
 
@@ -65,6 +68,7 @@ passage's page, with the normal initial-page fallback for an unknown passage ID.
 | Field | Type | Notes |
 | --- | --- | --- |
 | id | integer | Generated primary key |
+| owner | string | Mock-user ID that owns this mark; response only |
 | passage | object | Read-only passage context in responses |
 | passage_id | integer | Required only when creating a mark |
 | note | string | Optional, trimmed, maximum 500 characters |
@@ -119,6 +123,17 @@ Score responses include `extraction_status` (`not_started`, `processing`,
 `complete`, or `failed`) and `extraction_error`. Clients may poll the score detail
 while processing and retry after failure. The browser starts extraction after
 a PDF upload and displays the returned passages next to the PDF.
+
+While processing, `extraction_started_at` remains stable and
+`extraction_estimated_seconds` is based on the real page count, published as soon
+as PDF inspection finishes. The estimate is `15 + page_count *
+OMR_ESTIMATED_SECONDS_PER_PAGE`, capped at the configured recognition timeout.
+The per-page default is 15 seconds natively and 150 seconds in Docker, where
+Intel emulation can be slower. These are planning estimates, not measured
+recognition percentages or completion deadlines. Clients poll during their own
+long-running POST as well as when opening an already-running conversion.
+At zero remaining time the UI continues showing elapsed time and a longer-than-
+estimated message; success/failure comes from the server's extraction status.
 The importer retains Audiveris measure-stack geometry. `measure_layout_version`
 is 1 after these regions are stored. Older imports with version 0 are upgraded
 on the next extraction, preserving passage IDs and practice notes.
@@ -222,6 +237,19 @@ Updates the practice note and/or resolved status. This supports adding a note no
 
 Returns the updated practice-mark representation with 200 OK.
 
+### DELETE /api/practice-marks/{id}/
+
+Permanently removes the selected mock user's practice row and its note. Returns
+204 with no response body. An absent ID or an ID owned by another mock user
+returns 404. The shared score, source PDF, passages, and other users' marks are
+retained. Practice marks reference existing passages and do not create PDF copies.
+
+The frontend updates the saved state only after a successful DELETE (or a 404
+confirming the item is already absent). Passage responses then contain
+is_marked_for_practice=false and practice_mark_id=null for that user. Failures
+keep the displayed item and allow retry. Deleting a score still removes its
+source file and cascades all its passages and marks.
+
 ## Validation and errors
 
 | Situation | Status | Example response |
@@ -235,5 +263,5 @@ Returns the updated practice-mark representation with 200 OK.
 | Invalid review status | 400 | {"status": "Use 'unresolved' or 'resolved'."} |
 
 The API deliberately excludes production authentication, cloud synchronization,
-PDF optical-music recognition, tuner/metronome tools, social features, and
+tuner/metronome tools, social features, and
 automatic error detection.

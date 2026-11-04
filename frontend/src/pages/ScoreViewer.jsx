@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { AppLayout, FeedbackPanel, MeasureJump, ScoreContext, ScoreNavigation, ScoreSheet, ScreenHeading } from '../components/score-companion'
+import { AppLayout, FeedbackPanel, LoadingSkeleton, MeasureJump, ScoreContext, ScoreNavigation, ScoreSheet, ScreenHeading } from '../components/score-companion'
 import useScoreViewer from './useScoreViewer'
 import PdfScoreReader from './PdfScoreReader'
+import useMeasureKeyboard from './useMeasureKeyboard'
 import { useMockSession } from '../mockSession'
 import './ScoreViewer.css'
 
@@ -15,9 +16,10 @@ export default function ScoreViewer() {
   const sourceIsPdf = score?.source_file?.toLowerCase().endsWith('.pdf')
   const context = score && <ScoreContext movement={score.movement} instrument={score.instrument} sections={currentSections} />
   const measureRange = visible.length ? 'Measures ' + visible[0].measure_number + '–' + visible.at(-1).measure_number : 'No measures on this page'
+  useMeasureKeyboard(sourceIsPdf ? [] : viewer.passages, viewer.focusedPassageId, viewer.selectPassage)
 
   useEffect(() => {
-    if (!viewer.focusedPassageId) return
+    if (!viewer.focusedPassageId || sourceIsPdf) return
     document.getElementById(`measure-${viewer.focusedPassageId}`)?.scrollIntoView({ behavior: 'smooth', block: sourceIsPdf ? 'nearest' : 'center' })
   }, [viewer.focusedPassageId, viewer.page, sourceIsPdf])
 
@@ -39,16 +41,25 @@ export default function ScoreViewer() {
     } catch (error) { setActionError(error.message) }
   }
 
+  async function removeForPractice(passage) {
+    setSavingId(passage.id); setActionError(''); setActionMessage('')
+    try {
+      await viewer.removeFromPractice(passage)
+      setActionMessage(`Measure ${passage.measure_number} and its saved note were removed from practice.`)
+    } catch (failure) { setActionError(failure.message) }
+    finally { setSavingId(null) }
+  }
+
   return (
-    <AppLayout className="score-viewer" status={viewer.isSample ? 'Sample score' : 'Score viewer'} activeHref="#/score-library" headingId="score-title" busy={viewer.loading}>
+    <AppLayout className="score-viewer" status="Score reader" headingId="score-title" busy={viewer.loading}>
       <ScreenHeading
         id="score-title"
-        byline={sourceIsPdf ? 'Score' : 'Score viewer & navigation · Ankit Joshi'}
-        title={sourceIsPdf ? score.title : score ? score.movement + ' — ' + score.instrument : 'Your score'}
-        subtitle={sourceIsPdf ? 'Select a measure to open its music, or read the full page.' : score ? (score.title === score.movement ? 'Find your place. Pick up where rehearsal left off.' : score.title) : 'Open a part and find your place.'}
+        byline="Score"
+        title={score ? score.title : 'Score reader'}
+        subtitle={score ? 'Read a measure, move with the arrow keys, and save what needs practice.' : 'Open a score from your library to begin.'}
       />
 
-      {viewer.loading && <FeedbackPanel>Loading your score…</FeedbackPanel>}
+      {viewer.loading && <LoadingSkeleton label="Loading your score…" kind="reader" rows={2} />}
       {viewer.error && <FeedbackPanel title="We couldn’t open this score" tone="error" actions={<>
         <button type="button" onClick={viewer.retry}>Try again</button>
         <a href="#/score-library">Return to library</a>
@@ -71,13 +82,13 @@ export default function ScoreViewer() {
           focusedPassageId={viewer.focusedPassageId} onPageChange={viewer.changePage}
           onSelect={viewer.selectPassage}
           onExtract={viewer.extractMeasures} extracting={viewer.extracting} extractionError={viewer.extractionError}
-          onSave={saveForPractice} savingId={savingId} /> : <>
+          onSave={saveForPractice} onRemove={removeForPractice} savingId={savingId} /> : <>
         <ScoreSheet
           label={sourceIsPdf ? `Practice markers for PDF page ${viewer.page}` : 'Score page ' + viewer.page}
           heading={<ScoreContext movement={score.movement} instrument={score.instrument} sections={currentSections} separator=" / " />}
           passages={visible}
           focusedPassageId={viewer.focusedPassageId}
-          renderPassage={(passage) => <div><div className="viewer-measure-card"><span className="viewer-measure-label">m. {passage.measure_number}</span><div className="viewer-staff" aria-hidden="true"><i /><i /><i /><i /><i /><b className="viewer-note note-one" /><b className="viewer-note note-two" /><b className="viewer-note note-three" /><b className="viewer-note note-four" /></div></div><button className="viewer-mark-button" type="button" disabled={viewer.isSample || passage.is_marked_for_practice || savingId === passage.id} onClick={() => saveForPractice(passage)}>{savingId === passage.id ? 'Saving…' : passage.is_marked_for_practice ? 'Saved to review ✓' : 'Mark for practice'}</button></div>}
+          renderPassage={(passage) => <div><div className="viewer-measure-card"><span className="viewer-measure-label">m. {passage.measure_number}</span><div className="viewer-staff" aria-hidden="true"><i /><i /><i /><i /><i /><b className="viewer-note note-one" /><b className="viewer-note note-two" /><b className="viewer-note note-three" /><b className="viewer-note note-four" /></div></div><button className="viewer-mark-button" type="button" disabled={viewer.isSample || savingId !== null} onClick={() => passage.is_marked_for_practice ? removeForPractice(passage) : saveForPractice(passage)}>{savingId === passage.id ? 'Saving…' : passage.is_marked_for_practice ? 'Remove from practice' : 'Save for practice'}</button></div>}
           emptyMessage={sourceIsPdf ? 'No practice markers are on this page yet. Add a measure from the PDF below, then mark it for practice.' : 'No measures have been added for this page yet. Try another page or section.'}
         />
         {!viewer.isSample && score && <form className="viewer-add-measure" onSubmit={addPassage}><strong>Add a measure</strong><span>Enter the score position, then mark it for practice.</span><label>Section<input name="section" defaultValue="Start" required /></label><label>Measure<input name="measure_number" type="number" min="1" required /></label><label>Page<input name="page_number" type="number" min="1" max={score.page_count} defaultValue={viewer.page || 1} required /></label><button type="submit">Add measure</button></form>}

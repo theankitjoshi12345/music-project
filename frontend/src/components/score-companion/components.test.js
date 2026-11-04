@@ -9,6 +9,7 @@ let server
 let components
 let App
 let PdfScoreReader
+let ExtractionProgress
 
 before(async () => {
   server = await createServer({
@@ -20,6 +21,7 @@ before(async () => {
   const appModule = await server.ssrLoadModule('/src/App.jsx')
   App = appModule.default
   PdfScoreReader = (await server.ssrLoadModule('/src/pages/PdfScoreReader.jsx')).default
+  ExtractionProgress = (await server.ssrLoadModule('/src/pages/ExtractionProgress.jsx')).default
 })
 
 after(async () => { await server?.close() })
@@ -30,10 +32,10 @@ test('integrated routing renders all four screens and preserves viewer score lin
   try {
     Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: () => null } })
     for (const [hash, expected] of [
-      ['#/score-library', /Open a score\. Stay in the music\./],
-      ['#/score-viewer?score=42', /Score viewer &amp; navigation · Ankit Joshi/],
+      ['#/score-library', /Your score library/],
+      ['#/score-viewer?score=42', /Score reader/],
       ['#/measure-marker', /Select a measure to mark/],
-      ['#/practice-review', /<h1>Practice review<\/h1>/],
+      ['#/practice-review', /<h1[^>]*>Practice review<\/h1>/],
     ]) {
       globalThis.window = { location: { hash } }
       assert.match(renderToStaticMarkup(h(App)), expected)
@@ -108,9 +110,11 @@ test('PDF reader exposes actual detected measures, saved state, and the correct 
   assert.match(html, /href="\/media\/part.pdf#page=2&amp;view=FitH"/)
   assert.match(html, /src="\/api\/passages\/41\/preview\/"/)
   assert.match(html, /Music notation for measure 30, page 2/)
-  assert.match(html, /2 measures detected/)
-  assert.match(html, /Measure 30 saved to practice/)
-  assert.doesNotMatch(html, /Measure 29|Illustrative notation|Extract measures/)
+  assert.match(html, /2 measures ready/)
+  assert.match(html, /Remove measure 30 from practice/)
+  assert.match(html, /Previous measure/)
+  assert.match(html, /Next measure/)
+  assert.doesNotMatch(html, /Illustrative notation|Find measures/)
 })
 
 test('PDF reader provides progress and retry instead of an unexplained empty score', () => {
@@ -118,6 +122,25 @@ test('PDF reader provides progress and retry instead of an unexplained empty sco
   const processing = renderToStaticMarkup(h(PdfScoreReader, { ...props, extracting: true }))
   assert.match(processing, /Finding measures in your PDF/)
   const failed = renderToStaticMarkup(h(PdfScoreReader, { ...props, extractionError: 'Recognition unavailable' }))
-  assert.match(failed, /Retry extraction/)
+  assert.match(failed, /Retry conversion/)
   assert.match(failed, /role="alert">Recognition unavailable/)
+})
+
+test('PDF conversion shows an explicitly estimated countdown and elapsed time', () => {
+  const html = renderToStaticMarkup(h(ExtractionProgress, { score: {
+    page_count: 2, extraction_started_at: new Date(Date.now() + 1000).toISOString(), extraction_estimated_seconds: 315,
+  } }))
+  assert.match(html, /Estimated time remaining/)
+  assert.match(html, /05:15/)
+  assert.match(html, /Elapsed 00:00 · 2 pages/)
+  assert.match(html, /This is an estimate/)
+})
+
+test('PDF conversion overrun still shows work in progress rather than a completed timer', () => {
+  const html = renderToStaticMarkup(h(ExtractionProgress, { score: {
+    page_count: 2, extraction_started_at: new Date(Date.now() - 60000).toISOString(), extraction_estimated_seconds: 30,
+  } }))
+  assert.match(html, /Taking longer than estimated/)
+  assert.match(html, /Still working/)
+  assert.doesNotMatch(html, /<time|Estimated time remaining/)
 })

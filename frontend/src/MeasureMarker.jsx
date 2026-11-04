@@ -1,110 +1,75 @@
 import { useEffect, useState } from 'react'
-import MockUserControl from './MockUserControl'
+import { AppLayout, ScreenHeading, LoadingSkeleton } from './components/score-companion'
 import { mockUserHeaders, useMockSession } from './mockSession'
+import { loadViewerData } from './pages/scoreViewerData'
+import { ScoreImage } from './pages/PdfScoreReader'
+import useMeasureKeyboard from './pages/useMeasureKeyboard'
+import { adjacentMeasure } from './pages/measureNavigation'
 import './MeasureMarker.css'
-
-const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
-
-function selectedScoreId() {
-  return new URLSearchParams(window.location.hash.split('?')[1] || '').get('score')
-}
-
-function Staff() {
-  return <svg viewBox="0 0 220 70" aria-hidden="true">
-    {[25, 35, 45, 55, 65].map((y) => <line key={y} x1="0" x2="220" y1={y} y2={y} stroke="#91a5ba" />)}
-    {[[32, 45], [67, 55], [102, 65], [137, 45]].map(([x, y]) => <g key={x}><ellipse cx={x} cy={y} rx="7" ry="5" fill="currentColor" /><line x1={x + 6} x2={x + 6} y1={y} y2={y - 35} stroke="currentColor" /></g>)}
-  </svg>
-}
 
 export default function MeasureMarker() {
   const { user } = useMockSession()
-  const [score, setScore] = useState(null)
-  const [passages, setPassages] = useState(null)
+  const [data, setData] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
-  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  const [saving, setSaving] = useState(false)
-  const selected = passages?.find((passage) => passage.id === selectedId)
-  const count = passages?.filter((passage) => passage.is_marked_for_practice).length ?? 0
+  const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [retry, setRetry] = useState(0)
+  const passages = data?.passages ?? []
+  const selected = passages.find(passage => passage.id === selectedId) ?? passages[0]
+  const previous = adjacentMeasure(passages, selected?.id, -1)
+  const next = adjacentMeasure(passages, selected?.id, 1)
+  useMeasureKeyboard(passages, selected?.id, passage => setSelectedId(passage.id))
 
   useEffect(() => {
     const controller = new AbortController()
-    async function loadMarker() {
+    async function load() {
+      setData(null); setError('')
       try {
-        setError('')
-        setMessage('')
-        setSelectedId(null)
-        setPassages(null)
-        const headers = mockUserHeaders(user)
-        const scoresResponse = await fetch(`${apiBase}/scores/`, { headers, signal: controller.signal })
-        if (!scoresResponse.ok) throw new Error(`The score library could not load (${scoresResponse.status}).`)
-        const scores = await scoresResponse.json()
-        const requestedId = selectedScoreId()
-        const activeScore = scores.find((item) => String(item.id) === requestedId) ?? scores.find((item) => item.available_offline) ?? scores[0]
-        if (!activeScore) throw new Error('Add a score in the library before marking a measure.')
-        const passagesResponse = await fetch(`${apiBase}/scores/${activeScore.id}/passages/`, { headers, signal: controller.signal })
-        if (!passagesResponse.ok) throw new Error(`The score passages could not load (${passagesResponse.status}).`)
-        const data = await passagesResponse.json()
-        if (!Array.isArray(data)) throw new Error('The score passages returned an invalid response.')
-        setScore(activeScore)
-        setPassages(data)
-      } catch (loadError) {
-        if (loadError.name !== 'AbortError') setError(loadError.message)
-      }
+        const id = new URLSearchParams(window.location.hash.split('?')[1] || '').get('score')
+        const result = await loadViewerData(id, controller.signal, fetch, mockUserHeaders(user))
+        if (!controller.signal.aborted) { setData(result); setSelectedId(result.passages[0]?.id ?? null) }
+      } catch (failure) { if (!controller.signal.aborted) setError(failure.message) }
     }
-    loadMarker()
+    load()
     return () => controller.abort()
-  }, [user])
+  }, [user, retry])
 
-  async function save() {
-    if (!selected || selected.is_marked_for_practice) return
-    setSaving(true)
-    setError('')
+  async function changePractice() {
+    if (!selected) return
+    setBusy(true); setError(''); setMessage('')
+    const removing = selected.is_marked_for_practice
     try {
-      const response = await fetch(`${apiBase}/practice-marks/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...mockUserHeaders(user) },
-        body: JSON.stringify({ passage_id: selected.id }),
+      if (removing && !selected.practice_mark_id) throw new Error('Reload this score to refresh its practice state.')
+      const response = await fetch(removing ? `/api/practice-marks/${selected.practice_mark_id}/` : '/api/practice-marks/', {
+        method: removing ? 'DELETE' : 'POST', headers: { 'Content-Type': 'application/json', ...mockUserHeaders(user) },
+        ...(removing ? {} : { body: JSON.stringify({ passage_id: selected.id }) }),
       })
-      if (!response.ok) throw new Error(`Could not save this measure (${response.status}).`)
-      setPassages((current) => current.map((passage) => passage.id === selected.id ? { ...passage, is_marked_for_practice: true } : passage))
-      setMessage(`Measure ${selected.measure_number} saved for ${user.name}. Continue to practice review when ready.`)
-      setSelectedId(null)
-    } catch (saveError) {
-      setError(saveError.message)
-    } finally {
-      setSaving(false)
-    }
+      if (!response.ok && !(removing && response.status === 404)) throw new Error('Your practice item could not be updated. Please try again.')
+      const mark = removing ? null : await response.json()
+      setData(current => ({ ...current, passages: current.passages.map(passage => passage.id === selected.id ? { ...passage, is_marked_for_practice: !removing, practice_mark_id: mark?.id ?? null } : passage) }))
+      setMessage(`Measure ${selected.measure_number} ${removing ? 'and its note removed from' : 'saved for'} practice.`)
+    } catch (failure) { setError(failure.message) }
+    finally { setBusy(false) }
   }
 
-  return <div className="measure-marker">
-    <header className="mm-header"><a href="#/score-library">♫ SCORE COMPANION</a><span>● OFFLINE READY</span><MockUserControl /></header>
-    <div className="mm-layout">
-      <aside className="mm-sidebar"><nav aria-label="Score Companion"><a href="#/score-library">Score library</a><a href="#/practice-review">Practice review</a><a href="#/measure-marker" aria-current="page">Measure marker</a></nav></aside>
-      <main className="mm-content">
-        <h1>{count ? 'Select another measure' : 'Select a measure to mark'}</h1>
-        <p className="mm-subtitle">{count ? 'Your saved measures remain marked for this demo user. Choose another measure, then mark it.' : 'Tap a measure, then choose Mark for practice.'}</p>
-        {passages && <section className="mm-save-panel" aria-live="polite">
-          <div><strong>{selected ? `Measure ${selected.measure_number} selected` : 'No measure selected'}</strong><span>{selected?.is_marked_for_practice ? 'This measure is already in practice review.' : 'Choose a measure, then save it to practice review.'}</span></div>
-          <button className="mm-save" type="button" disabled={!selected || selected.is_marked_for_practice || saving} onClick={save}>{saving ? 'Saving…' : selected ? `Save measure ${selected.measure_number}` : 'Save selected measure'}</button>
-        </section>}
-        {passages && <><div className="mm-meta"><span>{user.name} | {score.movement} | Saved to practice review</span><strong>{count} marked {count === 1 ? 'measure' : 'measures'}</strong></div>
-        <section className="mm-score" aria-labelledby="mm-score-title">
-          <h2 id="mm-score-title">{score.movement.toUpperCase()} · {score.instrument.toUpperCase()}</h2>
-          <div className="mm-grid">{passages.map((passage) => <button type="button" key={passage.id}
-            className={`mm-measure${passage.id === selectedId ? ' is-selected' : ''}${passage.is_marked_for_practice ? ' is-saved' : ''}`}
-            aria-pressed={passage.id === selectedId}
-            aria-label={`Measure ${passage.measure_number}${passage.is_marked_for_practice ? ', saved for practice' : ''}`}
-            onClick={() => { setSelectedId(passage.id); setMessage('') }}>
-            <span>m. {passage.measure_number}</span><Staff />
-            <span className="mm-badges">{passage.is_marked_for_practice && <b>✓ SAVED</b>}{passage.id === selectedId && <b>SELECTED</b>}</span>
-          </button>)}</div>
-        </section></>}
-        {!passages && !error && <p className="mm-feedback" role="status">Loading your score…</p>}
-        {error && <p className="mm-feedback" role="alert">{error}</p>}
-        {passages && <><p className="mm-feedback" role="status">{message || (selected ? `Measure ${selected.measure_number} ${selected.is_marked_for_practice ? 'is already saved for practice.' : 'selected.'}` : 'Select a measure above.')}</p>
-        {message && <a className="mm-review-link" href="#/practice-review">Open practice review →</a>}</>}
-      </main>
-    </div>
-  </div>
+  return <AppLayout className="measure-marker" status="Measure marker" headingId="marker-title" busy={!data && !error}>
+    <ScreenHeading id="marker-title" title="Select a measure to mark" subtitle="Choose a measure, read its notation, and save it for practice." />
+    {!data && !error && <LoadingSkeleton kind="reader" label="Loading your score…" rows={2} />}
+    {error && <div className="viewer-error" role="alert"><p>{error}</p><button type="button" onClick={() => setRetry(value => value + 1)}>Reload score</button></div>}
+    {message && <p className="marker-message" role="status">{message}</p>}
+    {data && !selected && <div className="empty-state"><h2>No measures ready yet</h2><p>Open a score in the reader to find its measures first.</p><a className="button-link" href={data.score ? `#/score-viewer?score=${data.score.id}` : '#/score-library'}>Open score reader →</a></div>}
+    {selected && <>
+      <p className="marker-score-title">{data.score.title}</p>
+      <div className="marker-workspace">
+        <aside className="marker-list" aria-label="Choose a measure">{passages.map(passage => <button className="button-secondary" key={passage.id} type="button" aria-current={passage.id === selected.id ? 'true' : undefined} onClick={() => setSelectedId(passage.id)}>Measure {passage.measure_number}<span>Page {passage.page_number}{passage.is_marked_for_practice ? ' · Saved' : ''}</span></button>)}</aside>
+        <section className="marker-preview" aria-label="Selected measure">
+          <h2>Measure {selected.measure_number} · Page {selected.page_number}</h2>
+          <div className="screen-actions marker-actions"><button className="button-secondary" type="button" aria-label="Previous measure" disabled={!previous} onClick={() => setSelectedId(previous.id)}>← Previous</button><button className="button-secondary" type="button" aria-label="Next measure" disabled={!next} onClick={() => setSelectedId(next.id)}>Next →</button><button className={selected.is_marked_for_practice ? 'button-secondary' : 'button-primary'} type="button" disabled={busy} onClick={changePractice}>{busy ? 'Saving…' : selected.is_marked_for_practice ? 'Remove from practice' : 'Save for practice'}</button></div>
+          {selected.preview_url ? <ScoreImage key={selected.id} src={selected.preview_url} alt={`Music notation for measure ${selected.measure_number}, page ${selected.page_number}`} /> : <p>Open the score reader to view the original notation.</p>}
+          <a className="button-link" href={`#/score-viewer?score=${data.score.id}&passage=${selected.id}`}>Open this measure in the score reader →</a>
+        </section>
+      </div>
+    </>}
+  </AppLayout>
 }

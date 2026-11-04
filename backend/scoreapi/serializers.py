@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.conf import settings
 import hashlib
 import json
 
@@ -17,6 +18,8 @@ class ScoreSerializer(serializers.ModelSerializer):
     passage_count = serializers.IntegerField(read_only=True)
     extraction_status = serializers.SerializerMethodField()
     extraction_error = serializers.SerializerMethodField()
+    extraction_started_at = serializers.SerializerMethodField()
+    extraction_estimated_seconds = serializers.SerializerMethodField()
 
     class Meta:
         model = Score
@@ -31,6 +34,8 @@ class ScoreSerializer(serializers.ModelSerializer):
             "passage_count",
             "extraction_status",
             "extraction_error",
+            "extraction_started_at",
+            "extraction_estimated_seconds",
             "measure_layout_version",
         ]
 
@@ -42,9 +47,22 @@ class ScoreSerializer(serializers.ModelSerializer):
             return "The previous extraction was interrupted. Please retry."
         return score.extraction_error
 
+    def get_extraction_started_at(self, score):
+        if score.extraction_state == "processing" and not score.extraction_expired:
+            return score.extraction_updated_at.isoformat()
+        return None
+
+    def get_extraction_estimated_seconds(self, score):
+        if not score.source_file.name.lower().endswith(".pdf"):
+            return None
+        # Planning estimate, not a measurement of Audiveris's progress.
+        return min(settings.OMR_TIMEOUT_SECONDS,
+                   15 + score.page_count * settings.OMR_ESTIMATED_SECONDS_PER_PAGE)
+
 
 class PassageSerializer(serializers.ModelSerializer):
     is_marked_for_practice = serializers.SerializerMethodField()
+    practice_mark_id = serializers.SerializerMethodField()
     preview_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -55,6 +73,7 @@ class PassageSerializer(serializers.ModelSerializer):
             "measure_number",
             "page_number",
             "is_marked_for_practice",
+            "practice_mark_id",
             "bounding_box",
             "preview_url",
         ]
@@ -66,9 +85,12 @@ class PassageSerializer(serializers.ModelSerializer):
         return f"/api/passages/{passage.id}/preview/?v={version}"
 
     def get_is_marked_for_practice(self, passage):
+        return self.get_practice_mark_id(passage) is not None
+
+    def get_practice_mark_id(self, passage):
         request = self.context.get("request")
         owner = request.headers.get("X-Mock-User", "alex") if request else "alex"
-        return passage.practice_marks.filter(owner=owner).exists()
+        return next((mark.id for mark in passage.practice_marks.all() if mark.owner == owner), None)
 
 
 class PassageCreateSerializer(serializers.ModelSerializer):
