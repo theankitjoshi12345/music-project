@@ -1,11 +1,11 @@
 .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .loading-skeleton { width:100%; }
-.skeleton-card { background:#fff; border:1px solid #e0e7f0; border-radius:14px; padding:24px; margin-bottom:16px; }
-.skeleton-line { width:76%; height:13px; border-radius:5px; margin:12px 0; background:linear-gradient(90deg,#e7edf5 25%,#f4f7fb 50%,#e7edf5 75%); background-size:200% 100%; animation:skeleton-shimmer 1.6s ease infinite; }
-.skeleton-line--title { width:58%; height:20px; }
+.skeleton-card { background:var(--surface,#fffdfa); border:1px solid var(--border,#e2d9ed); border-radius:22px; padding:26px; margin-bottom:18px; }
+.skeleton-line { width:76%; height:13px; border-radius:7px; margin:12px 0; background:linear-gradient(90deg,var(--border,#e2d9ed) 25%,var(--background,#f8f4ff) 50%,var(--border,#e2d9ed) 75%); background-size:200% 100%; animation:skeleton-shimmer 1.6s ease infinite; }
+.skeleton-line--title { width:58%; height:21px; }
 .skeleton-line--short { width:35%; }
-.skeleton-notation { background:#f8fafc; border-radius:10px; height:min(55vh,550px); min-height:240px; padding:24px; box-sizing:border-box; display:flex; flex-direction:column; justify-content:center; }
-.skeleton-notation i { display:block; height:3px; margin:14px 0; background:#dce5f0; border-radius:3px; animation:skeleton-shimmer 1.6s ease infinite; }
+.skeleton-notation { background:var(--background,#f8f4ff); border-radius:16px; height:min(55vh,550px); min-height:240px; padding:26px; box-sizing:border-box; display:flex; flex-direction:column; justify-content:center; }
+.skeleton-notation i { display:block; height:3px; margin:14px 0; background:var(--border,#e2d9ed); border-radius:3px; animation:skeleton-shimmer 1.6s ease infinite; }
 .loading-skeleton--reader .skeleton-card { min-height:240px; }
 @keyframes skeleton-shimmer { from { background-position:200% 0; opacity:.6; } to { background-position:-200% 0; opacity:1; } }
 @media(prefers-reduced-motion:reduce) { .skeleton-line, .skeleton-notation i { animation:none; } }

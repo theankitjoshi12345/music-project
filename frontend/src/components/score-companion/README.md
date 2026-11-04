@@ -15,7 +15,9 @@ keeps its own data loading and state. Score Viewer does this in
 | Component | Main props | Purpose |
 | --- | --- | --- |
 | `AppLayout` | `status`, `activeHref`, `headingId`, `busy`, `children`, `navigation`, `className` | Header, responsive sidebar, and screen content region. `headingId` must match the screen heading's ID. |
-| `AppHeader` | `status`, `homeHref`, `activeHref` | Shared Library/Practice review navigation, user selector and current screen context. |
+| `AppHeader` | `status`, `homeHref`, `activeHref` | Shared logo, Library/Practice review navigation, theme picker and practice profile. Screen context is assistive text. |
+| `ThemePicker` | none | Native disclosure for the three palettes; reads ThemeProvider, supports Escape and closes after selection. |
+| `StudioArt` | none | Decorative library illustration using theme colors; hidden from assistive technology. |
 | `SidebarNavigation` | `items`, `activeHref` | Navigation items shaped as `{ href, label }`; marks the active link with `aria-current`. |
 | `ScreenHeading` | `id`, `title`, `subtitle`, `byline` | Screen title and optional supporting context. |
 | `LoadingSkeleton` | `label`, `kind`, `rows` | Labelled loading state; kinds are cards, reader or notation. Shapes are aria-hidden and motion respects user preferences. |
@@ -79,9 +81,15 @@ Suggested adoption:
 - Jonathan: layout, headings, context, and feedback for practice review.
 - Ankit: layout, context, sheet, page/section controls, and measure jump.
 
-Use truthful status labels. `AppHeader` displays the supplied text; it does not
+Use truthful status labels. `AppHeader` includes the supplied context as assistive text; it does not
 detect offline file availability. Pass `Offline ready` only when the screen
 has actually established that the score is cached and accessible offline.
+
+ThemeProvider lives above App in main.jsx so palette changes survive route and
+profile remounts. Shared CSS variables are scoped to AppLayout and its
+data-color-theme attribute. Use these variables for new controls and retain
+white paper for real notation. The default palette works when a shared component
+renders outside ThemeProvider. Font files and their licenses ship locally.
 
 PDF measures use ScoreImage in PdfScoreReader, which shows a notation skeleton
 until the backend PNG loads and provides Retry image on failure. The generic

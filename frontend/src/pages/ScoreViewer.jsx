@@ -51,7 +51,7 @@ export default function ScoreViewer() {
   }
 
   return (
-    <AppLayout className="score-viewer" status="Score reader" headingId="score-title" busy={viewer.loading}>
+    <AppLayout className="score-viewer" activeHref="#/score-library" status="Score reader" headingId="score-title" busy={viewer.loading}>
       <ScreenHeading
         id="score-title"
         byline="Score"

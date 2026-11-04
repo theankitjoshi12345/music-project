@@ -1,14 +1,20 @@
-.review-help { color:var(--muted); font-size:14px; line-height:1.6; margin:0 0 28px; }
-.review-summary { font-size:18px; margin:24px 0 16px; }
-.practice-review__list { display:grid; gap:16px; list-style:none; padding:0; margin:0; }
-.practice-review__card { background:white; border:1px solid #dae4ef; border-radius:14px; padding:24px; }
-.review-card-heading { display:flex; align-items:start; flex-wrap:wrap; justify-content:space-between; gap:12px; }
-.review-card-heading h3 { flex:1 1 250px; margin:0; font-size:20px; line-height:1.4; overflow-wrap:anywhere; }
-.review-state { background:#fff4d9; color:#8c6100; padding:5px 10px; border-radius:30px; font-size:12px; font-weight:700; white-space:nowrap; }
-.review-state.is-resolved { background:#e6f3e9; color:#22613a; }
+.practice-review .score-heading { padding-top:12px; }
+.review-help { color:var(--muted); font-size:13px; line-height:1.7; margin:0 0 28px; max-width:690px; }
+.review-summary { font-size:18px; font-weight:850; margin:28px 0 16px; }
+.practice-review__list { display:grid; gap:18px; list-style:none; padding:0; margin:0; }
+.practice-review__card { background:var(--surface); border:1px solid var(--border); border-left:5px solid var(--accent); border-radius:22px; padding:28px; box-shadow:var(--shadow); }
+.review-card-heading { display:flex; align-items:start; flex-wrap:wrap; justify-content:space-between; gap:14px; }
+.review-card-heading h3 { flex:1 1 250px; margin:0; font-size:21px; font-weight:800; line-height:1.45; overflow-wrap:anywhere; }
+.review-state { background:var(--art-secondary); color:var(--ink); padding:6px 12px; border-radius:30px; font-size:12px; font-weight:850; white-space:nowrap; }
+.review-state.is-resolved { background:var(--success-soft); color:var(--success); }
 .review-location { color:var(--muted); font-size:13px; margin:10px 0 20px; }
-.practice-review__note { background:#f4f7fb; padding:14px; border-radius:8px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
-.practice-review__actions { margin-top:22px; }
+.practice-review__note { background:var(--background); border:1px solid var(--border); padding:16px; border-radius:14px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; }
+.practice-review__actions { margin-top:24px; }
 .practice-review__actions .review-remove { margin-left:auto; }
-.review-message { color:#176d41; line-height:1.5; }
-@media(max-width:600px) { .practice-review__card { padding:18px; } .practice-review__actions .review-remove { margin-left:0; } }
+.review-message { color:var(--success); line-height:1.6; }
+@media(max-width:600px) {
+  .practice-review__card { padding:20px; }
+  .review-card-heading h3 { font-size:19px; }
+  .practice-review__actions .review-remove { margin-left:0; }
+  .practice-review__actions > a:first-child { width:100%; justify-content:center; }
+}

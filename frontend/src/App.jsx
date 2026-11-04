@@ -1,46 +1,25 @@
 import { useEffect, useState } from 'react'
-import './App.css'
 import ScoreViewer from './pages/ScoreViewer'
 import OfflineScoreLibrary from './OfflineScoreLibrary.jsx'
 import MeasureMarker from './MeasureMarker.jsx'
 import PracticeReview from './PracticeReview.jsx'
 import { useMockSession } from './mockSession'
 
-const routes = {
-  '/score-library': {
-    title: 'Offline Score Library',
-    owner: 'Logan Broussard',
-    complexity: 'Easiest',
-  },
-  '/score-viewer': {
-    title: 'Score Viewer & Navigation',
-    owner: 'Ankit Joshi',
-    complexity: 'Hardest',
-  },
-  '/measure-marker': {
-    title: 'Measure Marker',
-    owner: 'Matthew Pisani',
-    complexity: 'Hard',
-  },
-  '/practice-review': {
-    title: 'Practice Review',
-    owner: 'Jonathan Dempsey',
-    complexity: 'Medium',
-  },
-}
-
-const defaultRoute = '/score-library'
-
+const routes = new Set(['/score-library', '/score-viewer', '/measure-marker', '/practice-review'])
 function currentRoute(hash) {
   const path = hash.replace('#', '').split('?')[0]
-  return routes[path] ? path : defaultRoute
+  return routes.has(path) ? path : '/score-library'
 }
 
-function App() {
+export default function App() {
   const { user } = useMockSession()
   const [hash, setHash] = useState(window.location.hash)
   const route = currentRoute(hash)
   const screenKey = `${user.id}:${hash}`
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [hash])
 
   useEffect(() => {
     const handleHashChange = () => setHash(window.location.hash)
@@ -49,55 +28,7 @@ function App() {
   }, [])
 
   if (route === '/measure-marker') return <MeasureMarker key={screenKey} />
-
-  const screen = routes[route]
-
-  if (route === '/score-viewer') {
-    return <ScoreViewer key={screenKey} />
-  }
-
-  if (route === '/score-library') {
-    return <OfflineScoreLibrary key={screenKey} />
-  }
-
-  if (route === '/practice-review') {
-    return <PracticeReview key={screenKey} />
-  }
-
-  return (
-    <main className="app-shell">
-      <header>
-        <p className="eyebrow">CMPS 453 · P#9 setup</p>
-        <h1>Score Companion</h1>
-        <p className="subtitle">Shared React + Django application shell</p>
-      </header>
-
-      <nav aria-label="Assigned screens">
-        {Object.entries(routes).map(([path, item]) => (
-          <a className={path === route ? 'active' : ''} href={`#${path}`} key={path}>
-            {item.title}
-          </a>
-        ))}
-      </nav>
-
-      <section className="placeholder" aria-labelledby="screen-title">
-        <p className="eyebrow">Placeholder route</p>
-        <h2 id="screen-title">{screen.title}</h2>
-        <dl>
-          <div><dt>Owner</dt><dd>{screen.owner}</dd></div>
-          <div><dt>Complexity</dt><dd>{screen.complexity}</dd></div>
-        </dl>
-        <p>
-          This route is reserved for its owner. The approved Figma design has not
-          been implemented in the P#9 app shell.
-        </p>
-      </section>
-
-      <footer>
-        API health check: <code>GET /api/health/</code>
-      </footer>
-    </main>
-  )
+  if (route === '/score-viewer') return <ScoreViewer key={screenKey} />
+  if (route === '/practice-review') return <PracticeReview key={screenKey} />
+  return <OfflineScoreLibrary key={screenKey} />
 }
-
-export default App

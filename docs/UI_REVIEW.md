@@ -1,5 +1,47 @@
 # Navigation and practice-data review
 
+## Beginner and young-musician design review — November 4, 2026
+
+These are simulated persona walkthroughs and browser checks, not interviews or
+observations of recruited users. The beginner persona has limited experience
+with websites. The young-musician persona, including the requested young girl
+perspective, seeks a personal and expressive music space. Color preferences are
+not assumed to be shared by all girls or all young musicians.
+
+The initial read-only walkthrough followed the real library into its selected
+measure and review screens. Upload, open and save actions were discoverable,
+but the dark administration-style header, generic music glyph and Vite favicon
+did little to communicate a creative music app. “Demo user” and “resolved” used
+implementation or tracker vocabulary, and the next step after saving needed a
+nearby link, especially on phones.
+
+| Perspective / finding | Implemented response |
+| --- | --- |
+| Beginner: what do I do first? | Three short numbered steps, a clearly labelled file picker and one Add to library action |
+| Beginner: where am I? | The same Library / Practice review header on every screen; reader and marker belong to Library |
+| Beginner on a phone: opening a score hides the header | Route changes return to the top; changing measures with arrows keeps the reader in place |
+| Beginner: where does a saved measure go? | Saved badge and Open practice list link beside the measure; review opens the exact measure |
+| Beginner: what does resolved mean? | Mark practiced / Practice again; the existing backend flag is unchanged |
+| Young musician: the app feels like an admin dashboard | Rounded cards, expressive Fraunces headings, friendly Nunito Sans controls, original note-and-spark logo and musical artwork |
+| Young musician: I want a color that feels like mine | Optional Violet Jam, Peach Pop and Mint Groove palettes; collapsed Theme picker keeps the task controls prominent |
+| Musician: decoration must not obscure the score | Notation stays black on white; decoration stays outside score images; no new gamification or music-content placeholders |
+
+The native walkthrough recognized 56 real measures and completed the main
+tasks, including failed-request recovery and deletion checks. All three themes
+fit Library, Reader and nonempty Review at 320, 390, 768 and 1440 pixels.
+The marker and open score options were also checked at phone and desktop sizes.
+Theme choice survived route changes and reloads. Escape closed the palette
+picker, and keyboard focus returned to its summary after selection. Bundled
+fonts loaded from the Docker origin and font-license files returned HTTP 200.
+
+The tested ordinary-text color pairs (primary buttons, secondary controls,
+muted text, decorative badge text, success and danger states) all exceeded
+4.5:1. Primary button white-text ratios were 7.37:1 for Violet, 6.72:1 for Peach
+and 6.22:1 for Mint. Muted text on each palette's soft surface measured 4.71:1,
+4.93:1 and 5.23:1 respectively. These checks do not constitute a complete
+accessibility audit. Focus indicators, text labels and reduced-motion rules
+remain present; color is never the only saved/practiced indicator.
+
 ## User flow
 
 The main flow is Library → Open score → Select a measure → Save for practice →
@@ -9,7 +51,7 @@ and the destructive Delete score action.
 
 | Finding | Change |
 | --- | --- |
-| Different headers and sidebars made routes feel disconnected | One shared header, active navigation and consistent demo-user selector |
+| Different headers and sidebars made routes feel disconnected | One shared header, active navigation and consistent Practice profile selector |
 | Every measure row had a competing save button | One practice action beside the selected notation; saved ticks remain in the list |
 | Page arrows looked like measure navigation | Explicit Previous/Next measure buttons; page controls belong to Full page |
 | Reaching measures on another page took extra steps | Global measure jump and left/right keys cross page boundaries automatically |
@@ -33,7 +75,7 @@ The walkthrough checks:
    measure until Go is pressed. Keyboard navigation keeps the reader in view.
 3. Delay backend/image reads to observe skeletons. Fail an image request, retry,
    and recover. Fail a library read and recover through Try again.
-4. Save a measure, resolve it, return to its exact page and measure, then remove
+4. Save a measure, mark it practiced, return to its exact page and measure, then remove
    it. A simulated failed DELETE keeps the item on the screen and in the API.
    Successful removal survives refresh and clears the passage's saved state.
 5. Save again after removal and verify a new record with no retained note.
@@ -41,7 +83,8 @@ The walkthrough checks:
    state. Removing Sam's own item leaves no test practice rows.
 6. Reach Practice marker through Score options, view actual notation, move with
    keys, save/remove, and return to the same measure in the reader.
-7. Check Library and Reader at widths 390, 768 and 1440 pixels, including open
+7. Check every palette at widths 320, 390, 768 and 1440 pixels, including theme
+   persistence, white score paper and ordinary-text contrast. Check open
    score options. Check nonempty Review and Marker on phone and desktop layouts.
    No horizontal page overflow is allowed.
 8. Delete the disposable score and verify the original PDF returns 404 and all

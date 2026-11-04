@@ -11,7 +11,7 @@ upload a score, select a measure, save it for practice, then review it or return
 to its original score context. Despite the original screen name, browser offline
 caching is not implemented.
 
-The app uses local mock authentication, not production security. Choose **Alex Rivera** or **Sam Lee** in the Demo user selector. Practice marks are isolated by the selected mock user so the same passage can be marked independently for each demo user.
+The app uses local mock authentication, not production security. Choose **Alex Rivera** or **Sam Lee** in the **Practice profile** selector. Practice marks are isolated by the selected mock user so the same passage can be marked independently for each demo user.
 
 Use **Add to library** to upload a PDF, MusicXML, XML, or MXL file (up to 10 MB).
 PDF uploads open the reader and start local Audiveris recognition automatically.
@@ -44,7 +44,20 @@ intercept typing in fields. **Go to measure** jumps directly to a number.
 Full-page view has its own page controls. The separate Practice marker is
 available under a score's options.
 
-Data and image loads show skeleton placeholders. Save, resolve and remove
+The interface uses a colorful practice-studio style with an original music-note
+and sparkle logo. **Theme** in the header offers **Violet Jam**, **Peach Pop**,
+and **Mint Groove**. The choice stays in this browser across navigation and
+reloads; it does not change your scores or practice profile. All palettes keep
+the original sheet music on white paper. Fonts are bundled with the app, so
+teammates need no font installation or external font service.
+
+The library introduces the three steps: add sheet music, choose a measure, save
+it for practice. After saving, **Open practice list** beside the selected measure
+takes you directly to review. **Mark practiced** records completion;
+**Practice again** puts it back on your to-practice list. Removal still deletes
+the saved row and note from the backend.
+
+Data and image loads show skeleton placeholders. Save, mark practiced and remove
 actions show a pending state and wait for backend confirmation before changing
 the displayed saved state. Failed requests keep the existing item and offer a
 retry. See the [navigation and usability check](docs/UI_REVIEW.md).

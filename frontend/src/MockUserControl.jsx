@@ -6,8 +6,8 @@ export default function MockUserControl() {
 
   return (
     <label className="mock-user-control">
-      <span>Demo user</span>
-      <select aria-label="Demo user" value={user.id} onChange={(event) => setUserId(event.target.value)}>
+      <span>Practice profile</span>
+      <select aria-label="Practice profile" value={user.id} onChange={(event) => setUserId(event.target.value)}>
         {users.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
       </select>
     </label>

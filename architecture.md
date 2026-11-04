@@ -96,7 +96,7 @@ the same checkout; the container gets its own Linux runtime. See
 3. Select a detected measure number to load its original notation as a crop.
    Full page displays a rendered PDF page with selectable measure regions.
 4. Save a measure with Save for practice. Practice Review lists the selected demo
-   user's saved passages and can mark them resolved.
+   user's saved passages and can mark them practiced.
 5. Open measure returns to the exact score and passage ID, selecting its page
    and measure image.
 6. Remove from practice deletes the user's saved row and note. Deleting the
@@ -110,9 +110,41 @@ user's review or another score's reader.
 
 ## Navigation, loading and removal
 
+### Visual theme and browser preferences
+
+ThemeProvider wraps the app above the route and practice-profile remounts.
+themeContext defines Violet Jam (default), Peach Pop and Mint Groove.
+AppLayout applies the chosen data-color-theme attribute; shared CSS custom
+properties control the header, buttons, forms, cards, loading states and screen
+accents. PDF notation and full-page images retain a white paper background.
+The original SVG brand mark is reused by the header and favicon. Decorative
+library artwork is separate from actual score notation and hidden from
+assistive technology.
+
+ThemePicker is a native disclosure with labelled palette buttons and a pressed
+state. It supports Escape, restores focus after selection and closes on an
+outside pointer action. Its arrow events do not change the reader's measure.
+The selection persists under score-companion-theme-v1 in localStorage, separate
+from the practice profile. Unknown or unavailable storage falls back to Violet
+Jam, and changes still work for the current session. There is no theme API,
+database migration or server-side storage.
+
+Nunito Sans body text and Fraunces display headings are pinned Fontsource
+dependencies. Vite bundles their Latin variable-font files; Nginx serves them
+with the frontend. The public font-licenses directory retains both OFL notices.
+The native and Docker paths use the same assets without a CDN or host fonts.
+
+### Task controls and storage
+
 All four screens use AppLayout and its shared Library/Practice review header.
+Hash-route changes reset page scroll to reveal the new screen's heading and
+navigation. In-reader measure changes keep their scroll position.
 The reader keeps measure navigation and the save/remove action next to the
-selected notation. Full-page mode has separately labelled page controls. A
+selected notation. Saved PDF measures also show an Open practice list link at
+that point in the flow. The library introduces the three core steps and keeps
+the file picker and Add to library action together. Practice review uses Mark
+practiced and Practice again for the existing is_resolved flag; the API field
+and storage semantics are unchanged. Full-page mode has separately labelled page controls. A
 global measure jump and Left/Right keyboard handler change both page and selected
 passage; the handler ignores editable fields and modifier shortcuts and stops
 at score boundaries. Only the measure list scrolls when following a selection.

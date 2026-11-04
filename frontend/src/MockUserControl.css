@@ -1,20 +1,2 @@
-.mock-user-control {
-  align-items: center;
-  color: #20374f;
-  display: inline-flex;
-  font-size: 0.78rem;
-  font-weight: 700;
-  gap: 0.45rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.mock-user-control select {
-  background: #fff;
-  border: 1px solid #91a5ba;
-  border-radius: 0.3rem;
-  color: #20374f;
-  font: inherit;
-  padding: 0.3rem 0.45rem;
-  text-transform: none;
-}
+.mock-user-control { display:inline-flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; font-weight:700; white-space:nowrap; }
+.mock-user-control span { max-width:55px; white-space:normal; line-height:1.2; }
