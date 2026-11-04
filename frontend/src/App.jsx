@@ -18,6 +18,10 @@ export default function App() {
   const screenKey = `${user.id}:${hash}`
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [hash])
+
+  useEffect(() => {
     const handleHashChange = () => setHash(window.location.hash)
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)

@@ -137,6 +137,8 @@ The native and Docker paths use the same assets without a CDN or host fonts.
 ### Task controls and storage
 
 All four screens use AppLayout and its shared Library/Practice review header.
+Hash-route changes reset page scroll to reveal the new screen's heading and
+navigation. In-reader measure changes keep their scroll position.
 The reader keeps measure navigation and the save/remove action next to the
 selected notation. Saved PDF measures also show an Open practice list link at
 that point in the flow. The library introduces the three core steps and keeps

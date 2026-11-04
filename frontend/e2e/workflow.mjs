@@ -250,6 +250,7 @@ try {
     await page.screenshot({ path: path.join(output, `library-${width}.png`), fullPage: true })
     await page.getByRole('link', { name: 'Open score', exact: false }).click()
     await notation(first)
+    assert.equal(await page.evaluate(() => window.scrollY), 0, 'Opening a screen should reveal its heading and navigation')
   }
   console.log('PASS: marker uses original notation; library, reader and controls fit mobile, tablet and desktop')
   assert.deepEqual(errors, [])

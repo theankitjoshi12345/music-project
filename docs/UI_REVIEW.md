@@ -19,6 +19,7 @@ nearby link, especially on phones.
 | --- | --- |
 | Beginner: what do I do first? | Three short numbered steps, a clearly labelled file picker and one Add to library action |
 | Beginner: where am I? | The same Library / Practice review header on every screen; reader and marker belong to Library |
+| Beginner on a phone: opening a score hides the header | Route changes return to the top; changing measures with arrows keeps the reader in place |
 | Beginner: where does a saved measure go? | Saved badge and Open practice list link beside the measure; review opens the exact measure |
 | Beginner: what does resolved mean? | Mark practiced / Practice again; the existing backend flag is unchanged |
 | Young musician: the app feels like an admin dashboard | Rounded cards, expressive Fraunces headings, friendly Nunito Sans controls, original note-and-spark logo and musical artwork |
