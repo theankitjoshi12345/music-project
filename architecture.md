@@ -178,7 +178,7 @@ their existing metadata view uses illustrative notation.
 | State | Reader behavior |
 | --- | --- |
 | not_started | Starts PDF recognition when opened |
-| processing | Shows progress; other readers can poll the score |
+| processing | Shows an estimated countdown and elapsed time; readers poll the score |
 | complete | Uses saved measures and layout coordinates |
 | failed | Shows the stored error and offers retry |
 
@@ -191,6 +191,28 @@ A completed PDF import with layout version 0 contains metadata only. Opening it
 prepares the layout coordinates; version 1 means measure positions were stored.
 Completed imports with current layout data are reused. Failed extraction leaves
 existing passages and practice marks intact.
+
+### Conversion time estimate
+
+The existing extraction_updated_at field records the claim time while a job is
+processing; page-count updates do not change it. Score responses expose it as
+extraction_started_at for an active job, avoiding a new persistence model.
+The PDF inspection step publishes its real page count before rasterization and
+recognition. The serializer estimates total duration as 15 seconds of setup plus
+page count times OMR_ESTIMATED_SECONDS_PER_PAGE, capped at OMR_TIMEOUT_SECONDS.
+The defaults are 15 seconds per page natively and 150 in Docker for emulation.
+Operators can tune this estimate for their hardware; it is not measured OMR
+progress and does not control the actual timeout.
+
+The reader polls every 1.5 seconds even while its extraction POST is pending.
+ExtractionProgress uses the server start time and updates its clock every second;
+refreshing, remounting or polling therefore does not restart the countdown.
+When the estimate expires it shows a longer-than-estimated message and keeps
+counting elapsed time. Only completion/failure from the API ends the progress
+state. Clock updates are outside the live status announcement to avoid reading
+every second aloud. Spinning feedback respects reduced-motion preferences.
+Library conversion/retry actions enter the reader immediately, and on phones
+progress precedes the PDF image so it remains visible.
 
 This is synchronous processing in the Django request, not a durable job queue.
 Different scores can still run concurrently; a public deployment would need
@@ -253,6 +275,7 @@ installer and retains its license material in the resulting image.
 | frontend/src/OfflineScoreLibrary.jsx | Upload, reopen, extraction action, deletion |
 | frontend/src/pages/useScoreViewer.js | Load score data, extraction progress, selection, practice saves |
 | frontend/src/pages/PdfScoreReader.jsx | Measure images, full-page images, region selection, loading/error feedback |
+| frontend/src/pages/ExtractionProgress.jsx, extractionTiming.js | Estimated countdown, elapsed time, overrun feedback and clock formatting |
 | frontend/src/PracticeReview.jsx | Review and resolve the selected user's practice marks |
 | backend/scoreapi/models.py | Score, Passage, PracticeMark and constraints |
 | backend/scoreapi/upload_service.py | Content deduplication and file/database cleanup |
@@ -288,8 +311,8 @@ fresh one-command startup preserved the exact PDF, all 56 passages, the resolved
 practice mark and the generated secret key. The saved passage loaded in the
 browser after recreation. Nginx served original PDFs and collected admin assets
 with DEBUG disabled. Disposable test records were deleted afterward; the native
-library stayed separate from test data. All 30 backend tests pass in both
-runtimes; 17 frontend tests, migration checks and the production build pass.
+library stayed separate from test data. All 32 backend tests pass in both
+runtimes; 22 frontend tests, migration checks and the production build pass.
 
 Production authentication, durable cloud storage, cloud deployment, a background
 queue, guaranteed OMR accuracy, actual offline browser caching, and note-level

@@ -25,6 +25,7 @@ AUDIVERIS_COMMAND = os.environ.get("AUDIVERIS_COMMAND") or shutil.which("audiver
     (str(path) for path in _audiveris_candidates if path.is_file()), ""
 )
 OMR_TIMEOUT_SECONDS = int(os.environ.get("OMR_TIMEOUT_SECONDS", "300"))
+OMR_ESTIMATED_SECONDS_PER_PAGE = max(1, int(os.environ.get("OMR_ESTIMATED_SECONDS_PER_PAGE", "15")))
 OMR_MAX_PAGES = 10
 
 

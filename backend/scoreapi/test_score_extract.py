@@ -13,10 +13,12 @@ class PDFExtractionTests(SimpleTestCase):
     @patch("scoreapi.score_extract.shutil.which", side_effect=lambda command: command)
     @patch("scoreapi.score_extract.subprocess.run")
     def test_page_number_mapping_survives_nested_exports_and_double_digit_pages(self, run, which):
+        page_counts = []
         def command(args, **kwargs):
             if args[0] == "pdfinfo":
                 return subprocess.CompletedProcess(args, 0, stdout="Pages: 10\n")
             if args[0] == "pdftoppm":
+                self.assertEqual(page_counts, [10])
                 for number in range(1, 11):
                     Path(f"{args[-1]}-{number}.png").touch()
             else:
@@ -33,7 +35,7 @@ class PDFExtractionTests(SimpleTestCase):
             return subprocess.CompletedProcess(args, 0, stdout="")
 
         run.side_effect = command
-        result = extract_pdf_measures("test.pdf", "audiveris")
+        result = extract_pdf_measures("test.pdf", "audiveris", on_page_count=page_counts.append)
         self.assertEqual(result.page_count, 10)
         self.assertEqual(result.measures[1], ("Page 2", 2, 2))
         self.assertEqual(result.measures[-1], ("Page 10", 10, 10))

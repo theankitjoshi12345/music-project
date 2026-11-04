@@ -68,6 +68,21 @@
 .score-viewer .pdf-measure-save { background:#edf3ff; color:#234db9; font-size:11px; white-space:nowrap; }
 .score-viewer .pdf-review-link { color:var(--blue); display:block; font-size:13px; font-weight:700; margin-top:18px; text-decoration:none; }
 .score-viewer .pdf-measures .pdf-extract { background:#315fc8; color:white; padding:10px 14px; width:100%; }
+.score-viewer .pdf-extraction-progress { background:#f3f7ff; border:1px solid #dce6fb; border-radius:10px; padding:14px; }
+.score-viewer .pdf-extraction-progress .pdf-extraction-status { color:var(--navy); display:flex; align-items:center; gap:8px; font-weight:650; margin-top:0; }
+.score-viewer .pdf-extraction-countdown span { color:var(--muted); display:block; font-size:12px; }
+.score-viewer .pdf-extraction-countdown time { color:var(--navy); display:block; font-size:32px; font-variant-numeric:tabular-nums; font-weight:700; margin-top:4px; }
+.score-viewer .pdf-extraction-progress .pdf-extraction-elapsed { font-size:12px; }
+.score-viewer .pdf-extraction-progress p:last-child { margin-bottom:0; }
+.score-viewer .pdf-extraction-spinner { width:13px; height:13px; flex:none; border:2px solid #c5d5fa; border-top-color:#315fc8; border-radius:50%; animation:pdf-extraction-spin 1s linear infinite; }
+@keyframes pdf-extraction-spin { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { .score-viewer .pdf-extraction-spinner { animation:none; } }
+@media(max-width:850px) { .score-viewer .pdf-reader.is-extracting .pdf-measures { order:-1; } }
+@media(max-width:600px) {
+  .score-viewer .score-topbar { display:grid; grid-template-columns:minmax(0,1fr) auto; height:auto; padding:12px 16px; }
+  .score-viewer .viewer-primary-nav { gap:8px; margin:0; }
+  .score-viewer .viewer-header-meta { grid-column:1 / -1; flex-wrap:wrap; justify-content:space-between; gap:12px; }
+}
 @media(max-width:850px) { .score-viewer .pdf-reader { grid-template-columns:1fr; } .score-viewer .pdf-measure-list { max-height:320px; } .score-viewer .viewer-pdf iframe { height:65vh; } }
 .score-viewer .pdf-view-options { display:flex; gap:8px; border-bottom:1px solid #e1e7ef; padding:12px 16px; }
 .score-viewer .pdf-view-options button { background:#f1f5fa; color:#52677f; padding:8px 12px; }

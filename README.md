@@ -22,7 +22,16 @@ in that measure. **Full page** displays the original page with clickable measure
 regions. Check recognition boundaries and numbering against the original score.
 MusicXML/XML/MXL uploads import structured metadata directly.
 
-The reader reports extraction progress and provides a retry action on failure. Use
+While finding measures, the reader shows an **estimated countdown** and elapsed
+time. It checks the PDF's real page count early and uses the server's conversion
+start time, so refreshing or returning to the score keeps the clock. Estimates
+account for the slower Docker runtime. If the estimate runs out, the reader says
+**Taking longer than estimated** and keeps showing elapsed time until the server
+finishes or reports an error. You can read the full page while this runs.
+Conversion actions from the library open this reader immediately; on phones the
+progress card appears before the score image.
+
+The reader provides a retry action on failure. Use
 **Delete score** to remove an uploaded score, its local file, its measures, and
 any practice marks attached to those measures.
 
@@ -256,6 +265,7 @@ development retains its 300-second Audiveris default.
 | `DJANGO_DATA_DIR` | `/data` in Docker; manual startup defaults to `backend/` |
 | `DJANGO_SECRET_KEY_FILE` | `/data/django-secret-key`; created once and reused |
 | `OMR_TIMEOUT_SECONDS` | `600` in Compose; `300` by default for native development |
+| `OMR_ESTIMATED_SECONDS_PER_PAGE` | Countdown estimate: `150` in Compose, `15` natively; configurable for faster/slower servers |
 
 The Docker build excludes local databases, uploaded music, `.local-tools`, Git
 history, local environment files, and course-report folders. Migrations and
@@ -317,7 +327,7 @@ its separate named volume. Disposable scores and practice marks were deleted
 after testing. The native library was preserved. Selected notation crops and
 browser screenshots were visually checked.
 
-All 30 backend tests pass in both the native and container runtimes. All 17
+All 32 backend tests pass in both the native and container runtimes. All 22
 frontend tests and the production build pass. Lint
 reports three existing Fast Refresh warnings in `mockSession.jsx`. Recognition
 results still need review for each new score; the successful demo PDF does not

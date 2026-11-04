@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ExtractionProgress from './ExtractionProgress'
 
 function ScoreImage({ src, alt }) {
   const [state, setState] = useState('loading')
@@ -13,7 +14,7 @@ function ScoreImage({ src, alt }) {
 export default function PdfScoreReader({ score, passages, page, focusedPassageId, onPageChange, onSelect, onExtract, extracting, extractionError, onSave, savingId }) {
   const [view, setView] = useState('measure')
   const pageMeasures = passages.filter((passage) => passage.page_number === page)
-  const selected = passages.find((passage) => passage.id === focusedPassageId) ?? pageMeasures[0]
+  const selected = pageMeasures.find((passage) => passage.id === focusedPassageId) ?? pageMeasures[0]
   const complete = score.extraction_status === 'complete'
   const previewsReady = score.measure_layout_version >= 1
   const pdfUrl = `${score.source_file}#page=${page}&view=FitH`
@@ -23,7 +24,7 @@ export default function PdfScoreReader({ score, passages, page, focusedPassageId
     setView('measure')
   }
 
-  return <section className="pdf-reader" aria-label="PDF score and detected measures">
+  return <section className={`pdf-reader${extracting ? ' is-extracting' : ''}`} aria-label="PDF score and detected measures">
     <div className="viewer-pdf">
       <div className="viewer-pdf-heading">
         <a className="viewer-back" href="#/score-library">← Library</a>
@@ -55,14 +56,14 @@ export default function PdfScoreReader({ score, passages, page, focusedPassageId
     </div>
     <aside className="pdf-measures" aria-labelledby="detected-measures-title" aria-busy={Boolean(extracting)}>
       <h2 id="detected-measures-title">Measures</h2>
-      {extracting ? <p role="status" className="pdf-extraction-status">Finding measures in your PDF… You can keep reading while this runs.</p>
+      {extracting ? <ExtractionProgress score={score} />
         : complete && previewsReady ? <p role="status">{passages.length} measures detected. Select one to see its music.</p>
           : <><p>Find the measures in this PDF, then save the ones you want to practice.</p><button className="pdf-extract" type="button" onClick={onExtract}>{extractionError ? 'Retry extraction' : complete ? 'Prepare measure previews' : 'Extract measures'}</button></>}
       {extractionError && <p className="viewer-error" role="alert">{extractionError}</p>}
       {pageMeasures.length > 0 && <>
         <h3>Page {page} <span>· {pageMeasures.length} measures</span></h3>
-        <ul className="pdf-measure-list">{pageMeasures.map((passage) => <li id={`measure-${passage.id}`} key={passage.id} className={passage.id === focusedPassageId ? 'is-focused' : ''}>
-          <button type="button" className="pdf-measure-select" onClick={() => select(passage)} aria-current={passage.id === focusedPassageId ? 'true' : undefined}>Measure {passage.measure_number}</button>
+        <ul className="pdf-measure-list">{pageMeasures.map((passage) => <li id={`measure-${passage.id}`} key={passage.id} className={passage.id === selected?.id ? 'is-focused' : ''}>
+          <button type="button" className="pdf-measure-select" onClick={() => select(passage)} aria-current={passage.id === selected?.id ? 'true' : undefined}>Measure {passage.measure_number}</button>
           <button type="button" className="pdf-measure-save" disabled={passage.is_marked_for_practice || savingId !== null} onClick={() => onSave(passage)} aria-label={passage.is_marked_for_practice ? `Measure ${passage.measure_number} saved to practice` : `Save measure ${passage.measure_number} for practice`}>
             {savingId === passage.id ? 'Saving…' : passage.is_marked_for_practice ? 'Saved ✓' : '+ Practice'}
           </button>

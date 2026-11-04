@@ -39,6 +39,8 @@ authentication.
 | page_count | integer | Positive total page count |
 | available_offline | boolean | Offline-library availability |
 | source_file | string | Locally stored uploaded file path, when supplied |
+| extraction_started_at | string or null | ISO-8601 server start time for an active conversion; null when inactive, completed or interrupted |
+| extraction_estimated_seconds | integer or null | Approximate total PDF conversion duration for this runtime and page count; null for non-PDF scores |
 
 ### Passage
 
@@ -119,6 +121,17 @@ Score responses include `extraction_status` (`not_started`, `processing`,
 `complete`, or `failed`) and `extraction_error`. Clients may poll the score detail
 while processing and retry after failure. The browser starts extraction after
 a PDF upload and displays the returned passages next to the PDF.
+
+While processing, `extraction_started_at` remains stable and
+`extraction_estimated_seconds` is based on the real page count, published as soon
+as PDF inspection finishes. The estimate is `15 + page_count *
+OMR_ESTIMATED_SECONDS_PER_PAGE`, capped at the configured recognition timeout.
+The per-page default is 15 seconds natively and 150 seconds in Docker, where
+Intel emulation can be slower. These are planning estimates, not measured
+recognition percentages or completion deadlines. Clients poll during their own
+long-running POST as well as when opening an already-running conversion.
+At zero remaining time the UI continues showing elapsed time and a longer-than-
+estimated message; success/failure comes from the server's extraction status.
 The importer retains Audiveris measure-stack geometry. `measure_layout_version`
 is 1 after these regions are stored. Older imports with version 0 are upgraded
 on the next extraction, preserving passage IDs and practice notes.

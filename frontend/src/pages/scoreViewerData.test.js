@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { extractionCountdown, formatDuration } from './extractionTiming.js'
 import test from 'node:test'
 import { initialPage, loadViewerData, pagePassages, samplePassages, sectionOptions, scoreViewerHref } from './scoreViewerData.js'
 import { requestExtraction } from './extractionRequest.js'
@@ -74,4 +75,26 @@ test('extraction deduplicates simultaneous requests and permits a retry after fa
   await assert.rejects(requestExtraction(123, {}, async () => ({ ok: false, json: async () => ({ detail: 'Try again' }) })), /Try again/)
   const retried = await requestExtraction(123, {}, async () => ({ ok: true, json: async () => ({ extraction_status: 'complete' }) }))
   assert.equal(retried.extraction_status, 'complete')
+})
+
+test('conversion countdown uses the server start time across reloads and polling', () => {
+  const started = Date.parse('2026-11-03T15:00:00Z')
+  const score = { extraction_started_at: new Date(started).toISOString(), extraction_estimated_seconds: 315 }
+  assert.deepEqual(extractionCountdown(score, started + 120000), { elapsed: 120, remaining: 195 })
+  assert.deepEqual(extractionCountdown({ ...score }, started + 121000), { elapsed: 121, remaining: 194 })
+  assert.equal(formatDuration(194), '03:14')
+})
+
+test('conversion overrun keeps elapsed time without negative or fake completed countdowns', () => {
+  const started = Date.parse('2026-11-03T15:00:00Z')
+  const score = { extraction_started_at: new Date(started).toISOString(), extraction_estimated_seconds: 30 }
+  assert.deepEqual(extractionCountdown(score, started + 45000), { elapsed: 45, remaining: 0 })
+  assert.equal(formatDuration(-10), '00:00')
+})
+
+test('conversion waits for server timing and tolerates a future server clock', () => {
+  assert.equal(extractionCountdown({ extraction_started_at: null, extraction_estimated_seconds: 30 }), null)
+  assert.equal(extractionCountdown({ extraction_started_at: 'invalid', extraction_estimated_seconds: 30 }), null)
+  const future = Date.now() + 60000
+  assert.deepEqual(extractionCountdown({ extraction_started_at: new Date(future).toISOString(), extraction_estimated_seconds: 45 }, future - 1000), { elapsed: 0, remaining: 45 })
 })

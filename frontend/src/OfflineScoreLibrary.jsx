@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import MockUserControl from './MockUserControl'
 import { mockUserHeaders, useMockSession } from './mockSession'
 import './OfflineScoreLibrary.css'
-import { requestExtraction } from './pages/extractionRequest'
 
 const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
@@ -21,7 +20,6 @@ function OfflineScoreLibrary() {
   const [uploading, setUploading] = useState(false)
   const [uploadMessage, setUploadMessage] = useState('')
   const [deletingId, setDeletingId] = useState(null)
-  const [extractingId, setExtractingId] = useState(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -95,18 +93,8 @@ function OfflineScoreLibrary() {
     }
   }
 
-  async function extractMeasures(part) {
-    setExtractingId(part.id)
-    setError('')
-    setUploadMessage('')
-    try {
-      await requestExtraction(part.id, mockUserHeaders(user))
-      window.location.assign(`#/score-viewer?score=${part.id}`)
-    } catch (extractError) {
-      setError(extractError.message)
-    } finally {
-      setExtractingId(null)
-    }
+  function extractMeasures(part) {
+    window.location.assign(`#/score-viewer?score=${part.id}&extract=1`)
   }
 
   return (
@@ -156,7 +144,7 @@ function OfflineScoreLibrary() {
                     <h3>{part.title}</h3>
                     <p>{part.instrument} <span>·</span> {part.page_count} pages{part.extraction_status === 'complete' ? <> <span>·</span> {part.passage_count} measures detected</> : part.extraction_status === 'processing' ? <> <span>·</span> Extracting measures…</> : null}</p>
                   </div>
-                  <div className="offline-library__part-actions"><a className="offline-library__open-button" href={`#/score-viewer?score=${part.id}`}>Open score <span aria-hidden="true">→</span></a>{part.source_file?.toLowerCase().endsWith('.pdf') && part.extraction_status !== 'complete' && <button className="offline-library__extract-button" type="button" disabled={extractingId !== null || part.extraction_status === 'processing'} onClick={() => extractMeasures(part)}>{extractingId === part.id || part.extraction_status === 'processing' ? 'Extracting…' : part.extraction_status === 'failed' ? 'Retry extraction' : 'Extract measures'}</button>}<button className="offline-library__delete-button" type="button" disabled={deletingId === part.id || extractingId === part.id || part.extraction_status === 'processing'} onClick={() => deleteScore(part)}>{deletingId === part.id ? 'Deleting…' : 'Delete score'}</button></div>
+                  <div className="offline-library__part-actions"><a className="offline-library__open-button" href={`#/score-viewer?score=${part.id}`}>Open score <span aria-hidden="true">→</span></a>{part.source_file?.toLowerCase().endsWith('.pdf') && part.extraction_status !== 'complete' && <button className="offline-library__extract-button" type="button" disabled={part.extraction_status === 'processing'} onClick={() => extractMeasures(part)}>{part.extraction_status === 'processing' ? 'Extracting…' : part.extraction_status === 'failed' ? 'Retry extraction' : 'Extract measures'}</button>}<button className="offline-library__delete-button" type="button" disabled={deletingId === part.id || part.extraction_status === 'processing'} onClick={() => deleteScore(part)}>{deletingId === part.id ? 'Deleting…' : 'Delete score'}</button></div>
                 </li>
               ))}
             </ul>}

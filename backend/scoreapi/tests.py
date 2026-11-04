@@ -242,6 +242,45 @@ class ScoreApiTests(APITestCase):
         response = self.client.get(f"/api/scores/{self.score.id}/")
         self.assertEqual(response.json()["extraction_status"], "not_started")
 
+    @override_settings(OMR_ESTIMATED_SECONDS_PER_PAGE=150, OMR_TIMEOUT_SECONDS=600)
+    @patch("scoreapi.extraction_service.extract_pdf_measures")
+    def test_conversion_publishes_page_count_and_stable_timing_before_completion(self, extract_pdf):
+        self.score.source_file = "scores/scan.pdf"
+        self.score.page_count = 1
+        self.score.save()
+        url = f"/api/scores/{self.score.id}/"
+
+        def recognize(*args, on_page_count, **kwargs):
+            started = self.client.get(url).json()["extraction_started_at"]
+            self.assertIsNotNone(started)
+            on_page_count(2)
+            running = self.client.get(url).json()
+            self.assertEqual(running["extraction_status"], "processing")
+            self.assertEqual(running["page_count"], 2)
+            self.assertEqual(running["extraction_estimated_seconds"], 315)
+            self.assertEqual(running["extraction_started_at"], started)
+            return recognized_pdf([("Page 1", 1, 1), ("Page 2", 2, 2)], 2)
+
+        extract_pdf.side_effect = recognize
+        response = self.client.post(url + "extract-measures/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["extraction_started_at"])
+
+    @override_settings(OMR_ESTIMATED_SECONDS_PER_PAGE=150, OMR_TIMEOUT_SECONDS=600)
+    def test_estimate_is_bounded_and_interrupted_jobs_do_not_keep_a_live_clock(self):
+        self.score.source_file = "scores/scan.pdf"
+        self.score.page_count = 10
+        self.score.extraction_state = "processing"
+        self.score.extraction_updated_at = timezone.now() - timedelta(minutes=20)
+        self.score.save()
+        detail = self.client.get(f"/api/scores/{self.score.id}/").json()
+        self.assertEqual(detail["extraction_estimated_seconds"], 600)
+        self.assertEqual(detail["extraction_status"], "failed")
+        self.assertIsNone(detail["extraction_started_at"])
+        self.score.source_file = "scores/part.musicxml"
+        self.score.save()
+        self.assertIsNone(self.client.get(f"/api/scores/{self.score.id}/").json()["extraction_estimated_seconds"])
+
     @patch("scoreapi.extraction_service.extract_pdf_measures", return_value=recognized_pdf([("Page 1", 1, 1)], 1))
     def test_interrupted_job_can_be_retried_instead_of_showing_progress_forever(self, extract_pdf):
         self.score.source_file = "scores/scan.pdf"

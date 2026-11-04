@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.conf import settings
 import hashlib
 import json
 
@@ -17,6 +18,8 @@ class ScoreSerializer(serializers.ModelSerializer):
     passage_count = serializers.IntegerField(read_only=True)
     extraction_status = serializers.SerializerMethodField()
     extraction_error = serializers.SerializerMethodField()
+    extraction_started_at = serializers.SerializerMethodField()
+    extraction_estimated_seconds = serializers.SerializerMethodField()
 
     class Meta:
         model = Score
@@ -31,6 +34,8 @@ class ScoreSerializer(serializers.ModelSerializer):
             "passage_count",
             "extraction_status",
             "extraction_error",
+            "extraction_started_at",
+            "extraction_estimated_seconds",
             "measure_layout_version",
         ]
 
@@ -41,6 +46,18 @@ class ScoreSerializer(serializers.ModelSerializer):
         if score.extraction_expired:
             return "The previous extraction was interrupted. Please retry."
         return score.extraction_error
+
+    def get_extraction_started_at(self, score):
+        if score.extraction_state == "processing" and not score.extraction_expired:
+            return score.extraction_updated_at.isoformat()
+        return None
+
+    def get_extraction_estimated_seconds(self, score):
+        if not score.source_file.name.lower().endswith(".pdf"):
+            return None
+        # Planning estimate, not a measurement of Audiveris's progress.
+        return min(settings.OMR_TIMEOUT_SECONDS,
+                   15 + score.page_count * settings.OMR_ESTIMATED_SECONDS_PER_PAGE)
 
 
 class PassageSerializer(serializers.ModelSerializer):

@@ -37,8 +37,14 @@ def extract_score_measures(score_id):
         raise ExtractionBusy("Measures are already being extracted for this score.")
 
     try:
+        def record_page_count(page_count):
+            # Publish the real page count early without resetting the start time.
+            if not Score.objects.filter(pk=score_id).update(page_count=page_count):
+                raise Score.DoesNotExist
+
         result = extract_pdf_measures(score.source_file.path, settings.AUDIVERIS_COMMAND,
-                                      timeout=settings.OMR_TIMEOUT_SECONDS, max_pages=settings.OMR_MAX_PAGES)
+                                      timeout=settings.OMR_TIMEOUT_SECONDS, max_pages=settings.OMR_MAX_PAGES,
+                                      on_page_count=record_page_count)
         with transaction.atomic():
             if not Score.objects.filter(pk=score_id).update(extraction_updated_at=timezone.now()):
                 raise Score.DoesNotExist
