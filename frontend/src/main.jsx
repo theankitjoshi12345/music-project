@@ -3,11 +3,14 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { MockSessionProvider } from './mockSession.jsx'
+import { ThemeProvider } from './theme.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <MockSessionProvider>
-      <App />
-    </MockSessionProvider>
+    <ThemeProvider>
+      <MockSessionProvider>
+        <App />
+      </MockSessionProvider>
+    </ThemeProvider>
   </StrictMode>,
 )

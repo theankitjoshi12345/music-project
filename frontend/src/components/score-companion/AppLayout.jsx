@@ -1,4 +1,6 @@
 import MockUserControl from '../../MockUserControl'
+import { useTheme } from '../../themeContext'
+import ThemePicker from './ThemePicker'
 
 const defaultNavigation = [
   { href: '#/score-library', label: 'Score library' },
@@ -8,11 +10,12 @@ const defaultNavigation = [
 export function AppHeader({ status = 'Score Companion', homeHref = '#/score-library', activeHref }) {
   return (
     <header className="score-topbar">
-      <a className="viewer-brand" href={homeHref}><span aria-hidden="true">♫</span> Score Companion</a>
+      <a className="viewer-brand" href={homeHref} aria-label="Score Companion home"><img src="/favicon.svg" width="42" height="42" alt="" /><span>Score<br />Companion<span className="brand-spark" aria-hidden="true">✦</span></span></a>
       <nav className="viewer-primary-nav" aria-label="Main navigation"><a href="#/score-library" aria-current={activeHref === '#/score-library' ? 'page' : undefined}>Library</a><a href="#/practice-review" aria-current={activeHref === '#/practice-review' ? 'page' : undefined}>Practice review</a></nav>
       <div className="viewer-header-meta">
+        <ThemePicker />
         <MockUserControl />
-        <span className="viewer-status"><i aria-hidden="true" /> {status}</span>
+        <span className="visually-hidden">{status}</span>
       </div>
     </header>
   )
@@ -29,8 +32,9 @@ export function SidebarNavigation({ items = defaultNavigation, activeHref }) {
 }
 
 export default function AppLayout({ children, status, navigation, activeHref, headingId, busy = false, className = '' }) {
+  const { theme } = useTheme()
   return (
-    <div className={'score-companion ' + className}>
+    <div className={'score-companion ' + className} data-color-theme={theme}>
       <AppHeader status={status} activeHref={activeHref} />
       <div className="viewer-layout">
         {navigation && <SidebarNavigation items={navigation} activeHref={activeHref} />}

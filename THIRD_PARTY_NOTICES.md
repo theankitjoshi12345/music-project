@@ -1,4 +1,19 @@
-# Container dependencies
+# Third-party notices
+
+## Bundled fonts
+
+The frontend distributes unmodified Latin variable-font files from
+@fontsource-variable/nunito-sans 5.3.0 and @fontsource-variable/fraunces 5.3.0.
+Both use the SIL Open Font License 1.1. Their full copyright and license notices
+are included in the built frontend under /font-licenses/:
+
+- [Nunito Sans notice](frontend/public/font-licenses/nunito-sans.txt) · [Fontsource package](https://fontsource.org/fonts/nunito-sans)
+- [Fraunces notice](frontend/public/font-licenses/fraunces.txt) · [Fontsource package](https://fontsource.org/fonts/fraunces)
+
+The logo and decorative library illustration are original SVG artwork in this
+repository. They are separate from imported sheet music.
+
+## Container dependencies
 
 The backend image installs the unmodified official Audiveris 5.11.0 Linux
 package, including its bundled Java runtime and native dependencies. Audiveris

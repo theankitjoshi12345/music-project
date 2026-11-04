@@ -37,6 +37,65 @@ async function jump(passage) {
 async function noOverflow() {
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'Page must fit the viewport')
 }
+
+async function appearanceCheck(target) {
+  const palettes = [['violet', 'Violet Jam'], ['peach', 'Peach Pop'], ['mint', 'Mint Groove']]
+  for (const [id, name] of palettes) {
+    await page.locator('.theme-picker summary').click()
+    await page.getByRole('button', { name, exact: false }).click()
+    assert.equal(await page.locator('.score-companion').getAttribute('data-color-theme'), id)
+    const contrast = await page.evaluate(() => {
+      const root = document.querySelector('.score-companion')
+      const probe = document.createElement('span')
+      probe.hidden = true
+      root.append(probe)
+      function luminance(rgb) {
+        const values = rgb.match(/[\d.]+/g).slice(0, 3).map(Number).map(value => {
+          const n = value / 255
+          return n <= .04045 ? n / 12.92 : ((n + .055) / 1.055) ** 2.4
+        })
+        return .2126 * values[0] + .7152 * values[1] + .0722 * values[2]
+      }
+      const pairs = [['--accent', 'white'], ['--accent', '--soft'], ['--muted', '--background'], ['--muted', '--soft'], ['--ink', '--art-primary'], ['--ink', '--art-secondary'], ['--success', '--success-soft'], ['--danger', 'white']]
+      const result = pairs.map(([text, background]) => {
+        probe.style.color = `var(${text})`
+        probe.style.backgroundColor = background.startsWith('--') ? `var(${background})` : background
+        const style = getComputedStyle(probe)
+        const a = luminance(style.color), b = luminance(style.backgroundColor)
+        return { pair: `${text}/${background}`, ratio: (Math.max(a, b) + .05) / (Math.min(a, b) + .05) }
+      })
+      probe.remove()
+      return result
+    })
+    for (const pair of contrast) assert.ok(pair.ratio >= 4.5, `${name}: ${pair.pair} contrast ${pair.ratio.toFixed(2)}`)
+    for (const width of [320, 390, 768, 1440]) {
+      await page.setViewportSize({ width, height: width < 768 ? 844 : 1000 })
+      await noOverflow()
+      await page.locator('.theme-picker summary').click()
+      await noOverflow()
+      await page.keyboard.press('Escape')
+      assert.equal(await page.locator('.theme-picker').getAttribute('open'), null)
+      await page.getByRole('link', { name: 'Open measure', exact: false }).click()
+      await notation(target)
+      await noOverflow()
+      assert.equal(await page.locator('.score-companion').getAttribute('data-color-theme'), id)
+      assert.equal(await page.locator('.pdf-selected-measure').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(255, 255, 255)')
+      if (width === 390 || width === 1440) await page.screenshot({ path: path.join(output, `${id}-reader-${width}.png`), fullPage: true })
+      await nav().getByRole('link', { name: 'Library', exact: true }).click()
+      await page.getByRole('link', { name: 'Open score', exact: false }).waitFor()
+      await noOverflow()
+      if (width === 390 || width === 1440) await page.screenshot({ path: path.join(output, `${id}-library-${width}.png`), fullPage: true })
+      await nav().getByRole('link', { name: 'Practice review', exact: true }).click()
+      await page.getByRole('article', { name: `Practice measure ${target.measure_number}`, exact: true }).waitFor()
+    }
+    await page.reload()
+    await page.getByRole('article', { name: `Practice measure ${target.measure_number}`, exact: true }).waitFor()
+    assert.equal(await page.locator('.score-companion').getAttribute('data-color-theme'), id)
+    console.log(`PASS: ${name} contrast, 320/390/768/1440 layouts, white notation and persistence`)
+  }
+  await page.locator('.theme-picker summary').click()
+  await page.getByRole('button', { name: 'Violet Jam', exact: false }).click()
+}
 const delayRead = async route => {
   if (route.request().method() === 'GET') await new Promise(resolve => setTimeout(resolve, 350))
   await route.continue().catch(() => {})
@@ -121,8 +180,9 @@ try {
   await nav().getByRole('link', { name: 'Practice review', exact: true }).click()
   await page.getByRole('status').filter({ hasText: 'Loading practice review' }).waitFor()
   let card = page.getByRole('article', { name: `Practice measure ${target.measure_number}`, exact: true })
-  await card.getByRole('button', { name: 'Mark resolved', exact: true }).click()
-  await card.getByRole('button', { name: 'Mark unresolved', exact: true }).waitFor()
+  await card.getByRole('button', { name: 'Mark practiced', exact: true }).click()
+  await card.getByRole('button', { name: 'Practice again', exact: true }).waitFor()
+  await appearanceCheck(target)
   await page.screenshot({ path: path.join(output, 'review-1440.png'), fullPage: true })
   await page.setViewportSize({ width: 390, height: 844 }); await noOverflow()
   await page.screenshot({ path: path.join(output, 'review-390.png'), fullPage: true })
@@ -154,11 +214,11 @@ try {
   await page.getByRole('heading', { name: 'No saved practice measures yet', exact: true }).waitFor()
   assert.deepEqual(await json('practice-marks/'), [])
   assert.equal((await json('practice-marks/', 'sam')).length, 1)
-  await page.getByLabel('Demo user', { exact: true }).selectOption('sam')
+  await page.getByLabel('Practice profile', { exact: true }).selectOption('sam')
   await page.getByText('Sam keeps this', { exact: true }).waitFor()
   await page.getByRole('button', { name: 'Remove from practice', exact: true }).click()
   await page.getByRole('heading', { name: 'No saved practice measures yet', exact: true }).waitFor()
-  await page.getByLabel('Demo user', { exact: true }).selectOption('alex')
+  await page.getByLabel('Practice profile', { exact: true }).selectOption('alex')
   console.log('PASS: practice save/resolve/open, failed removal recovery, permanent note deletion and user isolation')
 
   await nav().getByRole('link', { name: 'Library', exact: true }).click()

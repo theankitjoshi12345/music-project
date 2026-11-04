@@ -1,8 +1,18 @@
-body {
-  margin: 0;
-  min-width: 320px;
-  background: #f6f8fb;
-  color: #172b4d;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+@font-face {
+  font-family: 'Nunito Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url('@fontsource-variable/nunito-sans/files/nunito-sans-latin-wght-normal.woff2') format('woff2');
 }
-html { scroll-behavior: smooth; }
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/fraunces/files/fraunces-latin-wght-normal.woff2') format('woff2');
+}
+body { margin:0; min-width:320px; background:#f8f4ff; color:#342840; font-family:'Nunito Sans',ui-sans-serif,system-ui,sans-serif; }
+html { scroll-behavior:smooth; }
+button, input, select { font:inherit; }
+@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }

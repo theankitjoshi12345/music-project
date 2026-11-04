@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AppLayout, ScreenHeading, LoadingSkeleton } from './components/score-companion'
 import { mockUserHeaders, useMockSession } from './mockSession'
 import './OfflineScoreLibrary.css'
+import StudioArt from './components/score-companion/StudioArt'
 
 const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
@@ -62,9 +63,14 @@ export default function OfflineScoreLibrary() {
   }
 
   return <AppLayout className="offline-library" activeHref="#/score-library" status="Library" headingId="library-title" busy={!parts && !error}>
-    <ScreenHeading id="library-title" title="Your score library" subtitle="Add a score, open its measures, and save the parts you want to practice." />
+    <div className="library-hero">
+      <div><ScreenHeading id="library-title" byline="Your space to make music" title="Your score library" subtitle="Big pieces. Small steps. A little better every practice." />
+        <ol className="library-steps"><li><span>1</span> Add your sheet music</li><li><span>2</span> Choose a measure</li><li><span>3</span> Save it for practice</li></ol>
+      </div>
+      <StudioArt />
+    </div>
     <section className="offline-library__upload" aria-labelledby="upload-title">
-      <div><h2 id="upload-title">Add a score</h2><p>PDF or MusicXML · up to 10 MB</p></div>
+      <div className="upload-intro"><span className="upload-icon" aria-hidden="true">＋</span><div><h2 id="upload-title">Add a score</h2><p>PDF or MusicXML · up to 10 MB</p></div></div>
       <form onSubmit={upload}>
         <label>Score file<input name="score_file" type="file" accept=".pdf,.musicxml,.xml,.mxl" required disabled={uploading} /></label>
         <button className="button-primary" type="submit" disabled={uploading}>{uploading ? 'Uploading…' : 'Add to library'}</button>
@@ -77,7 +83,7 @@ export default function OfflineScoreLibrary() {
       {!parts && !error && <LoadingSkeleton label="Loading your score library…" />}
       {parts?.length === 0 && <div className="empty-state"><h3>No scores yet</h3><p>Choose a file above to start. Your uploaded scores will appear here.</p></div>}
       {parts?.length > 0 && <ul className="library-list">{parts.map(score => <li className="offline-library__part" key={score.id}>
-        <div className="library-score-info"><h3>{score.title}</h3><p>{score.page_count} {score.page_count === 1 ? 'page' : 'pages'} · {score.passage_count} measures{score.extraction_status === 'processing' ? ' · Finding measures…' : ''}</p></div>
+        <span className="library-score-icon" aria-hidden="true">♫</span><div className="library-score-info"><h3>{score.title}</h3><p>{score.page_count} {score.page_count === 1 ? 'page' : 'pages'} · {score.passage_count} measures{score.extraction_status === 'processing' ? ' · Finding measures…' : ''}</p></div>
         <div className="offline-library__part-actions screen-actions">
           <a className="button-primary" href={`#/score-viewer?score=${score.id}`}>Open score →</a>
           {score.source_file?.toLowerCase().endsWith('.pdf') && score.extraction_status === 'failed' && <a className="button-secondary" href={`#/score-viewer?score=${score.id}&extract=1`}>Retry conversion</a>}

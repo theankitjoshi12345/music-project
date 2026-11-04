@@ -53,7 +53,7 @@ export default function MeasureMarker() {
     finally { setBusy(false) }
   }
 
-  return <AppLayout className="measure-marker" status="Measure marker" headingId="marker-title" busy={!data && !error}>
+  return <AppLayout className="measure-marker" activeHref="#/score-library" status="Measure marker" headingId="marker-title" busy={!data && !error}>
     <ScreenHeading id="marker-title" title="Select a measure to mark" subtitle="Choose a measure, read its notation, and save it for practice." />
     {!data && !error && <LoadingSkeleton kind="reader" label="Loading your score…" rows={2} />}
     {error && <div className="viewer-error" role="alert"><p>{error}</p><button type="button" onClick={() => setRetry(value => value + 1)}>Reload score</button></div>}

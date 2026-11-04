@@ -10,6 +10,7 @@ let components
 let App
 let PdfScoreReader
 let ExtractionProgress
+let ThemeProvider
 
 before(async () => {
   server = await createServer({
@@ -22,9 +23,27 @@ before(async () => {
   App = appModule.default
   PdfScoreReader = (await server.ssrLoadModule('/src/pages/PdfScoreReader.jsx')).default
   ExtractionProgress = (await server.ssrLoadModule('/src/pages/ExtractionProgress.jsx')).default
+  ThemeProvider = (await server.ssrLoadModule('/src/theme.jsx')).ThemeProvider
 })
 
 after(async () => { await server?.close() })
+
+test('themes restore supported preferences and safely fall back when storage is invalid or blocked', () => {
+  const originalStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+  try {
+    for (const [saved, expected] of [['mint', 'mint'], ['peach', 'peach'], ['violet', 'violet'], ['unknown', 'violet'], [null, 'violet'], [new Error('Storage blocked'), 'violet']]) {
+      Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem() {
+        if (saved instanceof Error) throw saved
+        return saved
+      } } })
+      const html = renderToStaticMarkup(h(ThemeProvider, null, h(components.AppLayout)))
+      assert.match(html, new RegExp(`data-color-theme="${expected}"`))
+    }
+  } finally {
+    if (originalStorage) Object.defineProperty(globalThis, 'localStorage', originalStorage)
+    else delete globalThis.localStorage
+  }
+})
 
 test('integrated routing renders all four screens and preserves viewer score links', () => {
   const originalWindow = globalThis.window
