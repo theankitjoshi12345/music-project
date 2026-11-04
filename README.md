@@ -15,8 +15,8 @@ The app uses local mock authentication, not production security. Choose **Alex R
 
 Use **Add to library** to upload a PDF, MusicXML, XML, or MXL file (up to 10 MB).
 PDF uploads open the reader and start local Audiveris recognition automatically.
-Detected measures appear next to the PDF, grouped by page. Use **+ Practice** to
-save a measure, then **Practice review** to revisit it. Selecting a measure opens
+Detected measures appear next to the PDF, grouped by page. Use **Save for practice**
+beside the selected measure, then **Practice review** in the header to revisit it. Selecting a measure opens
 its actual music cropped from the uploaded PDF, including all instrument staves
 in that measure. **Full page** displays the original page with clickable measure
 regions. Check recognition boundaries and numbering against the original score.
@@ -31,9 +31,23 @@ finishes or reports an error. You can read the full page while this runs.
 Conversion actions from the library open this reader immediately; on phones the
 progress card appears before the score image.
 
-The reader provides a retry action on failure. Use
-**Delete score** to remove an uploaded score, its local file, its measures, and
-any practice marks attached to those measures.
+The reader provides a retry action on failure. **Remove from practice** in the
+reader, marker, or review screen deletes that user's saved practice row and note
+from the backend. The score and its measures remain available in Library.
+Under **Library → Score options → Delete score**, deleting a score removes the
+uploaded file, score record, measures, and every attached practice mark.
+
+All screens share Library and Practice review navigation. The reader groups
+previous/next measure controls and the practice action beside the selected
+notation. **← / →** move between measures across page boundaries; they do not
+intercept typing in fields. **Go to measure** jumps directly to a number.
+Full-page view has its own page controls. The separate Practice marker is
+available under a score's options.
+
+Data and image loads show skeleton placeholders. Save, resolve and remove
+actions show a pending state and wait for backend confirmation before changing
+the displayed saved state. Failed requests keep the existing item and offer a
+retry. See the [navigation and usability check](docs/UI_REVIEW.md).
 
 Uploading an identical file reopens its existing library entry and keeps its
 measures and practice notes. Different files with the same original filename
@@ -280,14 +294,17 @@ With either setup running (port 5173 manually, or port 8080 with Docker):
    a clear sheet-music PDF of at most 10 pages. Wait for recognition to finish.
 2. Select different measure numbers. Confirm the music image changes and
    includes all staves, as well as showing the correct measure and page label.
-3. Move to another page. Switch to **Full page**, select a highlighted measure
+3. Use **Next**, **Previous**, or the arrow keys to cross a page boundary.
+   Switch to **Full page**, select a highlighted measure
    region, and confirm its selected-measure preview loads.
-4. Use **+ Practice**, open **Practice review**, confirm the saved measure, and
+4. Use **Save for practice**, open **Practice review**, confirm the saved measure, and
    resolve the mark.
-   Use **Open passage** to return to the exact saved measure and page.
+   Use **Open measure** to return to the exact saved measure and page.
 5. Switch to Sam Lee and confirm Alex's marks do not appear. Reuploading the
    identical PDF should reopen its existing library entry with its data intact.
-6. With a disposable upload, use **Delete score** and confirm the library entry,
+6. Remove a practice item, reload the reader and review, and confirm it is
+   unsaved while the score is still available. Then, with a disposable upload,
+   use **Score options → Delete score** and confirm the library entry,
    original file, passages, and attached practice marks are removed.
 
 ### Score Viewer navigation
@@ -327,7 +344,12 @@ its separate named volume. Disposable scores and practice marks were deleted
 after testing. The native library was preserved. Selected notation crops and
 browser screenshots were visually checked.
 
-All 32 backend tests pass in both the native and container runtimes. All 22
+The navigation/removal walkthrough also passes in both runtimes. It verifies
+arrow keys, form-field protection, visible skeletons, failed deletion recovery,
+permanent mark/note removal, user isolation and responsive layouts at 390, 768
+and 1440 pixels. The four-screen flow is documented in [UI review](docs/UI_REVIEW.md).
+
+All 34 backend tests pass in both the native and container runtimes. All 23
 frontend tests and the production build pass. Lint
 reports three existing Fast Refresh warnings in `mockSession.jsx`. Recognition
 results still need review for each new score; the successful demo PDF does not
@@ -349,6 +371,25 @@ With Docker running, backend checks can also run inside its installed runtime:
 docker compose exec backend python manage.py check
 docker compose exec backend python manage.py test scoreapi
 ```
+
+The optional browser workflow test uses a separate, empty library and a real
+sheet-music PDF supplied by the tester. It covers navigation, conversion timing,
+loading skeletons, keyboard/form behavior, removal failures, user isolation,
+mobile/tablet layouts and backend/file cleanup. Use a separate Compose project:
+
+```bash
+PORT=8081 docker compose -p score-companion-e2e up --build -d --wait
+cd frontend
+npm ci
+npx playwright install chromium
+E2E_ORIGIN=http://localhost:8081 E2E_PDF=/absolute/path/to/score.pdf npm run test:e2e
+```
+
+The script refuses to run against a nonempty library, and deletes its own
+uploaded score after the test. `E2E_EXPECTED_MEASURES=56` optionally checks the
+benchmark's recognized count. To use installed Chrome, set
+`E2E_BROWSER_CHANNEL=chrome`. Screenshots go to ignored `tmp/e2e/`; no video is
+recorded. Normal Docker startup still requires only Docker.
 
 ### Reusing frontend components
 

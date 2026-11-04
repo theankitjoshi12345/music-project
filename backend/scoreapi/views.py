@@ -165,7 +165,7 @@ def pdf_image_response(score, page_number, region=None):
 class PracticeMarkListCreateView(APIView):
     def get(self, request):
         owner = request.headers.get("X-Mock-User", "alex")
-        marks = PracticeMark.objects.select_related("passage").filter(owner=owner)
+        marks = PracticeMark.objects.select_related("passage", "passage__score").prefetch_related("passage__practice_marks").filter(owner=owner)
         score_id = request.query_params.get("score")
         mark_status = request.query_params.get("status")
 
@@ -193,6 +193,13 @@ class PracticeMarkListCreateView(APIView):
 
 
 class PracticeMarkDetailView(APIView):
+    def delete(self, request, mark_id):
+        owner = request.headers.get("X-Mock-User", "alex")
+        mark = get_object_or_404(PracticeMark, pk=mark_id, owner=owner)
+        # Notes live on this row; no separate practice files or orphan notes remain.
+        mark.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def patch(self, request, mark_id):
         owner = request.headers.get("X-Mock-User", "alex")
         mark = get_object_or_404(PracticeMark, pk=mark_id, owner=owner)

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { extractionCountdown, formatDuration } from './extractionTiming.js'
+import { adjacentMeasure } from './measureNavigation.js'
 import test from 'node:test'
 import { initialPage, loadViewerData, pagePassages, samplePassages, sectionOptions, scoreViewerHref } from './scoreViewerData.js'
 import { requestExtraction } from './extractionRequest.js'
@@ -97,4 +98,13 @@ test('conversion waits for server timing and tolerates a future server clock', (
   assert.equal(extractionCountdown({ extraction_started_at: 'invalid', extraction_estimated_seconds: 30 }), null)
   const future = Date.now() + 60000
   assert.deepEqual(extractionCountdown({ extraction_started_at: new Date(future).toISOString(), extraction_estimated_seconds: 45 }, future - 1000), { elapsed: 0, remaining: 45 })
+})
+
+test('measure navigation crosses pages and stops at the first and last measure', () => {
+  const passages = [{ id: 1, page_number: 1 }, { id: 2, page_number: 2 }, { id: 3, page_number: 2 }]
+  assert.equal(adjacentMeasure(passages, 1, -1), null)
+  assert.equal(adjacentMeasure(passages, 1, 1), passages[1])
+  assert.equal(adjacentMeasure(passages, 2, -1), passages[0])
+  assert.equal(adjacentMeasure(passages, 3, 1), null)
+  assert.equal(adjacentMeasure(passages, 999, 1), null)
 })

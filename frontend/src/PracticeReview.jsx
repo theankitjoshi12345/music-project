@@ -1,200 +1,80 @@
 import { useEffect, useState } from 'react'
-import './PracticeReview.css'
+import { AppLayout, ScreenHeading, LoadingSkeleton } from './components/score-companion'
 import { scoreViewerHref } from './pages/scoreViewerData'
-import MockUserControl from './MockUserControl'
 import { mockUserHeaders, useMockSession } from './mockSession'
+import './PracticeReview.css'
 
 const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
-function MusicNoteIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19 3v12.2a3.5 3.5 0 1 1-2-3.16V7.1l-8 1.6v8.5a3.5 3.5 0 1 1-2-3.16V7l12-2.4V3z" />
-    </svg>
-  )
-}
-
-async function responseJson(response) {
-  if (!response.ok) {
-    throw new Error(`Practice review request failed (${response.status}).`)
-  }
-
-  return response.json()
-}
-
-function PracticeReview() {
+export default function PracticeReview() {
   const { user } = useMockSession()
   const [marks, setMarks] = useState(null)
   const [error, setError] = useState('')
-  const [savingId, setSavingId] = useState(null)
+  const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState(null)
+  const [retry, setRetry] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
-
-    async function loadMarks() {
+    async function load() {
+      setMarks(null); setError('')
       try {
-        setError('')
-        const response = await fetch(`${apiBase}/practice-marks/`, {
-          headers: mockUserHeaders(user),
-          signal: controller.signal,
-        })
-        const data = await responseJson(response)
-
-        if (!Array.isArray(data)) {
-          throw new Error('Practice review returned an invalid response.')
-        }
-
+        const response = await fetch(`${apiBase}/practice-marks/`, { headers: mockUserHeaders(user), signal: controller.signal })
+        if (!response.ok) throw new Error('Practice review could not load. Please try again.')
+        const data = await response.json()
+        if (!Array.isArray(data)) throw new Error('Practice review returned an invalid response.')
         if (!controller.signal.aborted) setMarks(data)
-      } catch (requestError) {
-        if (requestError.name !== 'AbortError') {
-          setError(requestError.message)
-        }
+      } catch (failure) {
+        if (!controller.signal.aborted) setError(failure.message)
       }
     }
-
-    loadMarks()
+    load()
     return () => controller.abort()
-  }, [user])
+  }, [user, retry])
 
-  async function markResolved(mark) {
-    setSavingId(mark.id)
-    setError('')
-
+  async function changeMark(mark, action) {
+    setBusy({ id: mark.id, action }); setError(''); setMessage('')
     try {
+      const removing = action === 'remove'
       const response = await fetch(`${apiBase}/practice-marks/${mark.id}/`, {
-        method: 'PATCH',
+        method: removing ? 'DELETE' : 'PATCH',
         headers: { 'Content-Type': 'application/json', ...mockUserHeaders(user) },
-        body: JSON.stringify({ is_resolved: true }),
+        ...(removing ? {} : { body: JSON.stringify({ is_resolved: !mark.is_resolved }) }),
       })
-      const updatedMark = await responseJson(response)
-
-      setMarks((currentMarks) =>
-        currentMarks?.map((currentMark) =>
-          currentMark.id === updatedMark.id ? updatedMark : currentMark,
-        ),
-      )
-    } catch (requestError) {
-      setError(requestError.message)
-    } finally {
-      setSavingId(null)
-    }
+      if (!response.ok && !(removing && response.status === 404)) throw new Error(removing ? 'This item could not be removed. Please try again.' : 'The practice status could not be saved. Please try again.')
+      if (removing) {
+        setMarks(current => current.filter(item => item.id !== mark.id))
+        setMessage(`Measure ${mark.passage.measure_number} was removed from practice, including its saved note.`)
+      } else {
+        const updated = await response.json()
+        setMarks(current => current.map(item => item.id === mark.id ? updated : item))
+        setMessage(`Measure ${mark.passage.measure_number} marked ${updated.is_resolved ? 'resolved' : 'unresolved'}.`)
+      }
+    } catch (failure) { setError(failure.message) }
+    finally { setBusy(null) }
   }
 
-  const firstMark = marks?.[0]
-  const sharedContext =
-    firstMark &&
-    marks.every(
-      (mark) =>
-        mark.passage.movement === firstMark.passage.movement &&
-        mark.passage.score_id === firstMark.passage.score_id &&
-        mark.passage.section === firstMark.passage.section,
-    )
-
-  return (
-    <div className="practice-review">
-      <header className="practice-review__header">
-        <a className="practice-review__brand" href="#/score-library">
-          <MusicNoteIcon />
-          <span>Score Companion</span>
-        </a>
-        <p className="practice-review__status">
-          <span aria-hidden="true" />
-          Offline ready
-        </p>
-        <MockUserControl />
-      </header>
-
-      <div className="practice-review__layout">
-        <aside className="practice-review__sidebar">
-          <nav aria-label="Score Companion">
-            <a className="practice-review__nav-link" href="#/score-library">
-              Score library
-            </a>
-            <a
-              className="practice-review__nav-link is-active"
-              href="#/practice-review"
-              aria-current="page"
-            >
-              Practice review
-            </a>
-          </nav>
-        </aside>
-
-        <main className="practice-review__content">
-          <h1>Practice review</h1>
-          <p className="practice-review__subtitle">
-            Review {user.name}'s saved passages, practice, then resolve.
-          </p>
-
-          {marks && (
-            <section aria-labelledby="practice-review-summary">
-              <h2 className="practice-review__summary" id="practice-review-summary">
-                {marks.length} SAVED {marks.length === 1 ? 'MEASURE' : 'MEASURES'}
-                {sharedContext &&
-                  ` • ${firstMark.passage.movement.toUpperCase()} • SECTION ${firstMark.passage.section.toUpperCase()}`}
-              </h2>
-
-              {marks.length === 0 ? (
-                <p className="practice-review__empty">
-                  No saved practice measures yet.
-                </p>
-              ) : (
-                <ul className="practice-review__list">
-                  {marks.map((mark) => (
-                    <li className="practice-review__item" key={mark.id}>
-                      <article className="practice-review__card">
-                        <p
-                          className={`practice-review__state${mark.is_resolved ? ' is-resolved' : ''}`}
-                        >
-                          <span aria-hidden="true" />
-                          {mark.is_resolved ? 'Resolved' : 'Unresolved'}
-                        </p>
-                        <h3>
-                          {mark.passage.movement} — Measure {mark.passage.measure_number}
-                        </h3>
-                        {mark.note && <p className="practice-review__note">{mark.note}</p>}
-                        <div className="practice-review__actions">
-                          <a className="practice-review__button" href={scoreViewerHref(mark.passage)}>
-                            Open passage <span aria-hidden="true">→</span>
-                          </a>
-                          <button
-                            className="practice-review__button"
-                            disabled={mark.is_resolved || savingId === mark.id}
-                            onClick={() => markResolved(mark)}
-                            type="button"
-                          >
-                            {savingId === mark.id
-                              ? 'Saving…'
-                              : mark.is_resolved
-                                ? 'Resolved ✓'
-                                : 'Mark resolved ✓'}
-                          </button>
-                        </div>
-                      </article>
-                      <p className="practice-review__footnote">
-                        Your practice note stays attached to measure {mark.passage.measure_number}.
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          )}
-
-          {!marks && !error && (
-            <p className="practice-review__message" role="status">
-              Loading practice review…
-            </p>
-          )}
-          {error && (
-            <p className="practice-review__error" role="alert">
-              {error}
-            </p>
-          )}
-        </main>
-      </div>
-    </div>
-  )
+  return <AppLayout className="practice-review" activeHref="#/practice-review" status="Practice review" headingId="review-title" busy={!marks && !error}>
+    <ScreenHeading id="review-title" title="Practice review" subtitle={`Open ${user.name}'s saved measures, practice, then mark them resolved.`} />
+    <p className="review-help">Remove from practice deletes the saved item and its note. Your score stays in the library.</p>
+    {error && <div className="viewer-error" role="alert"><p>{error}</p><button type="button" onClick={() => setRetry(value => value + 1)}>Reload review</button></div>}
+    {message && <p className="review-message" role="status">{message}</p>}
+    {!marks && !error && <LoadingSkeleton label="Loading practice review…" />}
+    {marks?.length === 0 && <div className="empty-state"><h2>No saved practice measures yet</h2><p>Open a score and save a measure to build your practice list.</p><a className="button-link" href="#/score-library">Browse scores →</a></div>}
+    {marks?.length > 0 && <section aria-labelledby="review-summary">
+      <h2 id="review-summary" className="review-summary">{marks.length} saved {marks.length === 1 ? 'measure' : 'measures'}</h2>
+      <ul className="practice-review__list">{marks.map(mark => <li key={mark.id}>
+        <article className="practice-review__card" aria-label={`Practice measure ${mark.passage.measure_number}`} aria-busy={busy?.id === mark.id}>
+          <div className="review-card-heading"><h3>{mark.passage.movement} — Measure {mark.passage.measure_number}</h3><span className={`review-state${mark.is_resolved ? ' is-resolved' : ''}`}>{mark.is_resolved ? 'Resolved' : 'To practice'}</span></div>
+          <p className="review-location">Page {mark.passage.page_number} · {mark.passage.section}</p>
+          {mark.note && <p className="practice-review__note">{mark.note}</p>}
+          <div className="practice-review__actions screen-actions">
+            <a className="button-primary" href={scoreViewerHref(mark.passage)}>Open measure →</a>
+            <button className="button-secondary" type="button" disabled={busy !== null} onClick={() => changeMark(mark, 'resolve')}>{busy?.id === mark.id && busy.action === 'resolve' ? 'Saving…' : mark.is_resolved ? 'Mark unresolved' : 'Mark resolved'}</button>
+            <button className="button-danger review-remove" type="button" disabled={busy !== null} onClick={() => changeMark(mark, 'remove')}>{busy?.id === mark.id && busy.action === 'remove' ? 'Removing…' : 'Remove from practice'}</button>
+          </div>
+        </article>
+      </li>)}</ul>
+    </section>}
+  </AppLayout>
 }
-
-export default PracticeReview

@@ -18,8 +18,7 @@ export const samplePassages = Array.from({ length: 40 }, (_, index) => ({
 export function initialPage(passages, pageCount, passageId) {
   const requested = passages.find((passage) => String(passage.id) === String(passageId))
   if (requested) return requested.page_number
-  const target = passages.find((passage) => passage.section === 'B' && passage.measure_number === 24)
-  return target?.page_number ?? passages[0]?.page_number ?? (pageCount > 0 ? 1 : 0)
+  return passages[0]?.page_number ?? (pageCount > 0 ? 1 : 0)
 }
 
 export function scoreViewerHref(passage) {

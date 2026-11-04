@@ -9,7 +9,7 @@ export function AppHeader({ status = 'Score Companion', homeHref = '#/score-libr
   return (
     <header className="score-topbar">
       <a className="viewer-brand" href={homeHref}><span aria-hidden="true">♫</span> Score Companion</a>
-      <nav className="viewer-primary-nav" aria-label="Main navigation"><a href="#/score-library" aria-current={activeHref === '#/score-library' ? 'page' : undefined}>Library</a><a href="#/practice-review" aria-current={activeHref === '#/practice-review' ? 'page' : undefined}>Practice</a></nav>
+      <nav className="viewer-primary-nav" aria-label="Main navigation"><a href="#/score-library" aria-current={activeHref === '#/score-library' ? 'page' : undefined}>Library</a><a href="#/practice-review" aria-current={activeHref === '#/practice-review' ? 'page' : undefined}>Practice review</a></nav>
       <div className="viewer-header-meta">
         <MockUserControl />
         <span className="viewer-status"><i aria-hidden="true" /> {status}</span>
@@ -30,14 +30,14 @@ export function SidebarNavigation({ items = defaultNavigation, activeHref }) {
 
 export default function AppLayout({ children, status, navigation, activeHref, headingId, busy = false, className = '' }) {
   return (
-    <main className={'score-companion ' + className}>
+    <div className={'score-companion ' + className}>
       <AppHeader status={status} activeHref={activeHref} />
       <div className="viewer-layout">
         {navigation && <SidebarNavigation items={navigation} activeHref={activeHref} />}
-        <section className="score-content" aria-labelledby={headingId} aria-busy={busy}>
+        <main className="score-content" aria-labelledby={headingId} aria-busy={busy}>
           {children}
-        </section>
+        </main>
       </div>
-    </main>
+    </div>
   )
 }

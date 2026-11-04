@@ -193,6 +193,37 @@ class ScoreApiTests(APITestCase):
         self.assertFalse(Passage.objects.filter(pk=self.passage.id).exists())
         self.assertFalse(PracticeMark.objects.filter(pk=mark.id).exists())
 
+    def test_deleting_practice_removes_note_and_updates_passage_without_deleting_score(self):
+        self.score.source_file = SimpleUploadedFile("retained.pdf", b"%PDF retained score")
+        self.score.save()
+        source = Path(self.score.source_file.path)
+        mark = PracticeMark.objects.create(passage=self.passage, owner="alex", note="Remove this note")
+        other = PracticeMark.objects.create(passage=self.passage, owner="sam", note="Keep Sam's note")
+        response = self.client.delete(f"/api/practice-marks/{mark.id}/", HTTP_X_MOCK_USER="alex")
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(PracticeMark.objects.filter(pk=mark.id).exists())
+        self.assertTrue(PracticeMark.objects.filter(pk=other.id).exists())
+        self.assertTrue(Score.objects.filter(pk=self.score.id).exists())
+        self.assertTrue(Passage.objects.filter(pk=self.passage.id).exists())
+        self.assertTrue(source.is_file())
+        passage = self.client.get(f"/api/scores/{self.score.id}/passages/", HTTP_X_MOCK_USER="alex").json()[0]
+        self.assertFalse(passage["is_marked_for_practice"])
+        self.assertIsNone(passage["practice_mark_id"])
+        sam = self.client.get(f"/api/scores/{self.score.id}/passages/", HTTP_X_MOCK_USER="sam").json()[0]
+        self.assertTrue(sam["is_marked_for_practice"])
+        self.assertEqual(sam["practice_mark_id"], other.id)
+        saved = self.client.post("/api/practice-marks/", {"passage_id": self.passage.id}, format="json", HTTP_X_MOCK_USER="alex")
+        self.assertEqual(saved.status_code, 201)
+        self.assertNotEqual(saved.json()["id"], mark.id)
+        self.assertEqual(saved.json()["note"], "")
+
+    def test_deleting_practice_cannot_remove_another_users_record(self):
+        mark = PracticeMark.objects.create(passage=self.passage, owner="sam", note="Keep")
+        response = self.client.delete(f"/api/practice-marks/{mark.id}/", HTTP_X_MOCK_USER="alex")
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(PracticeMark.objects.filter(pk=mark.id, note="Keep").exists())
+        self.assertEqual(self.client.delete("/api/practice-marks/99999/").status_code, 404)
+
     @override_settings(AUDIVERIS_COMMAND="/opt/audiveris")
     @patch("scoreapi.extraction_service.extract_pdf_measures", return_value=recognized_pdf([("Page 1", 1, 1), ("Page 1", 2, 1), ("Page 2", 3, 2)], 2))
     def test_pdf_extraction_preserves_existing_passages_and_practice_marks(self, extract_pdf):
@@ -304,6 +335,7 @@ class ScoreApiTests(APITestCase):
                 "measure_number": 24,
                 "page_number": 2,
                 "is_marked_for_practice": False,
+                "practice_mark_id": None,
                 "bounding_box": None,
                 "preview_url": None,
             }

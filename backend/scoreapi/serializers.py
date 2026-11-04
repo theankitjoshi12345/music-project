@@ -62,6 +62,7 @@ class ScoreSerializer(serializers.ModelSerializer):
 
 class PassageSerializer(serializers.ModelSerializer):
     is_marked_for_practice = serializers.SerializerMethodField()
+    practice_mark_id = serializers.SerializerMethodField()
     preview_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -72,6 +73,7 @@ class PassageSerializer(serializers.ModelSerializer):
             "measure_number",
             "page_number",
             "is_marked_for_practice",
+            "practice_mark_id",
             "bounding_box",
             "preview_url",
         ]
@@ -83,9 +85,12 @@ class PassageSerializer(serializers.ModelSerializer):
         return f"/api/passages/{passage.id}/preview/?v={version}"
 
     def get_is_marked_for_practice(self, passage):
+        return self.get_practice_mark_id(passage) is not None
+
+    def get_practice_mark_id(self, passage):
         request = self.context.get("request")
         owner = request.headers.get("X-Mock-User", "alex") if request else "alex"
-        return passage.practice_marks.filter(owner=owner).exists()
+        return next((mark.id for mark in passage.practice_marks.all() if mark.owner == owner), None)
 
 
 class PassageCreateSerializer(serializers.ModelSerializer):

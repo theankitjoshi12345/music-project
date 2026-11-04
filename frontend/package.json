@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "test": "node --test src/pages/scoreViewerData.test.js src/components/score-companion/components.test.js",
+    "test:e2e": "node e2e/workflow.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "oxlint": "^1.88.0",
+    "playwright": "1.64.1",
     "vite": "^8.3.4"
   }
 }
