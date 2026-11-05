@@ -1,7 +1,10 @@
 # Launch verification
 
-Verified November 5, 2026 against merge commit
-`8ec3e3b42e4f151afd1b14d3c13e64ab55f336c1`.
+Application behavior was verified November 5, 2026 against merge commit
+`8ec3e3b42e4f151afd1b14d3c13e64ab55f336c1`. The later documentation and free
+runner update is synchronized at merge commit
+`b27e61478a26eeb7961f87eac56df6fcebc59206` and does not change the running
+application images.
 
 ## Free public demo
 
@@ -35,8 +38,8 @@ CSRF, cookie, impersonation, quota, and deletion boundaries.
 - Frontend: 24 tests passed; lint completed with three non-blocking Fast Refresh
   warnings; the production build succeeded.
 - Docker: backend and frontend health checks passed with the free-demo overlay.
-- Repositories: local, GitLab `main`, and GitHub `main` resolve to the same merge
-  commit above.
+- Repositories: local, GitLab `main`, and GitHub `main` resolved to merge commit
+  `b27e61478a26eeb7961f87eac56df6fcebc59206` after the free-runner update.
 
 ## GitLab CI status
 

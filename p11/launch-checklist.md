@@ -26,7 +26,7 @@ grader notes say to note an outside tester when possible.
 | Screenshots show real launched environment | Polish 5%; launch 30% | Pending; no localhost screenshots substituted. |
 | Team schedule reflects actual P11 work | Polish 5% | Pending supported member records; [contributions](team-contributions.md). |
 | Challenges, resolutions, and remaining limitations are specific | Polish 5%; security 20% | In progress in report. |
-| Root docs, report, links, and repository state agree | Polish 5% | GitLab, GitHub, local main, report, and evidence agree at merge commit 8ec3e3b. |
+| Root docs, report, links, and repository state agree | Polish 5% | Local, GitLab, and GitHub synchronization checks passed; final history records the documentation merge. |
 
 ## Submission checks
 
