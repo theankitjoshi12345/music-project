@@ -10,5 +10,8 @@ client secrets, private PDFs, or personal test data.
 - `security/`: Django deployment checks, isolation tests, dependency scan results,
   response headers, and cloud access/billing configuration summaries.
 
-No public deployment evidence is available at this draft stage. Do not relabel
-localhost or older P10 captures as launch evidence.
+The temporary free HTTPS demo, persistence restart, and two-session isolation
+results are recorded under `launch/`. GitLab accepted the CI configuration but
+blocked job execution until the account completes identity verification. Do not
+relabel localhost, older P10 captures, or a blocked pipeline as successful launch
+or CI evidence.

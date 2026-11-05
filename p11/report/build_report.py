@@ -58,6 +58,13 @@ def main():
         for index, value in data["paragraphs"].items():
             set_text(paragraphs[int(index)], value)
 
+        # Keep the final major section clear of an automatic page-boundary crop.
+        # LibreOffice can place a heading with pageBreakBefore above the printable
+        # top edge, so break on a short empty paragraph immediately before it.
+        spacer = element("p")
+        properties(spacer, "pPr").append(element("pageBreakBefore"))
+        paragraphs[64].addprevious(spacer)
+
         # The source title uses Heading1; apply the document's real Title role.
         title_props = properties(paragraphs[0], "pPr")
         title_props.find(W + "pStyle").set(W + "val", "Title")

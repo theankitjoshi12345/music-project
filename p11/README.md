@@ -36,9 +36,9 @@ No billing, paid hosting, or billable cloud resource is used.
 | Area | Evidence |
 | --- | --- |
 | Public launch, core task, persistence | Temporary free HTTPS demo verified; durable production hosting and outside-user evidence remain pending. |
-| GitLab CI/CD | Pending verified pipeline and deployment job links. |
-| Security | Pending final deployment checks and isolation results. |
-| Report | Prepared from official template; incomplete launch fields remain explicit. |
+| GitLab CI/CD | Configuration linted; execution blocked until the GitLab account completes identity verification. |
+| Security | Production checks, restart persistence, and live two-session isolation verified; permanent-host controls remain out of scope. |
+| Report | Regenerated from the official template and visually verified; remaining human-only fields stay explicit. |
 | Outside-user testing | Pending an actual person outside Team 08. |
 
 ## Remaining human actions
