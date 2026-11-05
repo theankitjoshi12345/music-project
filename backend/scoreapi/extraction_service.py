@@ -2,6 +2,9 @@
 
 from datetime import timedelta
 import logging
+import fcntl
+from contextlib import contextmanager
+from pathlib import Path
 import subprocess
 
 from django.conf import settings
@@ -18,7 +21,33 @@ class ExtractionBusy(RuntimeError):
     pass
 
 
+@contextmanager
+def recognition_slot():
+    """One Java recognition process across all workers on this persistent host.
+
+    flock is released by the OS on a crash; no stale lock files need deleting.
+    Local development and Linux production both support flock.
+    """
+    lock_path = Path(settings.DATA_DIR) / ".recognition.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ExtractionBusy("Another score is being converted. Please retry in a moment.")
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
 def extract_score_measures(score_id):
+    # Acquire before marking a score processing. Refused requests remain retryable.
+    with recognition_slot():
+        return _extract_score_measures(score_id)
+
+
+def _extract_score_measures(score_id):
     score = Score.objects.get(pk=score_id)
     if score.extraction_state == "complete" and score.measure_layout_version >= 1:
         return score

@@ -8,6 +8,9 @@ p7
 p8
 p9
 p10
+p11
+**/.recognition.lock
+**/.upload.lock
 **/.DS_Store
 **/__pycache__
 **/*.pyc
@@ -18,3 +21,5 @@ backend/db.sqlite3
 backend/media
 frontend/node_modules
 frontend/dist
+**/.secrets
+**/client_secret_*.json

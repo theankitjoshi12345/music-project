@@ -13,7 +13,7 @@ export default function ScoreViewer() {
   const [actionError, setActionError] = useState('')
   const [savingId, setSavingId] = useState(null)
   const { score, visible, currentSections } = viewer
-  const sourceIsPdf = score?.source_file?.toLowerCase().endsWith('.pdf')
+  const sourceIsPdf = score?.source_type === 'pdf'
   const context = score && <ScoreContext movement={score.movement} instrument={score.instrument} sections={currentSections} />
   const measureRange = visible.length ? 'Measures ' + visible[0].measure_number + '–' + visible.at(-1).measure_number : 'No measures on this page'
   useMeasureKeyboard(sourceIsPdf ? [] : viewer.passages, viewer.focusedPassageId, viewer.selectPassage)

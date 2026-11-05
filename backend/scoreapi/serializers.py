@@ -4,6 +4,7 @@ import hashlib
 import json
 
 from .models import Passage, PracticeMark, Score
+from .access import request_owner, visible_scores
 
 
 class ScoreUploadMetadataSerializer(serializers.Serializer):
@@ -15,6 +16,8 @@ class ScoreUploadMetadataSerializer(serializers.Serializer):
 
 
 class ScoreSerializer(serializers.ModelSerializer):
+    source_file = serializers.SerializerMethodField()
+    source_type = serializers.SerializerMethodField()
     passage_count = serializers.IntegerField(read_only=True)
     extraction_status = serializers.SerializerMethodField()
     extraction_error = serializers.SerializerMethodField()
@@ -31,6 +34,7 @@ class ScoreSerializer(serializers.ModelSerializer):
             "page_count",
             "available_offline",
             "source_file",
+            "source_type",
             "passage_count",
             "extraction_status",
             "extraction_error",
@@ -38,6 +42,14 @@ class ScoreSerializer(serializers.ModelSerializer):
             "extraction_estimated_seconds",
             "measure_layout_version",
         ]
+
+    def get_source_file(self, score):
+        return f"/api/scores/{score.id}/file/" if score.source_file else None
+
+    def get_source_type(self, score):
+        if not score.source_file:
+            return None
+        return "pdf" if score.source_file.name.lower().endswith(".pdf") else "musicxml"
 
     def get_extraction_status(self, score):
         return "failed" if score.extraction_expired else score.extraction_state
@@ -89,7 +101,7 @@ class PassageSerializer(serializers.ModelSerializer):
 
     def get_practice_mark_id(self, passage):
         request = self.context.get("request")
-        owner = request.headers.get("X-Mock-User", "alex") if request else "alex"
+        owner = request_owner(request)
         return next((mark.id for mark in passage.practice_marks.all() if mark.owner == owner), None)
 
 
@@ -126,6 +138,12 @@ class PracticeMarkSerializer(serializers.ModelSerializer):
         required=False,
     )
     passage = PracticeMarkPassageSerializer(read_only=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+        if request:
+            self.fields["passage_id"].queryset = Passage.objects.filter(score__in=visible_scores(request))
 
     class Meta:
         model = PracticeMark

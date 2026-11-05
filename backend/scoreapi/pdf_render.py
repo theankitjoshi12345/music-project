@@ -2,6 +2,7 @@
 
 import math
 import subprocess
+from .pdf_safety import validate_pdf_pages
 
 
 def render_pdf(pdf_path, page_number, region=None):
@@ -19,6 +20,7 @@ def render_pdf(pdf_path, page_number, region=None):
         args += ["-r", "300", "-x", str(left), "-y", str(top), "-W", str(right - left), "-H", str(bottom - top)]
     else:
         args += ["-r", "150"]
+    validate_pdf_pages(pdf_path, first_page=page_number, last_page=page_number)
     result = subprocess.run([*args, str(pdf_path)], check=True, capture_output=True, timeout=30)
     if not result.stdout.startswith(b"\x89PNG\r\n\x1a\n"):
         raise ValueError("The PDF page did not render an image.")

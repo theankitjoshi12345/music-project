@@ -15,7 +15,12 @@ const page = await context.newPage()
 const errors = []
 page.on('pageerror', error => errors.push(error.message))
 let score
-const api = async (route, user = 'alex', options = {}) => context.request.fetch(`${origin}/api/${route}`, { ...options, headers: { 'X-Mock-User': user, ...options.headers } })
+const sessionResponse = await context.request.get(`${origin}/api/session/`)
+assert.equal(sessionResponse.status(), 200)
+const session = await sessionResponse.json()
+const sessionMode = session.auth_mode === 'session'
+const csrfToken = session.csrfToken || session.csrf_token
+const api = async (route, user = 'alex', options = {}) => context.request.fetch(`${origin}/api/${route}`, { ...options, headers: { 'X-Mock-User': user, ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}), ...options.headers } })
 const json = async (route, user = 'alex') => {
   const response = await api(route, user)
   assert.equal(response.status(), 200, route)
@@ -206,19 +211,32 @@ try {
   const newMark = (await json('practice-marks/'))[0]
   assert.notEqual(newMark.id, mark.id)
   assert.equal(newMark.note, '')
-  const samResponse = await api('practice-marks/', 'sam', { method: 'POST', data: { passage_id: target.id, note: 'Sam keeps this' } })
-  assert.equal(samResponse.status(), 201)
+  if (!sessionMode) {
+    const samResponse = await api('practice-marks/', 'sam', { method: 'POST', data: { passage_id: target.id, note: 'Sam keeps this' } })
+    assert.equal(samResponse.status(), 201)
+  } else {
+    const outsider = await browser.newContext()
+    await outsider.request.get(`${origin}/api/session/`)
+    assert.deepEqual(await (await outsider.request.get(`${origin}/api/scores/`)).json(), [])
+    for (const route of [`/api/scores/${score.id}/`, score.source_file, first.preview_url]) {
+      assert.equal((await outsider.request.get(`${origin}${route}`)).status(), 404, 'Another browser cannot open private score data')
+    }
+    assert.equal((await context.request.post(`${origin}/api/practice-marks/`, { data: { passage_id: target.id } })).status(), 403, 'CSRF is required')
+    await outsider.close()
+  }
   await nav().getByRole('link', { name: 'Practice review', exact: true }).click()
   card = page.getByRole('article', { name: `Practice measure ${target.measure_number}`, exact: true })
   await card.getByRole('button', { name: 'Remove from practice', exact: true }).click()
   await page.getByRole('heading', { name: 'No saved practice measures yet', exact: true }).waitFor()
   assert.deepEqual(await json('practice-marks/'), [])
-  assert.equal((await json('practice-marks/', 'sam')).length, 1)
-  await page.getByLabel('Practice profile', { exact: true }).selectOption('sam')
-  await page.getByText('Sam keeps this', { exact: true }).waitFor()
-  await page.getByRole('button', { name: 'Remove from practice', exact: true }).click()
-  await page.getByRole('heading', { name: 'No saved practice measures yet', exact: true }).waitFor()
-  await page.getByLabel('Practice profile', { exact: true }).selectOption('alex')
+  if (!sessionMode) {
+    assert.equal((await json('practice-marks/', 'sam')).length, 1)
+    await page.getByLabel('Practice profile', { exact: true }).selectOption('sam')
+    await page.getByText('Sam keeps this', { exact: true }).waitFor()
+    await page.getByRole('button', { name: 'Remove from practice', exact: true }).click()
+    await page.getByRole('heading', { name: 'No saved practice measures yet', exact: true }).waitFor()
+    await page.getByLabel('Practice profile', { exact: true }).selectOption('alex')
+  }
   console.log('PASS: practice save/resolve/open, failed removal recovery, permanent note deletion and user isolation')
 
   await nav().getByRole('link', { name: 'Library', exact: true }).click()

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 import shutil
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,6 +28,10 @@ AUDIVERIS_COMMAND = os.environ.get("AUDIVERIS_COMMAND") or shutil.which("audiver
 OMR_TIMEOUT_SECONDS = int(os.environ.get("OMR_TIMEOUT_SECONDS", "300"))
 OMR_ESTIMATED_SECONDS_PER_PAGE = max(1, int(os.environ.get("OMR_ESTIMATED_SECONDS_PER_PAGE", "15")))
 OMR_MAX_PAGES = 10
+PUBLIC_MAX_SCORES_PER_SESSION = int(os.environ.get("PUBLIC_MAX_SCORES_PER_SESSION", "20"))
+PUBLIC_MAX_BYTES_PER_SESSION = int(os.environ.get("PUBLIC_MAX_BYTES_PER_SESSION", str(100 * 1024 * 1024)))
+PUBLIC_MAX_SCORES_TOTAL = int(os.environ.get("PUBLIC_MAX_SCORES_TOTAL", "100"))
+PUBLIC_MAX_BYTES_TOTAL = int(os.environ.get("PUBLIC_MAX_BYTES_TOTAL", str(500 * 1024 * 1024)))
 
 
 # Quick-start development settings - unsuitable for production
@@ -39,20 +44,62 @@ SECRET_KEY = (Path(_secret_key_file).read_text().strip() if _secret_key_file els
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() in {"1", "true", "yes"}
+DJANGO_ENV = os.environ.get("DJANGO_ENV", "development")
+if DJANGO_ENV not in {"development", "production"}:
+    raise ImproperlyConfigured("DJANGO_ENV must be development or production.")
+DJANGO_AUTH_MODE = os.environ.get("DJANGO_AUTH_MODE", "demo" if DEBUG else "session")
+if DJANGO_AUTH_MODE not in {"demo", "session"}:
+    raise ImproperlyConfigured("DJANGO_AUTH_MODE must be demo or session.")
+if DJANGO_ENV == "production":
+    if DEBUG or DJANGO_AUTH_MODE != "session":
+        raise ImproperlyConfigured("Production requires DEBUG=false and session authentication.")
+    if SECRET_KEY.startswith("django-insecure-") or len(SECRET_KEY) < 50:
+        raise ImproperlyConfigured("Production requires a strong private DJANGO_SECRET_KEY or key file.")
 
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get(
     "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]"
 ).split(",") if host.strip()]
+if DJANGO_ENV == "production" and (not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS):
+    raise ImproperlyConfigured("Production requires explicit DJANGO_ALLOWED_HOSTS.")
 
 # Local Vite development server. Tighten this list before production deployment.
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.environ.get(
+    "DJANGO_CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173" if DEBUG else ""
+).split(",") if origin.strip()]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get(
+    "DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173" if DEBUG else ""
+).split(",") if origin.strip()]
+CORS_ALLOW_CREDENTIALS = bool(CORS_ALLOWED_ORIGINS)
+SESSION_COOKIE_AGE = 30 * 24 * 60 * 60
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_NAME = "__Host-score-session" if DJANGO_ENV == "production" else "sessionid"
+CSRF_COOKIE_NAME = "__Host-score-csrf" if DJANGO_ENV == "production" else "csrftoken"
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = DJANGO_ENV == "production"
+CSRF_COOKIE_SECURE = DJANGO_ENV == "production"
+SECURE_SSL_REDIRECT = DJANGO_ENV == "production"
+SECURE_REDIRECT_EXEMPT = [r"^api/health/$"]
+SECURE_HSTS_SECONDS = 31536000 if DJANGO_ENV == "production" else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = DJANGO_ENV == "production"
+SECURE_HSTS_PRELOAD = DJANGO_ENV == "production"
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+DJANGO_ADMIN_ENABLED = os.environ.get("DJANGO_ADMIN_ENABLED", "false" if DJANGO_ENV == "production" else "true").lower() == "true"
+# Enable only behind our trusted reverse proxy, which replaces this header.
+if os.environ.get("DJANGO_TRUST_PROXY", "false").lower() == "true":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": ["scoreapi.access.PrivateLibraryPermission"],
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+}
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "INFO"},
+}
 
 # Application definition
 
@@ -107,6 +154,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': DATA_DIR / 'db.sqlite3',
+        'OPTIONS': {'timeout': 20},
     }
 }
 

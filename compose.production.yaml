@@ -1,0 +1,88 @@
+name: music-companion
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE:?Set BACKEND_IMAGE to the approved commit image}
+    platform: linux/amd64
+    environment:
+      DJANGO_ENV: production
+      DJANGO_AUTH_MODE: session
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: ${PUBLIC_HOST:?Set PUBLIC_HOST},localhost,127.0.0.1
+      DJANGO_CSRF_TRUSTED_ORIGINS: https://${PUBLIC_HOST}
+      DJANGO_CORS_ALLOWED_ORIGINS: ""
+      DJANGO_TRUST_PROXY: "true"
+      DJANGO_DATA_DIR: /data
+      DJANGO_SECRET_KEY_FILE: /data/django-secret-key
+      AUDIVERIS_COMMAND: /opt/audiveris/bin/Audiveris
+      OMR_TIMEOUT_SECONDS: "600"
+      OMR_ESTIMATED_SECONDS_PER_PAGE: "30"
+    volumes:
+      - type: bind
+        source: /srv/music-companion/data
+        target: /data
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    mem_limit: 2304m
+    cpus: 1.5
+    pids_limit: 256
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    healthcheck:
+      test: ["CMD", "/opt/venv/bin/python", "-c", "import urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/api/health/', headers={'X-Forwarded-Proto':'https'}); urllib.request.urlopen(r, timeout=5)"]
+      interval: 10s
+      timeout: 10s
+      start_period: 45s
+      retries: 12
+    stop_grace_period: 750s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+  frontend:
+    image: ${FRONTEND_IMAGE:?Set FRONTEND_IMAGE to the approved commit image}
+    platform: linux/amd64
+    volumes:
+      - /srv/music-companion/data/static:/data/static:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    mem_limit: 128m
+    pids_limit: 64
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+  gateway:
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST}
+      ACME_EMAIL: ${ACME_EMAIL:?Set an account contact for certificate renewal}
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /srv/music-companion/caddy-data:/data
+      - /srv/music-companion/caddy-config:/config
+    depends_on:
+      frontend:
+        condition: service_healthy
+    mem_limit: 128m
+    pids_limit: 64
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}

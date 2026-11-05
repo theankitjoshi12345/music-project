@@ -14,3 +14,13 @@ frontend/dist/
 .DS_Store
 tmp/
 .local-tools/
+
+# Local OAuth configuration and downloaded Google client credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+.secrets/
+**/.recognition.lock
+**/.upload.lock
+client_secret_*.json

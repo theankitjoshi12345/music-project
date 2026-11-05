@@ -46,7 +46,7 @@ export default function OfflineScoreLibrary() {
         const failure = score.score_file || score.page_count || score.detail
         throw new Error((Array.isArray(failure) ? failure[0] : failure) || 'The score could not be uploaded.')
       }
-      window.location.assign(`#/score-viewer?score=${score.id}${score.source_file?.toLowerCase().endsWith('.pdf') ? '&extract=1' : ''}`)
+      window.location.assign(`#/score-viewer?score=${score.id}${score.source_type === 'pdf' ? '&extract=1' : ''}`)
     } catch (failure) { setError(failure.message) }
     finally { setUploading(false) }
   }
@@ -86,7 +86,7 @@ export default function OfflineScoreLibrary() {
         <span className="library-score-icon" aria-hidden="true">♫</span><div className="library-score-info"><h3>{score.title}</h3><p>{score.page_count} {score.page_count === 1 ? 'page' : 'pages'} · {score.passage_count} measures{score.extraction_status === 'processing' ? ' · Finding measures…' : ''}</p></div>
         <div className="offline-library__part-actions screen-actions">
           <a className="button-primary" href={`#/score-viewer?score=${score.id}`}>Open score →</a>
-          {score.source_file?.toLowerCase().endsWith('.pdf') && score.extraction_status === 'failed' && <a className="button-secondary" href={`#/score-viewer?score=${score.id}&extract=1`}>Retry conversion</a>}
+          {score.source_type === 'pdf' && score.extraction_status === 'failed' && <a className="button-secondary" href={`#/score-viewer?score=${score.id}&extract=1`}>Retry conversion</a>}
           <details className="score-options"><summary>Score options</summary><div><a className="button-link" href={`#/measure-marker?score=${score.id}`}>Practice marker →</a><p>Delete this score, its uploaded file, and all attached practice items.</p><button className="button-danger" type="button" disabled={deletingId !== null || score.extraction_status === 'processing'} onClick={() => deleteScore(score)}>{deletingId === score.id ? 'Deleting…' : 'Delete score'}</button></div></details>
         </div>
       </li>)}</ul>}

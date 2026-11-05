@@ -19,7 +19,9 @@ class Score(models.Model):
     page_count = models.PositiveIntegerField()
     available_offline = models.BooleanField(default=True)
     source_file = models.FileField(upload_to=score_upload_path, blank=True)
-    content_sha256 = models.CharField(max_length=64, null=True, blank=True, unique=True, editable=False)
+    owner = models.CharField(max_length=64, null=True, blank=True, editable=False, db_index=True)
+    source_bytes = models.PositiveBigIntegerField(default=0, editable=False)
+    content_sha256 = models.CharField(max_length=64, null=True, blank=True, editable=False)
     extraction_state = models.CharField(max_length=20, default="not_started", choices=[
         ("not_started", "Not started"), ("processing", "Processing"),
         ("complete", "Complete"), ("failed", "Failed"),
@@ -30,6 +32,11 @@ class Score(models.Model):
 
     class Meta:
         ordering = ["title", "movement", "instrument"]
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "content_sha256"], name="unique_owned_score_content"),
+            models.UniqueConstraint(fields=["content_sha256"], condition=models.Q(owner__isnull=True),
+                                    name="unique_legacy_score_content"),
+        ]
 
     def __str__(self):
         return f"{self.title} — {self.movement} ({self.instrument})"

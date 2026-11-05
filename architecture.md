@@ -1,7 +1,10 @@
 # Score Companion architecture
 
-This document describes the implemented local application, including the
-measure-image pipeline in [MR !26](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/merge_requests/26).
+This document describes the implemented application and prepared deployment
+configuration. **The free temporary HTTPS demo is verified** through Docker and a
+Cloudflare Quick Tunnel; no public cloud deployment or billing is enabled. Local
+and container verification results are in
+[docs/LAUNCH_VERIFICATION.md](docs/LAUNCH_VERIFICATION.md).
 
 ## System boundaries
 
@@ -45,7 +48,7 @@ host runtime for this option. The Compose file defines:
 
 | Service | Responsibilities | Network and storage |
 | --- | --- | --- |
-| frontend | Node build stage; Nginx serves the built React assets, original uploads and Django static files; proxies /api and /admin | Host port 8080 by default; read-only app-data mount |
+| frontend | Node build stage; Nginx serves React and Django static files; proxies /api and local /admin; blocks /media | Host port 8080 by default; read-only app-data mount |
 | backend | Python 3.12, Django/Gunicorn, Poppler, Audiveris 5.11.0 and bundled Java | Internal port 8000 only; writable app-data mount |
 
 The frontend starts after the backend health check succeeds. Both services have
@@ -65,8 +68,9 @@ media and static directories, generates a Django secret key once, applies
 migrations, collects static files, and starts Gunicorn with one process and four
 threads. Docker allows 600 seconds for Audiveris, with 720-second Gunicorn/Nginx
 timeouts for the current synchronous recognition flow. Native development keeps
-the 300-second Audiveris default. They do not introduce a background queue or a global OMR
-concurrency limit. The JVM heap is capped at 1 GB and uses two logical processors.
+the 300-second Audiveris default. A nonblocking OS file lock permits only one
+Audiveris job across workers on this host; other scores receive a retryable 409.
+The operating system releases the lock if a process dies. There is no background queue. The JVM heap is capped at 1 GB and uses two logical processors.
 Java runs headless with fixed display scaling so Audiveris skips GTK monitor
 detection in the container. The build checks that its CLI starts as the app user.
 
@@ -79,8 +83,8 @@ startup options can run concurrently with independent libraries.
 Django settings accept DJANGO_DEBUG, DJANGO_ALLOWED_HOSTS, DJANGO_DATA_DIR,
 DJANGO_SECRET_KEY and DJANGO_SECRET_KEY_FILE. The file setting takes precedence
 when provided. Compose disables DEBUG and uses the generated secret file;
-the native defaults retain the existing development behavior. Nginx serves media
-and collected static files when DEBUG is false.
+the native defaults retain the existing development behavior. Nginx serves collected static files. Original uploads always use ownership-checked
+Django endpoints; Nginx blocks direct /media/ access.
 
 The build context excludes host data, the Mac .local-tools runtime, environment
 files, virtual environments, node_modules and course reports. The source remains
@@ -175,9 +179,9 @@ backend/file cleanup against an empty, separate library. See
 
 | Record | Stored data | Identity and relationships |
 | --- | --- | --- |
-| Score | Title, movement, instrument, page count, source file, SHA-256 content fingerprint, extraction state/error/time, layout version | One score has many passages; a non-null content fingerprint is unique |
+| Score | Browser owner (nullable legacy demo), title, movement, instrument, page count, file/bytes, SHA-256, extraction state/error/time, layout version | One score has many passages; fingerprint is unique per private owner, with a separate constraint for NULL-owned demo records |
 | Passage | Section, measure number, original PDF page, optional bounding box | Belongs to one score; score + section + measure number is unique |
-| PracticeMark | Mock owner, note, resolved state, timestamps | Belongs to a passage; passage + owner is unique |
+| PracticeMark | Server session owner or local mock owner, note, resolved state, timestamps | Belongs to a passage; passage + owner is unique |
 
 A passage bounding box contains normalized x, y, width, and height, plus the
 recognition image's pixel width and height. The region covers the measure stack
@@ -279,9 +283,12 @@ every second aloud. Spinning feedback respects reduced-motion preferences.
 Library conversion/retry actions enter the reader immediately, and on phones
 progress precedes the PDF image so it remains visible.
 
-This is synchronous processing in the Django request, not a durable job queue.
-Different scores can still run concurrently; a public deployment would need
-worker-level concurrency controls and an appropriate request timeout.
+Recognition remains synchronous in a bounded Django request on one persistent
+host. A cross-process file lock serializes Java jobs. A restart may interrupt
+recognition; the persisted timestamp becomes retryable after timeout plus90seconds,
+while existing measures and notes remain intact. The 720-second proxy/Gunicorn
+timeout exceeds the 600-second OMR deadline. This deliberately small demo has
+no durable background queue or multi-host worker coordination.
 
 ## PDF and measure rendering
 
@@ -303,8 +310,8 @@ are generated on request; there is no persistent preview-image store or server
 render cache. The original PDF remains available through Open PDF.
 
 Rendering checks the page or region before invoking Poppler and returns a clear
-error when a source file or measure position is unavailable. Local /media serving
-permits same-origin embedding.
+error when a source file or measure position is unavailable. Ownership-checked
+API downloads and image routes use the same-origin browser session cookie.
 
 ## Runtime requirements and limits
 
@@ -353,7 +360,7 @@ installer and retains its license material in the resulting image.
 | backend/scoreapi/migrations/ | Persistent schema changes |
 | Dockerfile, compose.yaml | Frontend/backend image builds, health checks, networking and persistent volume |
 | docker/entrypoint.sh | First-run setup, migrations and Gunicorn startup |
-| docker/nginx.conf | Built frontend, same-origin API proxy and persistent media/static serving |
+| docker/nginx.conf | Built frontend, API proxy, static files and direct-media denial |
 | backend/config/settings.py | Native defaults and Docker environment overrides |
 
 See [README.md](README.md) for startup and user testing, and
@@ -381,6 +388,171 @@ with DEBUG disabled. Disposable test records were deleted afterward; the native
 library stayed separate from test data. All 34 backend tests pass in both
 runtimes; 23 frontend tests, migration checks and the production build pass.
 
-Production authentication, durable cloud storage, cloud deployment, a background
-queue, guaranteed OMR accuracy, actual offline browser caching, and note-level
-music editing remain outside the implemented local demo.
+Those November3results are historical. Current P#11 checks are recorded separately
+in docs/LAUNCH_VERIFICATION.md. Permanent public deployment remains out of scope
+for the free-only demo.
+Verified Google accounts, a background queue, guaranteed OMR accuracy, browser
+offline caching, multi-host scaling, and note-level engraving remain unimplemented.
+
+## Private browser access and trust boundaries
+
+Local demo mode explicitly accepts X-Mock-User and exposes only legacy NULL-owned
+scores. Production requires `DJANGO_ENV=production`, `DEBUG=false`, a private
+secret, and `DJANGO_AUTH_MODE=session`; unsafe combinations stop startup.
+
+The frontend first calls `/api/session/`. Django creates a cryptographically random
+owner identifier in its server-side session store and returns a CSRF token.
+Only after initialization does React fetch the library. Production cookies use
+secure `__Host-` names, HttpOnly for the session, SameSite=Lax, and30days sliding
+expiry. Unsafe API methods explicitly enforce CSRF even though the visitor has
+no named Django account. Identity is never taken from a browser-supplied profile
+header in private mode. Every score, passage, image, original download and practice
+lookup is owner-scoped; inaccessible identifiers return404.
+
+Migrations preserve existing user data as NULL-owned local records; they never
+publish it or assign it to the first visitor. Duplicate bytes across two private
+libraries produce independent files and records. Uploads are serialized around
+quota checks and writes:20scores/100MiB per browser and100scores/500MiB globally.
+XML parsing rejects entities and bounds decompression and measure counts.
+
+Anonymous sessions are appropriate only for a limited course demonstration.
+There is no verified identity, password, Google login, recovery, or cross-device
+sync. Losing cookies loses access; the server does not automatically delete
+expired user files. Storage is bounded but capacity can be exhausted; an operator
+must obtain authorization before removing user data. This is not a general
+public file-hosting service. Google OAuth development setup is separate.
+
+~~~mermaid
+sequenceDiagram
+    participant Browser as React browser
+    participant API as Django
+    participant DB as SQLite sessions and scores
+    Browser->>API: GET /api/session/
+    API->>DB: Create or refresh server-owned session
+    API-->>Browser: Secure session cookie and CSRF token
+    Browser->>API: Upload with cookie and X-CSRFToken
+    API->>API: CSRF, owner, quota and format checks
+    API->>DB: Save owner-scoped metadata
+    Browser->>API: GET authorized measure image
+    API-->>Browser: Original notation PNG
+~~~
+
+## Local and Docker networks
+
+~~~mermaid
+flowchart LR
+    B[Browser] --> V[React and Vite :5173]
+    V -->|/api proxy| D[Django :8000]
+    D --> A[Local demo profiles or private session]
+    D --> S[(SQLite in backend)]
+    D --> F[(Local PDF files)]
+    F --> P[Poppler]
+    P --> O[Audiveris and Java]
+    O --> D
+~~~
+
+~~~mermaid
+flowchart LR
+    B[Browser localhost:8080] --> N[Nginx React frontend]
+    N -->|Internal Docker network /api| G[Gunicorn Django backend]
+    G --> V[(Persistent app-data Docker volume)]
+    V --> S[SQLite and source PDFs]
+    G --> P[Poppler and Audiveris inside backend]
+    N -->|Read only static files| V
+~~~
+
+## Free temporary sharing
+
+The free launch path keeps the tested Docker Compose stack on the developer's
+computer and optionally adds a Cloudflare Quick Tunnel. The tunnel forwards to
+the Nginx frontend over Docker's private network; it does not expose Django,
+SQLite, media, or Audiveris ports. Its random `trycloudflare.com` URL exists
+only while the tunnel container runs, so it is suitable for a short walkthrough,
+not production. See [docs/FREE_DEMO.md](docs/FREE_DEMO.md).
+
+~~~mermaid
+flowchart LR
+    T[Temporary trycloudflare.com URL] --> Q[cloudflared tunnel container]
+    Q --> N[Nginx frontend container]
+    N --> G[Private Django backend]
+    G --> D[(Persistent Docker volume)]
+~~~
+
+## Prepared paid cloud architecture — not yet deployed
+
+`compose.production.yaml` defines the topology below. `deploy/provision-gcp.sh`
+prepares one x86 e2-medium VM with4GiB RAM, a20GiB persistent disk, dedicated VPC,
+reserved IPv4, deletion protection and no VM service account. The public firewall
+permits80/443; SSH is restricted to IAP's source range and uses OS Login. Provisioning
+is gated on explicit billing approval; these resources are not free tier.
+
+~~~mermaid
+flowchart LR
+    U[Public browser] -->|HTTPS with public certificate| C[Caddy gateway]
+    subgraph VM[Proposed GCP e2-medium VM]
+      C --> N[Nginx built React assets]
+      C -->|Private HTTP and replaced forwarded header| G[Gunicorn Django]
+      G --> DB[(SQLite metadata sessions and practice)]
+      G --> PDF[(Original PDFs on persistent disk)]
+      G --> O[Single bounded Audiveris and Poppler job]
+      O -->|Temporary data removed after job| G
+      G --> K[Private generated Django key]
+      G --> L[Bounded container logs]
+      DB --> BK[Backup before migrations on same disk]
+      PDF --> BK
+    end
+~~~
+
+Persistence lives under `/srv/music-companion/data`, mounted at `/data`; replacing
+containers does not replace the disk. PNG previews are computed on demand, so the
+source PDF and stored crop coordinates are sufficient to regenerate them. Caddy
+certificate state has its own persistent directories. CI credentials are short-lived
+and kept outside release directories; the application key is generated once in
+private storage. No OAuth secret is embedded in the frontend or images.
+
+The database remains SQLite because existing transactions, constraints and joins
+are useful and the application deliberately runs one host. Firestore would require
+rewriting those semantics. Cloud Run would require separate relational/object
+storage and file-localization changes; it cannot safely use ephemeral SQLite.
+The persistent VM retains the tested native file paths and long OMR requests.
+This choice sacrifices autoscaling and high availability. Cloud disk loss is not
+covered by the same-disk deployment backup; independent backup storage is pending.
+
+Caddy provides HTTPS and blocks admin/media paths; Django enforces host/origin,
+secure-cookie, CSRF and owner checks. Only trusted private proxy traffic reaches
+Gunicorn. Resource limits bound memory, processes and temporary recognition work.
+The proposed sslip.io hostname requires no purchase, but is a third-party DNS
+service, not a Google-managed app domain. No live hostname is claimed yet.
+
+## CI/CD implementation and approval boundary
+
+~~~mermaid
+flowchart LR
+    Dev[Developer feature branch] --> GL[GitLab merge request]
+    GL --> Test[Django tests and checks / React tests lint build]
+    Test --> Audit[Python and npm vulnerability audits]
+    Audit --> Build[Immutable amd64 images in GitLab registry]
+    Build --> Main[Protected main merge]
+    Main --> Mirror[GitHub source mirror]
+    Main --> Gate{Approved deployment variables enabled?}
+    Gate -->|No| Skip[Deployment skipped: no launch claim]
+    Gate -->|Yes| WIF[Short-lived GitLab OIDC to GCP WIF]
+    WIF --> IAP[IAP SSH with verified host key]
+    IAP --> Backup[Stop writers and back up persistent data]
+    Backup --> Deploy[Pull SHA images / migrate / replace containers]
+    Deploy --> Verify[HTTPS health checks and golden-path verification]
+    Verify -->|Failure| Recover[Previous image only if schema compatible]
+    Recover --> Manual[Data restoration requires explicit review]
+~~~
+
+Only `.gitlab-ci.yml` deploys; GitHub mirrors source. Jobs never create cloud
+infrastructure or silently enable billing. Main deployment requires protected
+`DEPLOY_ENABLED=true` plus the reviewed WIF/provider/VM/host variables. Secrets
+are not committed; WIF is preferred over a service-account JSON key. SSH pins
+independently verified host keys. The release script serializes deployments,
+pulls images before downtime, stops writers, backs up data, runs migrations and
+verifies HTTPS before marking the release current. Rollback must consider schema
+compatibility and must not overwrite newer user data automatically.
+
+See [deploy/README.md](deploy/README.md) for exact scripts, permissions, variables,
+cost sources, operational limits and recovery steps.

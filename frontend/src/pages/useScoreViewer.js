@@ -1,3 +1,4 @@
+import { mockUserHeaders } from '../mockSession'
 import { useEffect, useState } from 'react'
 import { initialPage, loadViewerData, pagePassages, sectionOptions } from './scoreViewerData'
 import { requestExtraction } from './extractionRequest'
@@ -30,22 +31,22 @@ export default function useScoreViewer(user) {
       const query = new URLSearchParams(location.split('?')[1] || '')
       const scoreId = query.get('score')
       try {
-        const result = await loadViewerData(scoreId, controller.signal, fetch, { 'X-Mock-User': user.id })
+        const result = await loadViewerData(scoreId, controller.signal, fetch, mockUserHeaders(user))
         if (!controller.signal.aborted) {
           setData(result)
           const startingPage = initialPage(result.passages, result.score?.page_count ?? 1, query.get('passage'))
           setPage(startingPage)
           setFocusedPassageId(Number(query.get('passage')) || result.passages.find((item) => item.page_number === startingPage)?.id || null)
           setLoading(false)
-          const pdfNeedsPreviews = result.score?.source_file?.toLowerCase().endsWith('.pdf') &&
+          const pdfNeedsPreviews = result.score?.source_type === 'pdf' &&
             (result.score.extraction_status === 'not_started' ||
               (result.score.extraction_status === 'complete' && !result.score.measure_layout_version) ||
               (result.score.extraction_status === 'failed' && query.get('extract') === '1'))
           if (pdfNeedsPreviews) {
             setExtracting(true)
             try {
-              await requestExtraction(result.score.id, { 'X-Mock-User': user.id })
-              const refreshed = await loadViewerData(result.score.id, controller.signal, fetch, { 'X-Mock-User': user.id })
+              await requestExtraction(result.score.id, mockUserHeaders(user))
+              const refreshed = await loadViewerData(result.score.id, controller.signal, fetch, mockUserHeaders(user))
               if (!controller.signal.aborted) setData(refreshed)
             } catch (failure) {
               if (!controller.signal.aborted) setExtractionError(failure.message)
@@ -62,14 +63,14 @@ export default function useScoreViewer(user) {
     }
     load()
     return () => controller.abort()
-  }, [location, retry, user.id])
+  }, [location, retry, user])
 
   useEffect(() => {
     if (!data?.score?.id || (!extracting && data.score.extraction_status !== 'processing')) return
     const controller = new AbortController()
     const timer = setInterval(async () => {
       try {
-        const refreshed = await loadViewerData(data.score.id, controller.signal, fetch, { 'X-Mock-User': user.id })
+        const refreshed = await loadViewerData(data.score.id, controller.signal, fetch, mockUserHeaders(user))
         if (!controller.signal.aborted) {
           setData(refreshed)
           setExtractionError('')
@@ -79,7 +80,7 @@ export default function useScoreViewer(user) {
       }
     }, 1500)
     return () => { clearInterval(timer); controller.abort() }
-  }, [data?.score?.id, data?.score?.extraction_status, extracting, user.id])
+  }, [data?.score?.id, data?.score?.extraction_status, extracting, user])
 
   const passages = data?.passages ?? []
   const visible = pagePassages(passages, page)
@@ -126,8 +127,8 @@ export default function useScoreViewer(user) {
       setExtracting(true)
       setExtractionError('')
       try {
-        await requestExtraction(scoreId, { 'X-Mock-User': user.id })
-        const refreshed = await loadViewerData(scoreId, undefined, fetch, { 'X-Mock-User': user.id })
+        await requestExtraction(scoreId, mockUserHeaders(user))
+        const refreshed = await loadViewerData(scoreId, undefined, fetch, mockUserHeaders(user))
         setData((current) => current?.score.id === scoreId ? refreshed : current)
       } catch (failure) {
         setExtractionError(failure.message)
@@ -136,7 +137,7 @@ export default function useScoreViewer(user) {
     async addPassage(values) {
       if (!data?.score?.id) throw new Error('Open a saved score before adding a measure.')
       const response = await fetch(`/api/scores/${data.score.id}/passages/`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Mock-User': user.id }, body: JSON.stringify(values),
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...mockUserHeaders(user) }, body: JSON.stringify(values),
       })
       const passage = await response.json()
       if (!response.ok) throw new Error(passage.detail || passage.page_number?.[0] || passage.measure_number?.[0] || 'The measure could not be added.')
@@ -147,7 +148,7 @@ export default function useScoreViewer(user) {
     },
     async saveForPractice(passage) {
       const response = await fetch('/api/practice-marks/', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Mock-User': user.id }, body: JSON.stringify({ passage_id: passage.id }),
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...mockUserHeaders(user) }, body: JSON.stringify({ passage_id: passage.id }),
       })
       const mark = await response.json()
       if (!response.ok) throw new Error(mark.passage_id?.[0] || 'The practice mark could not be saved.')
@@ -157,7 +158,7 @@ export default function useScoreViewer(user) {
     async removeFromPractice(passage) {
       if (!passage.practice_mark_id) throw new Error('Reload this score to refresh its practice state.')
       const response = await fetch(`/api/practice-marks/${passage.practice_mark_id}/`, {
-        method: 'DELETE', headers: { 'X-Mock-User': user.id },
+        method: 'DELETE', headers: mockUserHeaders(user),
       })
       if (!response.ok && response.status !== 404) throw new Error('The practice item could not be removed. Please try again.')
       setData(current => ({ ...current, passages: current.passages.map(item => item.id === passage.id ? { ...item, is_marked_for_practice: false, practice_mark_id: null } : item) }))
