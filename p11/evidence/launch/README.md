@@ -17,10 +17,18 @@ Verified over HTTPS:
   layout version 1.
 - A measure preview fetched through the public URL returned `image/png`,
   608 x 607 pixels, HTTP 200.
+- Recreating the backend and frontend containers preserved two completed scores,
+  112 passages, the latest source PDF, and its 191,436-byte metadata in the named
+  Docker volume; the public health endpoint returned HTTP 200 after the correct
+  free-demo overlay was restored.
+- Two fresh HTTPS browser sessions were tested with a disposable upload. The
+  owner received 200 for its score; the other session received an empty library
+  and 404 for both read and delete; the owner deleted the record with 204 and a
+  follow-up read returned 404.
 
 The verification used Docker on November 5, 2026. Temporary test scores were
 deleted through their authorized sessions; existing library entries were kept.
-This is demo evidence, not a claim of permanent uptime, restart persistence,
-or outside-user testing.
+This is demo evidence, not a claim of permanent uptime, host-machine failure
+recovery, or outside-user testing.
 
 No screenshots are claimed here. Do not substitute localhost or P10 captures.

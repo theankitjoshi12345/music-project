@@ -8,11 +8,11 @@ workflow:
 stages: [test, security, package, deploy, verify]
 
 default:
-  tags: [saas-linux-small-amd64]
   interruptible: true
 
 backend-tests:
   stage: test
+  tags: [python]
   image: python:3.12-bookworm
   script:
     - apt-get update -qq && apt-get install -y --no-install-recommends poppler-utils
@@ -25,6 +25,7 @@ backend-tests:
 
 frontend-tests:
   stage: test
+  tags: [node]
   image: node:22-bookworm-slim
   script:
     - cd frontend
@@ -38,6 +39,7 @@ frontend-tests:
 
 dependency-security:
   stage: security
+  tags: [python]
   image: python:3.12-bookworm
   script:
     - pip install pip-audit
@@ -49,6 +51,7 @@ dependency-security:
 
 frontend-security:
   stage: security
+  tags: [node]
   image: node:22-bookworm-slim
   script:
     - cd frontend
@@ -61,6 +64,7 @@ frontend-security:
 
 container-images:
   stage: package
+  tags: [python]
   image:
     name: moby/buildkit:rootless
     entrypoint: [""]

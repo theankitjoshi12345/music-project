@@ -14,6 +14,11 @@ docker compose -f compose.yaml -f compose.free-demo.yaml \
 docker compose logs -f tunnel
 ```
 
+Keep using both Compose files for every `up`, `restart`, `ps`, and `down`
+operation on the public demo. Running plain `docker compose up` uses the local
+demo profile and intentionally removes the public host/session settings; rerun
+the command above to restore them.
+
 Cloudflare prints a random `https://…trycloudflare.com` URL. Share that URL only
 with the intended tester. The currently verified demo URL is
 `https://locate-valuation-using-donald.trycloudflare.com` while its container is
