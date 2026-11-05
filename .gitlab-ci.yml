@@ -65,20 +65,20 @@ frontend-security:
 container-images:
   stage: package
   tags: [python]
-  image:
-    name: moby/buildkit:rootless
-    entrypoint: [""]
+  image: quay.io/buildah/stable@sha256:a6f96bfffc47f36462985573d85e87f782bf2d8b37e02cb3dd307713bfa6cc13
   parallel:
     matrix:
       - TARGET: [backend, frontend]
   variables:
-    BUILDKITD_FLAGS: --oci-worker-no-process-sandbox
+    STORAGE_DRIVER: vfs
+    BUILDAH_FORMAT: docker
+    BUILDAH_ISOLATION: chroot
   before_script:
-    - mkdir -p ~/.docker
-    - umask 077
-    - printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}' "$CI_REGISTRY" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" > ~/.docker/config.json
+    - printf '%s' "$CI_REGISTRY_PASSWORD" | buildah login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
   script:
-    - buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=. --local dockerfile=. --opt target="$TARGET" --opt platform=linux/amd64 --output type=image,name="$CI_REGISTRY_IMAGE/$TARGET:$CI_COMMIT_SHA",push=true
+    - export IMAGE_NAME="$CI_REGISTRY_IMAGE/$TARGET:$CI_COMMIT_SHA"
+    - buildah build --isolation "$BUILDAH_ISOLATION" --storage-driver "$STORAGE_DRIVER" --format "$BUILDAH_FORMAT" --platform linux/amd64 --target "$TARGET" --tag "$IMAGE_NAME" .
+    - buildah push "$IMAGE_NAME"
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_PIPELINE_SOURCE == "merge_request_event"'
 
