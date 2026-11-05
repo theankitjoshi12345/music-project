@@ -22,9 +22,11 @@ from django.views.static import serve
 from django.urls import include, path
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('api/', include('scoreapi.urls')),
 ]
 
-if settings.DEBUG:
+if settings.DJANGO_ADMIN_ENABLED:
+    urlpatterns += [path('admin/', admin.site.urls)]
+
+if settings.DEBUG and settings.DJANGO_AUTH_MODE == "demo":
     urlpatterns += static(settings.MEDIA_URL, view=xframe_options_sameorigin(serve), document_root=settings.MEDIA_ROOT)

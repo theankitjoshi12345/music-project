@@ -14,7 +14,15 @@ import subprocess
 import tempfile
 import struct
 from zipfile import BadZipFile, ZipFile
-from xml.etree import ElementTree
+from defusedxml import ElementTree
+from defusedxml.common import DefusedXmlException
+from .pdf_safety import validate_pdf_pages
+
+
+MAX_XML_BYTES = 20 * 1024 * 1024
+MAX_MXL_MANIFEST_BYTES = 64 * 1024
+MAX_MXL_ENTRIES = 1000
+MAX_MUSICXML_MEASURES = 10000
 
 
 class OMRUnavailable(RuntimeError):
@@ -75,10 +83,17 @@ def extract_measure_regions(omr_path):
 def _xml_bytes(uploaded_file, suffix):
     uploaded_file.seek(0)
     if suffix != ".mxl":
-        return uploaded_file.read()
+        data = uploaded_file.read(MAX_XML_BYTES + 1)
+        if len(data) > MAX_XML_BYTES:
+            raise ValueError("The MusicXML score exceeds 20 MB.")
+        return data
     with ZipFile(uploaded_file) as archive:
+        if len(archive.infolist()) > MAX_MXL_ENTRIES:
+            raise ValueError("The MXL archive contains too many entries.")
         names = [name for name in archive.namelist() if name.lower().endswith((".musicxml", ".xml")) and not name.startswith("META-INF/")]
         if "META-INF/container.xml" in archive.namelist():
+            if archive.getinfo("META-INF/container.xml").file_size > MAX_MXL_MANIFEST_BYTES:
+                raise ValueError("The MXL manifest exceeds 64 KB.")
             container = ElementTree.fromstring(archive.read("META-INF/container.xml"))
             rootfile = next((element.get("full-path") for element in container.iter()
                              if element.tag.rsplit("}", 1)[-1] == "rootfile"), None)
@@ -87,7 +102,7 @@ def _xml_bytes(uploaded_file, suffix):
                 names.insert(0, rootfile)
         if not names:
             raise ValueError("The MXL file does not contain a MusicXML score.")
-        if archive.getinfo(names[0]).file_size > 20 * 1024 * 1024:
+        if archive.getinfo(names[0]).file_size > MAX_XML_BYTES:
             raise ValueError("The uncompressed MusicXML score exceeds 20 MB.")
         return archive.read(names[0])
 
@@ -99,7 +114,7 @@ def extract_musicxml_measures(uploaded_file):
         return []
     try:
         root = ElementTree.parse(BytesIO(_xml_bytes(uploaded_file, suffix))).getroot()
-    except (ElementTree.ParseError, OSError, ValueError, BadZipFile) as error:
+    except (ElementTree.ParseError, DefusedXmlException, OSError, ValueError, BadZipFile, RuntimeError, NotImplementedError) as error:
         raise ValueError("The uploaded MusicXML file could not be read.") from error
     finally:
         uploaded_file.seek(0)
@@ -112,6 +127,8 @@ def extract_musicxml_measures(uploaded_file):
     page_number = 1
     section = "Start"
     for position, measure in enumerate((element for element in part if element.tag.rsplit("}", 1)[-1] == "measure"), start=1):
+        if position > MAX_MUSICXML_MEASURES:
+            raise ValueError(f"This demo supports MusicXML scores up to {MAX_MUSICXML_MEASURES} measures.")
         for child in measure.iter():
             name = child.tag.rsplit("}", 1)[-1]
             if name == "print" and child.get("new-page") == "yes" and measures:
@@ -138,13 +155,7 @@ def extract_pdf_measures(pdf_path, audiveris_command, *, timeout=300, max_pages=
     if not shutil.which("pdftoppm") or not shutil.which("pdfinfo"):
         raise OMRUnavailable("PDF measure extraction requires Poppler (pdftoppm and pdfinfo).")
 
-    info = subprocess.run(["pdfinfo", str(pdf_path)], check=True, capture_output=True, text=True, timeout=15)
-    match = re.search(r"^Pages:\s+(\d+)", info.stdout, re.MULTILINE)
-    if not match:
-        raise ValueError("The PDF page count could not be read. Try an unencrypted PDF.")
-    page_count = int(match.group(1))
-    if page_count > max_pages:
-        raise ValueError(f"This demo supports extraction of PDFs up to {max_pages} pages.")
+    page_count = validate_pdf_pages(pdf_path, last_page=max_pages, max_pages=max_pages)
     if on_page_count:
         on_page_count(page_count)
 

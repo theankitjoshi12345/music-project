@@ -8,11 +8,29 @@ http://localhost:8080/api through Docker's Nginx frontend. The browser uses
 same-origin /api requests in both setups; Vite proxies them during native
 development. Docker does not publish the backend port separately.
 
-**Format:** JSON request and response bodies
-**Mock authentication:** The local app sends the selected demo user in the
-`X-Mock-User` request header. Supported demo users are `alex` and `sam`.
-This is a structural placeholder for local multi-user flows, not production
-authentication.
+**Format:** JSON request and response bodies; uploads use multipart form data.
+
+**Identity and authorization:** Clients first call `GET /api/session/`. In local
+`DJANGO_AUTH_MODE=demo`, scores are shared and `X-Mock-User` selects the practice
+profile (`alex` or `sam` in the UI). In `DJANGO_AUTH_MODE=session`, a server-issued,
+HttpOnly session cookie owns a private score library; `X-Mock-User` cannot change
+that identity. Every score, original file, rendered image, passage and practice
+operation checks this owner. Legacy NULL-owned local scores remain inaccessible
+to public sessions. A missing session returns 403; another owner's object is
+treated as absent (404, or a 400 invalid passage reference on mark creation).
+
+Session mode is an anonymous browser identity, not a verified Google account.
+Access lasts 30 days of inactivity and refreshes on requests. Losing cookies,
+using another browser or letting the session expire loses access; there is no
+account recovery or automatic deletion of the stored scores. Production requires
+HTTPS and uses host-only `__Host-` cookies. `DJANGO_ENV=production` rejects demo
+mode, DEBUG and insecure signing keys. The admin route is disabled by default.
+
+Session-mode `POST`, `PATCH` and `DELETE` requests must include the session cookie
+and `X-CSRFToken` using the `csrfToken` returned by session initialization. Missing
+or invalid CSRF tokens and untrusted origins return 403, including for anonymous
+users. Same-origin `fetch` sends cookies by default. File/image tags use the same
+session cookie; direct `/media/` URLs must not be publicly served.
 
 ## Screen-to-endpoint map
 
@@ -25,7 +43,10 @@ authentication.
 
 ## Data models and relationships
 
-    User 1 -- * PracticeMark * -- 1 Passage * -- 1 Score
+    BrowserSession 1 -- * Score 1 -- * Passage 1 -- * PracticeMark
+
+Local demo mode retains the shared score library and separates practice marks by
+selected profile. Public session mode scopes both scores and marks to the browser.
 
 ### Score
 
@@ -37,7 +58,8 @@ authentication.
 | instrument | string | Instrument or section |
 | page_count | integer | Positive total page count |
 | available_offline | boolean | Offline-library availability |
-| source_file | string | Locally stored uploaded file path, when supplied |
+| source_file | string or null | Authorized same-origin `/api/scores/{id}/file/` URL; never a raw storage path |
+| source_type | string or null | `pdf`, `musicxml` (including XML/MXL), or null; use this to select the reader |
 | extraction_started_at | string or null | ISO-8601 server start time for an active conversion; null when inactive, completed or interrupted |
 | extraction_estimated_seconds | integer or null | Approximate total PDF conversion duration for this runtime and page count; null for non-PDF scores |
 
@@ -54,7 +76,7 @@ authentication.
 | score_id | integer | Included in practice-mark passage context so Open passage targets the correct score |
 | bounding_box | object or null | Normalized x/y/width/height and recognition image dimensions for the actual PDF measure |
 | preview_url | string or null | PNG crop of the original notation; null until layout extraction is complete |
-| is_marked_for_practice | boolean | Whether the selected mock user has a saved practice item |
+| is_marked_for_practice | boolean | Whether the current browser identity or local demo profile has a saved practice item |
 | practice_mark_id | integer or null | That user's practice row ID, used for DELETE; another user's ID is never returned |
 
 A score cannot have duplicate section and measure_number combinations.
@@ -68,14 +90,14 @@ passage's page, with the normal initial-page fallback for an unknown passage ID.
 | Field | Type | Notes |
 | --- | --- | --- |
 | id | integer | Generated primary key |
-| owner | string | Mock-user ID that owns this mark; response only |
+| owner | string | Opaque server owner identifier, or local demo profile ID; response only and never an authentication credential |
 | passage | object | Read-only passage context in responses |
 | passage_id | integer | Required only when creating a mark |
 | note | string | Optional, trimmed, maximum 500 characters |
 | is_resolved | boolean | Defaults to false |
 | created_at, updated_at | ISO 8601 string | Server-managed timestamps |
 
-There can be one practice mark per passage for each mock user. A mark cannot
+There can be one practice mark per passage for each owner. A mark cannot
 be moved to a different passage after creation.
 
 ## Endpoints
@@ -86,9 +108,29 @@ Returns the existing service check.
 
     {"status": "ok", "service": "score-companion-api"}
 
+This is public liveness only. It does not expose account or library information
+and is exempt from HTTPS redirects for internal container probes.
+
+### GET /api/session/
+
+Initializes or resumes the browser library and returns a CSRF token. The response
+uses `Cache-Control: private, no-store` and never returns the private owner token.
+
+    {
+      "auth_mode": "session",
+      "display_name": "Private browser library",
+      "csrfToken": "<request-specific CSRF token>",
+      "expires_in_seconds": 2592000
+    }
+
+Local demo mode returns `auth_mode: "demo"`, `display_name: "Local practice
+profile"` and `expires_in_seconds: null`. Clients should finish this request
+before loading scores or issuing concurrent uploads.
+
 ### GET /api/scores/
 
-Lists downloaded parts for the Offline Score Library.
+Lists only the current library's uploaded parts (shared local library in demo
+mode; private browser library in session mode).
 
     [
       {
@@ -106,6 +148,14 @@ Lists downloaded parts for the Offline Score Library.
 
 Returns one score and its library/viewer context. A missing score returns 404 Not Found.
 
+### GET /api/scores/{id}/file/
+
+Serves the original upload after the same ownership check as score detail.
+PDFs use `application/pdf` with inline disposition and `X-Frame-Options:
+SAMEORIGIN`; MusicXML/XML/MXL downloads use `application/octet-stream` and
+attachment disposition. Responses use `Cache-Control: private, no-store` and
+`X-Content-Type-Options: nosniff`. Missing files and inaccessible scores return 404.
+
 ### DELETE /api/scores/{id}/
 
 Removes an uploaded score, its local source file, all of its passages, and any
@@ -116,8 +166,17 @@ practice marks attached to those passages. Returns 204 No Content.
 For a stored PDF (up to 10 pages), runs local Audiveris after rendering each page
 with `pdftoppm`. Imported measures retain their PDF page numbers. Matching
 passages are updated without deleting IDs or practice notes. Completed imports
-are returned from storage. Returns 409 while another request is processing,
+are returned from storage. A host-wide file lock permits one Audiveris process
+across workers. Returns 409 while another score is being converted (retry later)
+or another request is processing the same score (poll its detail),
 503 when the local runtime is unavailable, and 422 when recognition fails.
+
+Before rasterization, `pdfinfo -box` verifies every extraction page's reported
+size and uncropped MediaBox. Each side is limited to 1,440 points (20 inches)
+and each page to 25 million pixels at 300 DPI. Page/measure image endpoints apply
+the same check to the requested page even before recognition. Excessive pages
+return 422 with a message asking for a standard Letter/A4 export; no rasterizer
+is started for the rejected page or extraction batch.
 
 Score responses include `extraction_status` (`not_started`, `processing`,
 `complete`, or `failed`) and `extraction_error`. Clients may poll the score detail
@@ -159,11 +218,29 @@ and MusicXML page breaks into Passages. PDFs are stored first; the browser then
 starts recognition through `/scores/{id}/extract-measures/` and displays progress
 in the reader.
 
+MusicXML parsing rejects entity expansion and external entities. Plain XML and
+the selected uncompressed MXL score are limited to 20 MiB; MXL manifests to 64
+KiB before decompression; archives to 1,000 entries; and imported scores to
+10,000 measures. Invalid or excessive inputs return 400 without saving a score.
+Ordinary MusicXML DOCTYPE declarations remain supported without fetching a DTD.
+
+Public session-mode quotas default to 20 scores/100 MiB per browser and 100
+scores/500 MiB across public libraries. Exceeding a score or uploaded-byte limit
+returns 429 with a user-readable `detail` before saving a new file. Duplicate
+uploads within the same library remain allowed. The persistent-host upload lock
+serializes quota checks and file creation across workers. The limits are
+configured by `PUBLIC_MAX_SCORES_PER_SESSION`, `PUBLIC_MAX_BYTES_PER_SESSION`,
+`PUBLIC_MAX_SCORES_TOTAL` and `PUBLIC_MAX_BYTES_TOTAL`; they count original uploads,
+not temporary OMR work space. Local demo mode does not apply these public quotas.
+
 New files return 201 with `already_uploaded: false`. Identical file contents
-return the original score with 200 and `already_uploaded: true`; original
+within the same owner scope return the original score with 200 and
+`already_uploaded: true`; original
 metadata, extracted measures, and practice marks are preserved. Different file
 contents get separate storage paths, even when filenames match. Existing local
 files can be indexed once with `manage.py index_score_files` after migration.
+The same file uploaded by another browser creates an independent file and score;
+its existence, metadata and practice notes are not disclosed across libraries.
 
 ### GET /api/scores/{id}/passages/
 
@@ -239,9 +316,9 @@ Returns the updated practice-mark representation with 200 OK.
 
 ### DELETE /api/practice-marks/{id}/
 
-Permanently removes the selected mock user's practice row and its note. Returns
-204 with no response body. An absent ID or an ID owned by another mock user
-returns 404. The shared score, source PDF, passages, and other users' marks are
+Permanently removes the current owner's practice row and its note. Returns
+204 with no response body. An absent ID or an ID owned by someone else
+returns 404. The score, source PDF, passages, and other owners' marks are
 retained. Practice marks reference existing passages and do not create PDF copies.
 
 The frontend updates the saved state only after a successful DELETE (or a 404
@@ -255,6 +332,10 @@ source file and cascades all its passages and marks.
 | Situation | Status | Example response |
 | --- | ---: | --- |
 | Missing score, passage, or mark | 404 | {"detail": "Not found."} |
+| Missing browser session | 403 | Initialize `/api/session/` first |
+| Missing/invalid CSRF or untrusted origin | 403 | CSRF validation detail |
+| Public upload quota exceeded | 429 | User-readable `detail` |
+| Recognition worker busy | 409 | Retry later; current score remains retryable |
 | Missing passage_id on create | 400 | {"passage_id": ["This field is required."]} |
 | Nonexistent passage | 400 | {"passage_id": ["Invalid pk ..."]} |
 | Duplicate mark for a passage | 200 | Existing mark (idempotent save) |
@@ -262,6 +343,7 @@ source file and cascades all its passages and marks.
 | Attempt to move a mark | 400 | {"passage_id": ["A practice mark cannot be moved to another passage."]} |
 | Invalid review status | 400 | {"status": "Use 'unresolved' or 'resolved'."} |
 
-The API deliberately excludes production authentication, cloud synchronization,
-tuner/metronome tools, social features, and
-automatic error detection.
+The API does not yet provide verified Google sign-in, cross-device account
+recovery, tuner/metronome tools, social features or automatic musical-error
+detection. Deployment and persistence status are recorded in the root README;
+session support alone does not establish that a public deployment exists.

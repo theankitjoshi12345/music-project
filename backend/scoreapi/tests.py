@@ -13,6 +13,8 @@ from rest_framework.test import APITestCase
 from .models import Passage, PracticeMark, Score
 from .score_extract import OMRUnavailable, PDFExtraction
 from .upload_service import store_upload
+from .extraction_service import recognition_slot
+from .pdf_safety import PDFSafetyError
 
 
 def recognized_pdf(measures, page_count):
@@ -28,6 +30,7 @@ class HealthCheckTests(SimpleTestCase):
         self.assertEqual(response.json(), {"status": "ok", "service": "score-companion-api"})
 
 
+@override_settings(DJANGO_AUTH_MODE="demo")
 class ScoreApiTests(APITestCase):
     @classmethod
     def setUpClass(cls):
@@ -267,6 +270,22 @@ class ScoreApiTests(APITestCase):
         self.assertEqual(response.status_code, 409)
         extract_pdf.assert_not_called()
 
+    @patch("scoreapi.extraction_service.extract_pdf_measures", return_value=recognized_pdf([("Page 1", 1, 1)], 1))
+    def test_global_recognition_slot_rejects_then_allows_a_retry(self, extract_pdf):
+        self.score.source_file = "scores/scan.pdf"
+        self.score.save()
+        with tempfile.TemporaryDirectory(prefix="recognition-slot-tests-") as data:
+            with override_settings(DATA_DIR=data):
+                with recognition_slot():
+                    response = self.client.post(f"/api/scores/{self.score.id}/extract-measures/")
+                    self.assertEqual(response.status_code, 409)
+                    extract_pdf.assert_not_called()
+                    self.score.refresh_from_db()
+                    self.assertEqual(self.score.extraction_state, "not_started")
+                response = self.client.post(f"/api/scores/{self.score.id}/extract-measures/")
+                self.assertEqual(response.status_code, 200)
+                extract_pdf.assert_called_once()
+
     def test_manual_placeholder_does_not_claim_pdf_extraction_succeeded(self):
         self.score.source_file = "scores/scan.pdf"
         self.score.save()
@@ -367,6 +386,14 @@ class ScoreApiTests(APITestCase):
         invalid = self.client.get(f"/api/scores/{self.score.id}/pages/9/image/")
         self.assertEqual(invalid.status_code, 404)
         render.assert_called_once_with(self.score.source_file.path, 2, None)
+
+    @patch("scoreapi.views.render_pdf", side_effect=PDFSafetyError("PDF page 1 is too large to process safely. Export standard Letter or A4 pages and retry."))
+    def test_oversized_pdf_image_returns_actionable_error(self, render):
+        self.score.source_file = "scores/giant.pdf"
+        self.score.save()
+        response = self.client.get(f"/api/scores/{self.score.id}/pages/1/image/")
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("Letter or A4", response.json()["detail"])
 
     def test_create_mark_and_filter_unresolved_marks(self):
         response = self.client.post(

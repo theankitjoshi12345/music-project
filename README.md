@@ -3,7 +3,15 @@
 Score Companion is a CMPS 453 team project for uploading sheet music, viewing
 individual measures, and saving passages and notes for practice.
 
-## P#10 local MVP
+## USER GUIDE
+
+**Public launch status:** temporary free demo verified at
+<https://locate-valuation-using-donald.trycloudflare.com> while the Docker tunnel
+is running. The address is temporary and changes after restart. Instructions are
+in [Free demo sharing](docs/FREE_DEMO.md).
+The Google Cloud VM proposal is paid and out of scope for the free-only launch;
+see [Cloud deployment](#cloud-deployment) for the record. Assignment evidence is indexed in
+[p11/README.md](p11/README.md); completed P#10 files remain unchanged.
 
 The app includes Logan's Offline Score Library, Ankit's Score Viewer & Navigation,
 Matthew's Measure Marker, and Jonathan's Practice Review. The current flow is:
@@ -11,7 +19,18 @@ upload a score, select a measure, save it for practice, then review it or return
 to its original score context. Despite the original screen name, browser offline
 caching is not implemented.
 
-The app uses local mock authentication, not production security. Choose **Alex Rivera** or **Sam Lee** in the **Practice profile** selector. Practice marks are isolated by the selected mock user so the same passage can be marked independently for each demo user.
+Local development uses mock profiles: choose **Alex Rivera** or **Sam Lee** in
+**Practice profile**. They share a local library and have separate practice lists.
+Never publish this demo mode. Production mode instead creates a private,
+server-issued browser session. Scores, originals, images, and practice records
+are isolated to that session; a forged profile header grants no access.
+Keep this browser's cookies to return to your library. Access expires after
+30 days of inactivity, with no account recovery or cross-device synchronization.
+This is anonymous course-demo access, not a verified Google account.
+
+The Google sign-in development project and intended local callback configuration
+are documented in [Google authentication development setup](docs/GOOGLE_AUTH_DEVELOPMENT.md).
+Google sign-in is not implemented in the app yet.
 
 Use **Add to library** to upload a PDF, MusicXML, XML, or MXL file (up to 10 MB).
 PDF uploads open the reader and start local Audiveris recognition automatically.
@@ -145,7 +164,7 @@ architecture.md                 Implemented architecture and limits
 API_CONTRACT.md                 REST endpoints and data contract
 ```
 
-## Local setup
+## LOCAL DEVELOPMENT
 
 Choose either startup option below. Both run the complete library, PDF measure
 reader, and practice flow. Local development uses two terminals; Docker Compose
@@ -362,8 +381,9 @@ arrow keys, form-field protection, visible skeletons, failed deletion recovery,
 permanent mark/note removal, user isolation and responsive layouts at 390, 768
 and 1440 pixels. The four-screen flow is documented in [UI review](docs/UI_REVIEW.md).
 
-All 34 backend tests pass in both the native and container runtimes. All 23
-frontend tests and the production build pass. Lint
+Those historical checks preceded the P#11 security changes. Current launch
+verification is recorded in [docs/LAUNCH_VERIFICATION.md](docs/LAUNCH_VERIFICATION.md).
+The frontend production build and automated tests remain required in GitLab CI. Lint
 reports three existing Fast Refresh warnings in `mockSession.jsx`. Recognition
 results still need review for each new score; the successful demo PDF does not
 guarantee OMR accuracy on other files.
@@ -418,6 +438,96 @@ The Django REST API is documented in [API_CONTRACT.md](API_CONTRACT.md).
 The library upload flow creates scores and imports passages. Endpoints under
 `/api/` provide scores, passage metadata, extraction state, practice marks, full
 PDF page images, and individual measure previews.
+
+## CLOUD DEPLOYMENT
+
+**Paid path, intentionally disabled:** `compose.production.yaml` and `deploy/` provide a
+single-host deployment on an x86 Google Compute Engine VM. Provisioning has not
+run: the project `music-companion-513717` has billing disabled. No deployment URL
+should be treated as real until HTTPS and the full PDF workflow pass.
+
+The proposed host is one **e2-medium (4 GiB RAM)** in `us-central1-a`, with a
+20 GiB persistent disk and external IPv4. Caddy terminates HTTPS, Nginx serves
+React, and Gunicorn runs Django with Poppler/Audiveris in Docker. SQLite, original
+PDFs, sessions, and the Django key persist under `/srv/music-companion/data`.
+Generated images are rendered on demand; recognition scratch files are removed
+automatically. No developer computer is part of the proposed public runtime.
+
+This preserves the existing relational model and filesystem-based OMR pipeline.
+These resources are not free tier and are not part of the free-only launch.
+Firestore is not a Django ORM replacement; Cloud Run's ephemeral filesystem cannot
+hold this SQLite/media setup durably. A single persistent VM is appropriate for
+this small course demo; horizontal scaling and high availability are not supported.
+
+The proposed VM is **not free tier**. Current indicative cost is about **$29/month**
+or **$4.75 for five continuous days**, before network egress and taxes; these are
+estimates, not spending caps. Disk and reserved IP charges can continue while the
+VM is stopped. No billable resources or billing account are created automatically
+by ordinary CI. See [deployment operations and cost sources](deploy/README.md).
+
+### Production prerequisites and procedure
+
+1. Approve and link billing, the reviewed VM/network resources, and narrowly scoped
+   GitLab deployment IAM. The provisioning script refuses to run without explicit
+   `BILLING_APPROVED=true`; this flag alone is not user approval.
+2. Follow [deploy/README.md](deploy/README.md) to provision, verify SSH host keys,
+   and configure protected GitLab variables and workload identity federation.
+3. Use the immutable images built by GitLab after backend/frontend tests and
+   dependency audits. The protected main pipeline deploys only when the operator
+   sets `DEPLOY_ENABLED=true` after approval.
+4. Verify HTTPS, upload, actual recognition, measure PNGs, practice persistence,
+   two-browser privacy, and container replacement before recording launch.
+
+The proposed no-purchase hostname uses `sslip.io` with the reserved IP and a
+publicly trusted certificate. Compute Engine does not supply a public HTTPS app
+hostname; this is an explicit exception to the preferred platform domain, and
+introduces a third-party DNS dependency. No hostname has been provisioned yet.
+
+### Production configuration and security
+
+| Setting | Production value or purpose |
+| --- | --- |
+| `DJANGO_ENV` / `DJANGO_DEBUG` | `production` / `false`; unsafe combinations fail startup |
+| `DJANGO_AUTH_MODE` | `session`; local mock headers cannot select public users |
+| `DJANGO_ALLOWED_HOSTS` | Exact public hostname plus internal health-check hosts |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | Exact `https://` origin |
+| `DJANGO_TRUST_PROXY` | `true` only behind the private trusted gateway |
+| `DJANGO_SECRET_KEY_FILE` | `/data/django-secret-key`, private persistent generated key |
+| `DJANGO_DATA_DIR` | `/data`, backed by the persistent VM disk |
+| `PUBLIC_HOST` / `ACME_EMAIL` | Public DNS name and certificate renewal contact |
+| `OMR_TIMEOUT_SECONDS` | 600 seconds, one recognition process at a time |
+
+The gateway publishes only 80/443; API and database ports remain private. Admin
+and direct `/media/` URLs are blocked. Original files use authorized API downloads.
+Secure HttpOnly session cookies, CSRF enforcement, HTTPS redirects, HSTS, upload
+size/type parsing bounds, and per-browser/global storage quotas protect the demo.
+The backend container runs as an unprivileged user. Service-account JSON keys and
+OAuth secrets never enter images or frontend bundles.
+
+Anonymous session access is deliberately limited: lost/expired cookies cannot
+recover a library, and automated abuse can exhaust the bounded demo capacity.
+There is no billing hard cap, user account recovery, or independent backup service.
+Deployments take a consistent backup before migrations; the backup is on the same
+disk and does not protect against disk loss. Do not delete user data to clear
+capacity without explicit authorization. Google sign-in remains separate, unfinished
+integration work. See [architecture.md](architecture.md) for the trust boundaries.
+
+### CI/CD and troubleshooting
+
+`.gitlab-ci.yml` is the only deployment pipeline. It runs Django checks/tests,
+React lint/tests/build, dependency audits, and immutable amd64 image builds.
+Approved production deployment uses short-lived GitLab OIDC/WIF credentials and
+IAP SSH with pinned host keys; post-deploy jobs check HTTPS frontend and API.
+GitHub is a source mirror and has no competing deploy workflow.
+
+If public deployment is skipped, check `DEPLOY_ENABLED`, protected-main status,
+and the variables in the deployment guide. A green test pipeline with deployment
+skipped does not mean the app is live. A 403 in a private library usually means
+missing session/CSRF state; reload the app without clearing its cookies. A busy
+conversion means another score holds the single OMR slot; retry after it finishes.
+Check `docker compose ... logs backend` for bounded recognition errors. Never use
+`down --volumes`, delete the persistent directory, or restore a database over
+newer user data as an ordinary troubleshooting step.
 
 ## Development workflow
 

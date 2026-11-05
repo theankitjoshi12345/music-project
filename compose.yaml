@@ -7,6 +7,8 @@ services:
       target: backend
     environment:
       DJANGO_DEBUG: "false"
+      # Local-only shared demo. Production uses private server sessions.
+      DJANGO_AUTH_MODE: "demo"
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,[::1]}
       DJANGO_DATA_DIR: /data
       DJANGO_SECRET_KEY_FILE: /data/django-secret-key
