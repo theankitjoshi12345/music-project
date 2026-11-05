@@ -7,13 +7,13 @@
     "2": "Team: 08 | CMPS453",
     "3": "Date: November 5, 2026 | Deadline: November 9, 2026",
     "5": "Score Companion helps musicians turn sheet-music PDFs into measures and save difficult passages for practice. This report covers P11 launch preparation, delivery, and security. A temporary free HTTPS demo was verified through Docker; durable hosting and outside-user testing remain pending. No demo video is included. The final presentation and live demo belong to P13.",
-    "7": "A = Ankit Joshi; B = Logan Broussard; C = Matthew Pisani; D = Jonathan Dempsey. Earlier work: see the P10 report. P11 rows below record supported activity only.",
+    "7": "A = Ankit Joshi; B = Logan Broussard; C = Matthew Pisani; D = Jonathan Dempsey. Completed issue and P11 merge-request URLs are recorded in p11/team-contributions.md.",
     "11": "Nov. 4, 2026",
     "12": "A",
-    "13": "Directed free-demo launch preparation and cloud audit with AI assistance; final repository evidence is recorded in the project.",
-    "14": "By Nov. 9",
+    "13": "Directed the free-demo launch and MRs !30-!32; completed assigned integration evidence issue #34.",
+    "14": "Nov. 2, 2026",
     "15": "B, C, D",
-    "16": "Individual P11 contributions require member confirmation or repository evidence.",
+    "16": "Completed assigned integration issues: B #31, C #32, and D #33. URLs are in p11/team-contributions.md.",
     "17": "Nov. 5, 2026",
     "18": "Team",
     "19": "Verified the temporary free HTTPS demo and documented remaining outside-user feedback and submission work.",
@@ -61,6 +61,6 @@
     "81": "Submission checklist",
     "82": "See p11/launch-checklist.md; permanent documentation is in README.md and architecture.md.",
     "83": "Human confirmation",
-    "84": "Complete actual outside-user testing and confirm team contributions. Keep the launch free."
+    "84": "Complete actual outside-user testing. Team issue evidence is recorded. Keep the launch free."
   }
 }

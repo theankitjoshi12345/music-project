@@ -44,9 +44,10 @@ No billing, paid hosting, or billable cloud resource is used.
 ## Remaining human actions
 
 An actual non-team person must try the deployed product and provide the record
-described in `outside-user-test.md`. Confirm each member's actual P11
-contribution. A durable public host would require a separately approved free-tier
-or paid service; that work is intentionally out of scope for this free demo.
+described in `outside-user-test.md`. Completed assigned issue evidence for all
+four members is recorded in `team-contributions.md`. A durable public host would
+require a separately approved free-tier or paid service; that work is
+intentionally out of scope for this free demo.
 
 No video is included. The official template places the final presentation and
 live demo in P13.

@@ -24,7 +24,7 @@ grader notes say to note an outside tester when possible.
 | Native and Docker startup/tests still pass | Launch 30%; documentation 25% | 54 backend tests, 24 frontend tests, build, Docker health, and public health passed. |
 | Report uses official template and exports cleanly to PDF | Polish 5% | Word and PDF regenerated from the official template and visually inspected across four pages. |
 | Screenshots show real launched environment | Polish 5%; launch 30% | Pending; no localhost screenshots substituted. |
-| Team schedule reflects actual P11 work | Polish 5% | Pending supported member records; [contributions](team-contributions.md). |
+| Team schedule reflects actual work | Polish 5% | Completed assigned issues #31 through #34 and P11 MRs #30 through #32 are linked in [contributions](team-contributions.md). |
 | Challenges, resolutions, and remaining limitations are specific | Polish 5%; security 20% | In progress in report. |
 | Root docs, report, links, and repository state agree | Polish 5% | Local, GitLab, and GitHub synchronization checks passed; final history records the documentation merge. |
 
@@ -39,6 +39,6 @@ grader notes say to note an outside tester when possible.
 - [x] Security evidence captured.
 - [ ] Real launch screenshots added.
 - [ ] Actual outside-user test recorded.
-- [ ] Team contributions confirmed.
+- [x] Team contribution issue URLs recorded as directed.
 - [x] Final Word and PDF report regenerated and visually inspected.
 - [x] Final links, commits, and GitLab/GitHub synchronization checked.
