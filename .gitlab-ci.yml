@@ -65,20 +65,24 @@ frontend-security:
 container-images:
   stage: package
   tags: [python]
-  image: quay.io/buildah/stable@sha256:a6f96bfffc47f36462985573d85e87f782bf2d8b37e02cb3dd307713bfa6cc13
+  # The ULL Docker runner blocks CLONE_NEWUSER, so rootless BuildKit and
+  # Buildah both fail before a build starts. Kaniko is daemonless and does not
+  # require a privileged runner. Pin the multi-architecture image index.
+  image:
+    name: gcr.io/kaniko-project/executor@sha256:c3109d5926a997b100c4343944e06c6b30a6804b2f9abe0994d3de6ef92b028e
+    entrypoint: [""]
   parallel:
     matrix:
       - TARGET: [backend, frontend]
-  variables:
-    STORAGE_DRIVER: vfs
-    BUILDAH_FORMAT: docker
-    BUILDAH_ISOLATION: chroot
   before_script:
-    - printf '%s' "$CI_REGISTRY_PASSWORD" | buildah login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - mkdir -p /kaniko/.docker
+    - printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}' "$CI_REGISTRY" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" > /kaniko/.docker/config.json
   script:
     - export IMAGE_NAME="$CI_REGISTRY_IMAGE/$TARGET:$CI_COMMIT_SHA"
-    - buildah build --isolation "$BUILDAH_ISOLATION" --storage-driver "$STORAGE_DRIVER" --format "$BUILDAH_FORMAT" --platform linux/amd64 --target "$TARGET" --tag "$IMAGE_NAME" .
-    - buildah push "$IMAGE_NAME"
+    - /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/Dockerfile" --target "$TARGET" --custom-platform linux/amd64 --destination "$IMAGE_NAME" --digest-file "$CI_PROJECT_DIR/$TARGET-image-digest.txt"
+  artifacts:
+    paths: ["*-image-digest.txt"]
+    expire_in: 30 days
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_PIPELINE_SOURCE == "merge_request_event"'
 
