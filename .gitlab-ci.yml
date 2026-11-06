@@ -65,20 +65,24 @@ frontend-security:
 container-images:
   stage: package
   tags: [python]
+  # The ULL Docker runner blocks CLONE_NEWUSER, so rootless BuildKit and
+  # Buildah both fail before a build starts. Kaniko is daemonless and does not
+  # require a privileged runner. Pin the multi-architecture image index.
   image:
-    name: moby/buildkit:rootless
+    name: gcr.io/kaniko-project/executor@sha256:c3109d5926a997b100c4343944e06c6b30a6804b2f9abe0994d3de6ef92b028e
     entrypoint: [""]
   parallel:
     matrix:
       - TARGET: [backend, frontend]
-  variables:
-    BUILDKITD_FLAGS: --oci-worker-no-process-sandbox
   before_script:
-    - mkdir -p ~/.docker
-    - umask 077
-    - printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}' "$CI_REGISTRY" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" > ~/.docker/config.json
+    - mkdir -p /kaniko/.docker
+    - printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}' "$CI_REGISTRY" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" > /kaniko/.docker/config.json
   script:
-    - buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=. --local dockerfile=. --opt target="$TARGET" --opt platform=linux/amd64 --output type=image,name="$CI_REGISTRY_IMAGE/$TARGET:$CI_COMMIT_SHA",push=true
+    - export IMAGE_NAME="$CI_REGISTRY_IMAGE/$TARGET:$CI_COMMIT_SHA"
+    - /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/Dockerfile" --target "$TARGET" --custom-platform linux/amd64 --destination "$IMAGE_NAME" --digest-file "$CI_PROJECT_DIR/$TARGET-image-digest.txt"
+  artifacts:
+    paths: ["*-image-digest.txt"]
+    expire_in: 30 days
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_PIPELINE_SOURCE == "merge_request_event"'
 
