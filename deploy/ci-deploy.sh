@@ -121,7 +121,7 @@ gcloud run deploy "$guard_service" \
   --execution-environment=gen2 \
   --port=8080 \
   --cpu=1 \
-  --memory=256Mi \
+  --memory=512Mi \
   --concurrency=1 \
   --timeout=30 \
   --min=0 \
@@ -145,7 +145,7 @@ annotations = template["metadata"].get("annotations", {})
 assert annotations.get("autoscaling.knative.dev/maxScale") == "1"
 assert annotations.get("autoscaling.knative.dev/minScale", "0") == "0"
 container = template["spec"]["containers"][0]
-assert container["resources"]["limits"] == {"cpu": "1", "memory": "256Mi"}
+assert container["resources"]["limits"] == {"cpu": "1", "memory": "512Mi"}
 print(service["status"]["url"])
 PY
 )
