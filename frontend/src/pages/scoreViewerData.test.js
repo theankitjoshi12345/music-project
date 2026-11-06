@@ -66,15 +66,31 @@ test('page navigation handles empty pages and derives the real sections', () => 
 
 test('extraction deduplicates simultaneous requests and permits a retry after failure', async () => {
   let finish
-  let calls = 0
-  const request = () => { calls++; return new Promise((resolve) => { finish = resolve }) }
+  const calls = []
+  const request = (path, options) => {
+    calls.push([path, options])
+    if (path.endsWith('/extraction-ticket/')) {
+      return Promise.resolve({ ok: true, json: async () => ({ url: 'https://api.example.test/extract', token: 'signed-ticket' }) })
+    }
+    return new Promise((resolve) => { finish = resolve })
+  }
   const first = requestExtraction(123, {}, request)
   const second = requestExtraction(123, {}, request)
-  assert.equal(calls, 1)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(calls.length, 2)
+  assert.equal(calls[0][0], '/api/scores/123/extraction-ticket/')
+  assert.equal(calls[1][0], 'https://api.example.test/extract')
+  assert.equal(calls[1][1].headers.Authorization, 'Bearer signed-ticket')
   finish({ ok: true, json: async () => ({ extraction_status: 'complete' }) })
   assert.deepEqual(await first, await second)
-  await assert.rejects(requestExtraction(123, {}, async () => ({ ok: false, json: async () => ({ detail: 'Try again' }) })), /Try again/)
-  const retried = await requestExtraction(123, {}, async () => ({ ok: true, json: async () => ({ extraction_status: 'complete' }) }))
+  const failedRequest = async path => path.endsWith('/extraction-ticket/')
+    ? { ok: true, json: async () => ({ url: '/extract', token: 'ticket' }) }
+    : { ok: false, json: async () => ({ detail: 'Try again' }) }
+  await assert.rejects(requestExtraction(123, {}, failedRequest), /Try again/)
+  const successfulRequest = async path => path.endsWith('/extraction-ticket/')
+    ? { ok: true, json: async () => ({ url: '/extract', token: 'ticket' }) }
+    : { ok: true, json: async () => ({ extraction_status: 'complete' }) }
+  const retried = await requestExtraction(123, {}, successfulRequest)
   assert.equal(retried.extraction_status, 'complete')
 })
 

@@ -23,6 +23,51 @@ backend-tests:
     - export DJANGO_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(64))')"
     - DJANGO_ENV=production DJANGO_DEBUG=false DJANGO_ALLOWED_HOSTS=ci.example.test DJANGO_CSRF_TRUSTED_ORIGINS=https://ci.example.test python backend/manage.py check --deploy --fail-level WARNING
 
+cost-guard-tests:
+  stage: test
+  tags: [python]
+  image: python:3.12-bookworm
+  script:
+    - pip install -r cost_guard/requirements.txt
+    - PYTHONPATH=cost_guard python -m unittest discover -s cost_guard -p 'test_*.py' -v
+
+firestore-integration:
+  stage: test
+  tags: [python]
+  image: python:3.12-bookworm
+  services:
+    - name: us-docker.pkg.dev/google.com/cloudsdktool/gcr.io/google-cloud-cli@sha256:c3b114528245d315af73d92d95d8e2fed9747ce29003ad46232f22b4542da036
+      alias: firestore
+      entrypoint: ["/bin/bash", "-c"]
+      command:
+        - gcloud emulators firestore start --host-port=0.0.0.0:8787 --database-mode=datastore-mode --quiet
+  variables:
+    DJANGO_PERSISTENCE_BACKEND: firestore
+    FIRESTORE_DATABASE_MODE: datastore
+    DJANGO_FILE_STORAGE_BACKEND: filesystem
+    GOOGLE_CLOUD_PROJECT: music-companion-ci
+    DATASTORE_PROJECT_ID: music-companion-ci
+    DATASTORE_EMULATOR_HOST: firestore:8787
+    DJANGO_AUTH_MODE: google
+    GOOGLE_OAUTH_CLIENT_ID: ci-client.apps.googleusercontent.com
+    DJANGO_ADMIN_ENABLED: "false"
+    DJANGO_ALLOWED_HOSTS: testserver
+  script:
+    - pip install -r backend/requirements-docker.txt
+    - |
+      for attempt in $(seq 1 60); do
+        if python -c 'import socket; socket.create_connection(("firestore", 8787), 2).close()'; then
+          break
+        fi
+        if [ "$attempt" = 60 ]; then
+          echo "Firestore emulator did not become ready"
+          exit 1
+        fi
+        sleep 1
+      done
+    - python backend/manage.py migrate --noinput
+    - python backend/manage.py smoke_firestore
+
 frontend-tests:
   stage: test
   tags: [node]
@@ -44,9 +89,10 @@ dependency-security:
   script:
     - pip install pip-audit
     - pip-audit -r backend/requirements-docker.txt --format json --output backend-audit.json
+    - pip-audit -r cost_guard/requirements.txt --format json --output cost-guard-audit.json
   artifacts:
     when: always
-    paths: [backend-audit.json]
+    paths: [backend-audit.json, cost-guard-audit.json]
     expire_in: 30 days
 
 frontend-security:
@@ -73,7 +119,7 @@ container-images:
     entrypoint: [""]
   parallel:
     matrix:
-      - TARGET: [backend, frontend]
+      - TARGET: [backend, frontend, cloudrun, cost-guard]
   before_script:
     - mkdir -p /kaniko/.docker
     - printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}' "$CI_REGISTRY" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" > /kaniko/.docker/config.json
@@ -86,21 +132,28 @@ container-images:
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_PIPELINE_SOURCE == "merge_request_event"'
 
-# Set the protected variables only after billing, VM, and narrowly scoped IAM
-# are approved and provisioned. There is no persistent service-account key.
+# Set protected variables only after billing/API/resource deployment, public
+# ingress, artifact cleanup, and narrowly scoped IAM are explicitly approved.
+# The job uses GitLab OIDC; there is no persistent service-account key.
 deploy-production:
   stage: deploy
-  image: google/cloud-sdk:slim
+  image: us-docker.pkg.dev/google.com/cloudsdktool/gcr.io/google-cloud-cli@sha256:18d8c484aaef27d7ef7b54dfb018f73712503d254a16f0a76b2626b4f6003af2
   interruptible: false
   resource_group: production
   environment:
     name: production
-    url: https://$PUBLIC_HOST
   id_tokens:
     GCP_ID_TOKEN:
       aud: https://iam.googleapis.com/$GCP_WIF_PROVIDER
+  before_script:
+    - apt-get update -qq && apt-get install -y --no-install-recommends nodejs npm skopeo
+    - npm install --global firebase-tools@15.35.0
   script:
     - bash deploy/ci-deploy.sh
+  artifacts:
+    reports:
+      dotenv: cloud-run.env
+    expire_in: 30 days
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true" && $DEPLOY_ENABLED == "true"'
 
@@ -110,10 +163,11 @@ verify-production:
   environment:
     name: production
     action: verify
-    url: https://$PUBLIC_HOST
+    url: $PUBLIC_URL
   script:
     - apk add --no-cache curl
-    - curl --fail --show-error --silent --retry 5 --retry-delay 5 "https://$PUBLIC_HOST/api/health/"
-    - curl --fail --show-error --silent "https://$PUBLIC_HOST/" | grep -q 'Score Companion'
+    - curl --fail --show-error --silent --retry 5 --retry-delay 5 "$PUBLIC_URL/api/health/" | grep -q 'score-companion-api'
+    - curl --fail --show-error --silent "$PUBLIC_URL/api/session/" | grep -q 'google_client_id'
+    - curl --fail --show-error --silent "$PUBLIC_URL/" | grep -q 'Score Companion'
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true" && $DEPLOY_ENABLED == "true"'

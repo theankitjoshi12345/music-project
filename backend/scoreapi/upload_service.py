@@ -7,9 +7,9 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Sum
 
 from .models import Passage, Score
+from .persistence import delete_id_direct, delete_ids_direct
 
 
 class UploadQuotaExceeded(ValueError):
@@ -41,8 +41,10 @@ def enforce_upload_quota(owner, incoming_bytes):
         (Score.objects.filter(owner__isnull=False), settings.PUBLIC_MAX_SCORES_TOTAL,
          settings.PUBLIC_MAX_BYTES_TOTAL, "The demo storage limit has been reached. Please try later or contact the team."),
     ]:
-        usage = queryset.aggregate(count=Count("id"), size=Sum("source_bytes"))
-        if usage["count"] >= max_scores or (usage["size"] or 0) + incoming_bytes > max_bytes:
+        # Fetch full entities instead of a Datastore projection query, which
+        # would require an otherwise unnecessary index on the size field.
+        stored_sizes = [score.source_bytes for score in queryset.order_by()]
+        if len(stored_sizes) >= max_scores or sum(stored_sizes) + incoming_bytes > max_bytes:
             raise UploadQuotaExceeded(message)
 
 
@@ -68,22 +70,39 @@ def _store_upload(source, metadata, measures, owner, fingerprint):
     enforce_upload_quota(owner, source.size)
 
     score = Score(**metadata, content_sha256=fingerprint, owner=owner, source_bytes=source.size,
+                  passage_count=len(measures),
                   extraction_state="complete" if measures else "not_started")
-    # UUID file names isolate different uploads even when original names match.
+    # The upload path is owner-scoped and content-addressed.
     score.source_file.save(source.name, source, save=False)
+    score_saved = False
     try:
+        score.save(force_insert=True)
+        score_saved = True
+        # Keep invalid MusicXML measure sets inside a savepoint so an integrity
+        # failure can be cleaned up on SQLite. This is one Firestore bulk write,
+        # not a query-after-write transaction.
         with transaction.atomic():
-            score.save(force_insert=True)
             Passage.objects.bulk_create([
                 Passage(score=score, section=section, measure_number=number, page_number=page)
                 for section, number, page in measures
             ])
     except Exception as error:
-        score.source_file.delete(save=False)
-        if isinstance(error, IntegrityError):
+        if isinstance(error, IntegrityError) and not score_saved:
             # Another request may have committed the same content first.
             existing = Score.objects.filter(content_sha256=fingerprint, owner=owner).first()
             if existing:
+                if score.source_file.name != existing.source_file.name:
+                    score.source_file.delete(save=False)
                 return existing, False
+        if score.pk:
+            passage_ids = list(Passage.objects.filter(score_id=score.pk).order_by().values_list("pk", flat=True))
+            if passage_ids:
+                delete_ids_direct(Passage, passage_ids)
+            delete_id_direct(Score, score.pk)
+        # A concurrent identical upload can share the content-addressed object.
+        # Remove it only after rolling back our rows and confirming that no
+        # committed score still references this storage name.
+        if not Score.objects.filter(source_file=score.source_file.name).exists():
+            score.source_file.delete(save=False)
         raise
     return score, True

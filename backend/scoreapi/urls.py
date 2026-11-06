@@ -5,6 +5,7 @@ from .views import (
     PracticeMarkListCreateView,
     ScoreDetailView,
     ScoreListView,
+    ScorePdfExtractionTicketView,
     ScorePdfExtractionView,
     ScoreUploadView,
     ScorePassageListView,
@@ -13,6 +14,8 @@ from .views import (
     ScorePageImageView,
     ScoreFileView,
     browser_session,
+    google_login,
+    google_logout,
 )
 
 app_name = "scoreapi"
@@ -20,10 +23,13 @@ app_name = "scoreapi"
 urlpatterns = [
     path("health/", health_check, name="health-check"),
     path("session/", browser_session, name="browser-session"),
+    path("auth/google/", google_login, name="google-login"),
+    path("auth/logout/", google_logout, name="google-logout"),
     path("scores/", ScoreListView.as_view(), name="score-list"),
     path("scores/upload/", ScoreUploadView.as_view(), name="score-upload"),
     path("scores/<int:score_id>/", ScoreDetailView.as_view(), name="score-detail"),
     path("scores/<int:score_id>/file/", ScoreFileView.as_view(), name="score-file"),
+    path("scores/<int:score_id>/extraction-ticket/", ScorePdfExtractionTicketView.as_view(), name="score-extraction-ticket"),
     path("scores/<int:score_id>/extract-measures/", ScorePdfExtractionView.as_view(), name="score-pdf-extraction"),
     path("scores/<int:score_id>/pages/<int:page_number>/image/", ScorePageImageView.as_view(), name="score-page-image"),
     path("passages/<int:passage_id>/preview/", PassagePreviewView.as_view(), name="passage-preview"),

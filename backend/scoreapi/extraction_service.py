@@ -8,11 +8,11 @@ from pathlib import Path
 import subprocess
 
 from django.conf import settings
-from django.db import transaction
 from django.utils import timezone
 
 from .models import Passage, Score
 from .score_extract import OMRUnavailable, extract_pdf_measures
+from .storage_assets import local_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -54,16 +54,14 @@ def _extract_score_measures(score_id):
 
     now = timezone.now()
     stale_before = now - timedelta(seconds=settings.OMR_TIMEOUT_SECONDS + 90)
-    # A conditional UPDATE is atomic on SQLite too. A second tab cannot launch
-    # a second OMR job for this score. Crashed requests can retry after expiry.
-    claimed = Score.objects.filter(pk=score_id).exclude(extraction_state="complete", measure_layout_version__gte=1).exclude(
-        extraction_state="processing", extraction_updated_at__gt=stale_before,
-    ).update(extraction_state="processing", extraction_error="", extraction_updated_at=now)
-    if not claimed:
-        latest = Score.objects.get(pk=score_id)
-        if latest.extraction_state == "complete" and latest.measure_layout_version >= 1:
-            return latest
+    # recognition_slot serializes every OMR process on the single Cloud Run
+    # instance. A crashed request remains retryable after its lease expires.
+    if score.extraction_state == "processing" and score.extraction_updated_at and score.extraction_updated_at > stale_before:
         raise ExtractionBusy("Measures are already being extracted for this score.")
+    score.extraction_state = "processing"
+    score.extraction_error = ""
+    score.extraction_updated_at = now
+    score.save(update_fields=["extraction_state", "extraction_error", "extraction_updated_at"])
 
     try:
         def record_page_count(page_count):
@@ -71,23 +69,38 @@ def _extract_score_measures(score_id):
             if not Score.objects.filter(pk=score_id).update(page_count=page_count):
                 raise Score.DoesNotExist
 
-        result = extract_pdf_measures(score.source_file.path, settings.AUDIVERIS_COMMAND,
-                                      timeout=settings.OMR_TIMEOUT_SECONDS, max_pages=settings.OMR_MAX_PAGES,
-                                      on_page_count=record_page_count)
-        with transaction.atomic():
-            if not Score.objects.filter(pk=score_id).update(extraction_updated_at=timezone.now()):
-                raise Score.DoesNotExist
-            for section, number, page in result.measures:
-                # Preserve passage IDs and attached notes on retry/import.
-                Passage.objects.update_or_create(
-                    score_id=score_id, section=section, measure_number=number,
-                    defaults={"page_number": page, "bounding_box": result.regions.get((section, number, page))},
-                )
-            Score.objects.filter(pk=score_id).update(
-                page_count=result.page_count, extraction_state="complete",
-                extraction_error="", extraction_updated_at=timezone.now(),
-                measure_layout_version=1 if result.regions else 0,
-            )
+        with local_file_path(score.source_file) as source_path:
+            result = extract_pdf_measures(source_path, settings.AUDIVERIS_COMMAND,
+                                          timeout=settings.OMR_TIMEOUT_SECONDS, max_pages=settings.OMR_MAX_PAGES,
+                                          on_page_count=record_page_count)
+
+        # Avoid collection queries after writes in a Firestore transaction.
+        # Partial imports are safe: completion is published only after every
+        # measure is saved, and retries reuse passage IDs and practice marks.
+        existing = {
+            (passage.section, passage.measure_number): passage
+            for passage in Passage.objects.filter(score_id=score_id).order_by()
+        }
+        for section, number, page in result.measures:
+            passage = existing.get((section, number))
+            if passage is None:
+                passage = Passage(score_id=score_id, section=section, measure_number=number)
+            passage.page_number = page
+            passage.bounding_box = result.regions.get((section, number, page))
+            passage.save()
+            existing[(section, number)] = passage
+
+        final_score = Score.objects.get(pk=score_id)
+        final_score.page_count = result.page_count
+        final_score.passage_count = len(existing)
+        final_score.extraction_state = "complete"
+        final_score.extraction_error = ""
+        final_score.extraction_updated_at = timezone.now()
+        final_score.measure_layout_version = 1 if result.regions else 0
+        final_score.save(update_fields=[
+            "page_count", "passage_count", "extraction_state", "extraction_error",
+            "extraction_updated_at", "measure_layout_version",
+        ])
     except Score.DoesNotExist:
         raise
     except (OMRUnavailable, subprocess.SubprocessError, OSError, ValueError) as error:

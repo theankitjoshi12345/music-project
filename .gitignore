@@ -24,3 +24,4 @@ tmp/
 **/.recognition.lock
 **/.upload.lock
 client_secret_*.json
+firebase-debug.log
