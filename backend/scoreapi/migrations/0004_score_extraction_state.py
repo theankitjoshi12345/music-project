@@ -3,12 +3,22 @@ from django.db import migrations, models
 
 def recognize_existing_imports(apps, schema_editor):
     Score = apps.get_model("scoreapi", "Score")
-    for score in Score.objects.exclude(source_file=""):
+    Passage = apps.get_model("scoreapi", "Passage")
+    # Clear Score's multi-field default ordering and filter blank source files
+    # in Python. Datastore otherwise translates exclude(source_file="") into
+    # multiple inequality queries that require a composite index during a
+    # fresh deployment.
+    for score in Score.objects.all().order_by():
+        if not score.source_file:
+            continue
         suffix = score.source_file.name.rsplit(".", 1)[-1].lower()
-        imported = suffix in {"musicxml", "xml", "mxl"} and score.passages.exists()
+        passages = list(Passage.objects.filter(score_id=score.pk).order_by())
+        imported = suffix in {"musicxml", "xml", "mxl"} and bool(passages)
         # Earlier PDF OMR imports used Page N sections; a manual placeholder
         # alone must not be presented as successful extraction.
-        imported = imported or (suffix == "pdf" and score.passages.filter(section__startswith="Page ").exists())
+        imported = imported or (
+            suffix == "pdf" and any(passage.section.startswith("Page ") for passage in passages)
+        )
         if imported:
             score.extraction_state = "complete"
             score.save(update_fields=["extraction_state"])
