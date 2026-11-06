@@ -18,7 +18,12 @@ readonly bucket=music-companion-513717-data
 readonly repository=music-companion
 readonly runtime_account=music-companion-runtime
 readonly deploy_account=music-companion-deploy
+readonly cost_guard_account=music-companion-cost-guard
+readonly cost_guard_push_account=music-companion-cost-guard-push
 readonly django_secret=music-companion-django-secret
+readonly budget_topic=music-companion-budget
+readonly billing_account=01124F-AA2E30-D8B14D
+readonly budget_id=9f6f514b-5508-441c-ba32-249b32edf00f
 readonly workload_pool=gitlab
 readonly workload_provider=music-companion
 readonly gitlab_project_id=87224439
@@ -33,6 +38,7 @@ gcloud services enable \
   run.googleapis.com artifactregistry.googleapis.com firestore.googleapis.com \
   storage.googleapis.com secretmanager.googleapis.com iamcredentials.googleapis.com \
   sts.googleapis.com firebase.googleapis.com firebasehosting.googleapis.com \
+  cloudbilling.googleapis.com billingbudgets.googleapis.com pubsub.googleapis.com \
   --project="$project"
 
 if ! gcloud firestore databases describe --database='(default)' --project="$project" >/dev/null 2>&1; then
@@ -52,6 +58,8 @@ fi
 
 runtime_email="$runtime_account@$project.iam.gserviceaccount.com"
 deploy_email="$deploy_account@$project.iam.gserviceaccount.com"
+cost_guard_email="$cost_guard_account@$project.iam.gserviceaccount.com"
+cost_guard_push_email="$cost_guard_push_account@$project.iam.gserviceaccount.com"
 if ! gcloud iam service-accounts describe "$runtime_email" --project="$project" >/dev/null 2>&1; then
   gcloud iam service-accounts create "$runtime_account" --project="$project" \
     --display-name='Music Companion Cloud Run runtime'
@@ -59,6 +67,14 @@ fi
 if ! gcloud iam service-accounts describe "$deploy_email" --project="$project" >/dev/null 2>&1; then
   gcloud iam service-accounts create "$deploy_account" --project="$project" \
     --display-name='Music Companion protected GitLab deployer'
+fi
+if ! gcloud iam service-accounts describe "$cost_guard_email" --project="$project" >/dev/null 2>&1; then
+  gcloud iam service-accounts create "$cost_guard_account" --project="$project" \
+    --display-name='Music Companion one-dollar billing shutdown'
+fi
+if ! gcloud iam service-accounts describe "$cost_guard_push_email" --project="$project" >/dev/null 2>&1; then
+  gcloud iam service-accounts create "$cost_guard_push_account" --project="$project" \
+    --display-name='Authenticated budget notification delivery'
 fi
 
 gcloud projects add-iam-policy-binding "$project" --member="serviceAccount:$runtime_email" \
@@ -78,13 +94,34 @@ fi
 gcloud secrets add-iam-policy-binding "$django_secret" --project="$project" \
   --member="serviceAccount:$runtime_email" --role=roles/secretmanager.secretAccessor --quiet
 
+# The shutdown identity can read this project's billing state and unlink only
+# this project. It receives no billing-account role and cannot relink billing.
+gcloud projects add-iam-policy-binding "$project" --member="serviceAccount:$cost_guard_email" \
+  --role=roles/browser --condition=None --quiet
+gcloud projects add-iam-policy-binding "$project" --member="serviceAccount:$cost_guard_email" \
+  --role=roles/billing.projectManager --condition=None --quiet
+
+if ! gcloud pubsub topics describe "$budget_topic" --project="$project" >/dev/null 2>&1; then
+  gcloud pubsub topics create "$budget_topic" --project="$project"
+fi
+# Cloud Billing configures its publisher access when this existing,
+# project-scoped budget is connected to the topic.
+gcloud billing budgets update "$budget_id" --billing-account="$billing_account" \
+  --notifications-rule-pubsub-topic="projects/$project/topics/$budget_topic" --quiet
+
 gcloud projects add-iam-policy-binding "$project" --member="serviceAccount:$deploy_email" \
   --role=roles/run.admin --condition=None --quiet
 gcloud projects add-iam-policy-binding "$project" --member="serviceAccount:$deploy_email" \
   --role=roles/firebasehosting.admin --condition=None --quiet
 gcloud projects add-iam-policy-binding "$project" --member="serviceAccount:$deploy_email" \
   --role=roles/serviceusage.serviceUsageConsumer --condition=None --quiet
+gcloud projects add-iam-policy-binding "$project" --member="serviceAccount:$deploy_email" \
+  --role=roles/pubsub.editor --condition=None --quiet
 gcloud iam service-accounts add-iam-policy-binding "$runtime_email" --project="$project" \
+  --member="serviceAccount:$deploy_email" --role=roles/iam.serviceAccountUser --quiet
+gcloud iam service-accounts add-iam-policy-binding "$cost_guard_email" --project="$project" \
+  --member="serviceAccount:$deploy_email" --role=roles/iam.serviceAccountUser --quiet
+gcloud iam service-accounts add-iam-policy-binding "$cost_guard_push_email" --project="$project" \
   --member="serviceAccount:$deploy_email" --role=roles/iam.serviceAccountUser --quiet
 gcloud artifacts repositories add-iam-policy-binding "$repository" --project="$project" --location="$region" \
   --member="serviceAccount:$deploy_email" --role=roles/artifactregistry.repoAdmin --quiet
@@ -115,6 +152,8 @@ printf '%s\n' 'Approved Google resources and narrowly scoped identities are conf
 printf 'GCP_WIF_PROVIDER=%s\n' "$provider_resource"
 printf 'GCP_DEPLOY_SERVICE_ACCOUNT=%s\n' "$deploy_email"
 printf 'GCP_RUNTIME_SERVICE_ACCOUNT=%s\n' "$runtime_email"
+printf 'GCP_COST_GUARD_SERVICE_ACCOUNT=%s\n' "$cost_guard_email"
+printf 'GCP_COST_GUARD_PUSH_SERVICE_ACCOUNT=%s\n' "$cost_guard_push_email"
 printf 'GCP_STORAGE_BUCKET=%s\n' "$bucket"
 printf 'GCP_ARTIFACT_REPOSITORY=%s\n' "$repository"
 printf 'GCP_DJANGO_SECRET=%s\n' "$django_secret"

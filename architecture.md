@@ -108,7 +108,8 @@ falls back to `index.html` for SPA routes.
 | User storage | 10 scores, 50 MB |
 | Global storage | 50 scores, 250 MB |
 | Artifact Registry | temporary digest; delete after verified release |
-| Billing | $1 monthly budget; gross alerts at 1¢, 50¢, and $1 |
+| Billing | $1 monthly gross budget; alerts at 1¢, 50¢, and $1 |
+| Automatic stop | private min-0 Cloud Run guard; verified Pub/Sub event unlinks project billing |
 
 The budget excludes credits when measuring thresholds. It is not a cap: usage
 estimates and notifications can be delayed. Firebase Blaze, Cloud Run,
@@ -116,8 +117,17 @@ Firestore, GCS, networking, logs, Secret Manager, and Artifact Registry can
 charge beyond allowances. Public availability cannot guarantee $0 under quota
 changes or abuse.
 
-Automatic billing disconnection can react to budget Pub/Sub, but requires
-billing-account IAM, can arrive after spend, and stops the app. It remains an
+The cost guard accepts authenticated same-project Pub/Sub push only. It checks
+the exact billing account, budget ID/display name, schema version, USD currency,
+fixed amount, and 100% threshold. Its dedicated identity has project Browser
+and Project Billing Manager only; no billing-account role is granted. Delivery
+is at least once, so the handler is idempotent and asks Pub/Sub to retry API
+failures. The guard runs at min 0, max 1, concurrency 1, 256 MiB.
+
+This reaction is not a hard cap. Google budget estimates and notifications can
+be delayed, and pre-shutdown usage can be reported afterward. Disconnection
+stops all billable project services and can make resources unavailable or
+non-recoverable. Activating it and the public deployment remains an
 explicit-approval item.
 
 ## CI/CD trust model
@@ -127,10 +137,10 @@ audits, a Firestore emulator lifecycle, digest-pinned Kaniko builds, protected
 `main` deployment, and separate public verification.
 
 GitLab OIDC exchanges through Workload Identity Federation; no JSON key exists.
-CI copies the exact image to temporary Artifact Registry, deploys Cloud Run by
-digest, discovers/publishes its URL, deploys Firebase, verifies health/session/
-frontend HTTPS, and removes the temporary image. GitHub mirrors reviewed
-GitLab `main`.
+CI copies the exact app and cost-guard images to temporary Artifact Registry,
+deploys both by digest, configures authenticated Pub/Sub delivery, discovers/
+publishes the app URL, deploys Firebase, verifies health/session/frontend HTTPS,
+and removes both temporary images. GitHub mirrors reviewed GitLab `main`.
 
 ## Completion gates
 

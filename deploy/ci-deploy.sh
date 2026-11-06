@@ -31,7 +31,22 @@ done
 }
 
 temporary_dir=$(mktemp -d)
-trap 'rm -rf -- "$temporary_dir"' EXIT
+immutable_image=''
+guard_immutable_image=''
+cleanup() {
+  status=$?
+  set +e
+  for image in "$immutable_image" "$guard_immutable_image"; do
+    if [[ -n $image ]]; then
+      gcloud artifacts docker images delete "$image" --delete-tags --quiet >&2 || \
+        printf 'WARNING: failed to clean temporary image %s\n' "$image" >&2
+    fi
+  done
+  rm -rf -- "$temporary_dir"
+  trap - EXIT
+  exit "$status"
+}
+trap cleanup EXIT
 export CLOUDSDK_CONFIG="$temporary_dir/gcloud"
 printf '%s' "$GCP_ID_TOKEN" > "$temporary_dir/oidc-token"
 gcloud iam workload-identity-pools create-cred-config "$GCP_WIF_PROVIDER" \
@@ -45,6 +60,8 @@ export GOOGLE_APPLICATION_CREDENTIALS="$temporary_dir/credential.json"
 registry_host="${GCP_REGION}-docker.pkg.dev"
 destination_image="$registry_host/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPOSITORY/music-companion:$CI_COMMIT_SHA"
 source_image="$CI_REGISTRY_IMAGE/cloudrun:$CI_COMMIT_SHA"
+guard_destination_image="$registry_host/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPOSITORY/music-companion-cost-guard:$CI_COMMIT_SHA"
+guard_source_image="$CI_REGISTRY_IMAGE/cost-guard:$CI_COMMIT_SHA"
 export GCP_ACCESS_TOKEN
 GCP_ACCESS_TOKEN=$(gcloud auth print-access-token)
 export CONTAINER_AUTH_FILE="$temporary_dir/containers-auth.json"
@@ -74,9 +91,82 @@ unset GCP_ACCESS_TOKEN CI_REGISTRY_PASSWORD
 # Registry is only a short-lived handoff so the large Audiveris image never
 # accumulates monthly registry storage.
 skopeo copy --authfile "$CONTAINER_AUTH_FILE" "docker://$source_image" "docker://$destination_image"
+immutable_image="$destination_image"
 image_digest=$(skopeo inspect --authfile "$CONTAINER_AUTH_FILE" --format '{{.Digest}}' "docker://$destination_image")
 [[ $image_digest =~ ^sha256:[0-9a-f]{64}$ ]] || { printf '%s\n' 'Artifact Registry returned an invalid digest.' >&2; exit 2; }
 immutable_image="${destination_image%:*}@$image_digest"
+skopeo copy --authfile "$CONTAINER_AUTH_FILE" "docker://$guard_source_image" "docker://$guard_destination_image"
+guard_immutable_image="$guard_destination_image"
+guard_image_digest=$(skopeo inspect --authfile "$CONTAINER_AUTH_FILE" --format '{{.Digest}}' "docker://$guard_destination_image")
+[[ $guard_image_digest =~ ^sha256:[0-9a-f]{64}$ ]] || { printf '%s\n' 'Artifact Registry returned an invalid cost-guard digest.' >&2; exit 2; }
+guard_immutable_image="${guard_destination_image%:*}@$guard_image_digest"
+
+readonly guard_service=music-companion-cost-guard
+readonly guard_runtime_account="music-companion-cost-guard@$GCP_PROJECT_ID.iam.gserviceaccount.com"
+readonly guard_push_account="music-companion-cost-guard-push@$GCP_PROJECT_ID.iam.gserviceaccount.com"
+readonly budget_subscription=music-companion-cost-guard
+readonly budget_topic=music-companion-budget
+readonly billing_account=01124F-AA2E30-D8B14D
+readonly budget_id=9f6f514b-5508-441c-ba32-249b32edf00f
+
+# This service is private, accepts only authenticated same-project Pub/Sub
+# delivery, and has only the project-level permission needed to unlink billing.
+gcloud run deploy "$guard_service" \
+  --project="$GCP_PROJECT_ID" \
+  --region="$GCP_REGION" \
+  --image="$guard_immutable_image" \
+  --service-account="$guard_runtime_account" \
+  --no-allow-unauthenticated \
+  --ingress=internal \
+  --execution-environment=gen2 \
+  --port=8080 \
+  --cpu=1 \
+  --memory=256Mi \
+  --concurrency=1 \
+  --timeout=30 \
+  --min=0 \
+  --max=1 \
+  --no-cpu-boost \
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,EXPECTED_BUDGET_ID=$budget_id,EXPECTED_BILLING_ACCOUNT_ID=$billing_account,EXPECTED_BUDGET_DISPLAY_NAME=Music Companion zero-cost guard,EXPECTED_BUDGET_AMOUNT_USD=1.00" \
+  --quiet
+
+guard_service_json="$temporary_dir/guard-service.json"
+gcloud run services describe "$guard_service" --project="$GCP_PROJECT_ID" \
+  --region="$GCP_REGION" --format=json > "$guard_service_json"
+guard_service_url=$(python3 - "$guard_service_json" "$guard_runtime_account" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    service = json.load(source)
+template = service["spec"]["template"]
+assert template["spec"]["serviceAccountName"] == sys.argv[2]
+annotations = template["metadata"].get("annotations", {})
+assert annotations.get("autoscaling.knative.dev/maxScale") == "1"
+assert annotations.get("autoscaling.knative.dev/minScale", "0") == "0"
+container = template["spec"]["containers"][0]
+assert container["resources"]["limits"] == {"cpu": "1", "memory": "256Mi"}
+print(service["status"]["url"])
+PY
+)
+[[ $guard_service_url == https://*.run.app ]] || { printf '%s\n' 'Cost guard did not return its managed HTTPS URL.' >&2; exit 2; }
+gcloud run services add-iam-policy-binding "$guard_service" --project="$GCP_PROJECT_ID" \
+  --region="$GCP_REGION" --member="serviceAccount:$guard_push_account" \
+  --role=roles/run.invoker --quiet
+if gcloud pubsub subscriptions describe "$budget_subscription" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+  gcloud pubsub subscriptions update "$budget_subscription" --project="$GCP_PROJECT_ID" \
+    --push-endpoint="$guard_service_url/" \
+    --push-auth-service-account="$guard_push_account" \
+    --push-auth-token-audience="$guard_service_url" \
+    --ack-deadline=30 --expiration-period=never --quiet
+else
+  gcloud pubsub subscriptions create "$budget_subscription" --project="$GCP_PROJECT_ID" \
+    --topic="$budget_topic" \
+    --push-endpoint="$guard_service_url/" \
+    --push-auth-service-account="$guard_push_account" \
+    --push-auth-token-audience="$guard_service_url" \
+    --ack-deadline=30 --expiration-period=never --quiet
+fi
 
 environment_values=(
   "DJANGO_ENV=production"
@@ -193,5 +283,8 @@ curl --fail --show-error --silent --connect-timeout 10 --max-time 60 "$public_ur
 # This approved deletion occurs only after the revision and public HTTPS checks
 # pass. Cloud Run has already imported the immutable image for the revision.
 gcloud artifacts docker images delete "$immutable_image" --delete-tags --quiet
+immutable_image=''
+gcloud artifacts docker images delete "$guard_immutable_image" --delete-tags --quiet
+guard_immutable_image=''
 printf 'PUBLIC_URL=%s\n' "$public_url" > cloud-run.env
 printf 'Release %s verified through Firebase Hosting at %s\n' "$CI_COMMIT_SHA" "$public_url"

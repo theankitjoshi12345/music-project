@@ -23,6 +23,14 @@ backend-tests:
     - export DJANGO_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(64))')"
     - DJANGO_ENV=production DJANGO_DEBUG=false DJANGO_ALLOWED_HOSTS=ci.example.test DJANGO_CSRF_TRUSTED_ORIGINS=https://ci.example.test python backend/manage.py check --deploy --fail-level WARNING
 
+cost-guard-tests:
+  stage: test
+  tags: [python]
+  image: python:3.12-bookworm
+  script:
+    - pip install -r cost_guard/requirements.txt
+    - PYTHONPATH=cost_guard python -m unittest discover -s cost_guard -p 'test_*.py' -v
+
 firestore-integration:
   stage: test
   tags: [python]
@@ -81,9 +89,10 @@ dependency-security:
   script:
     - pip install pip-audit
     - pip-audit -r backend/requirements-docker.txt --format json --output backend-audit.json
+    - pip-audit -r cost_guard/requirements.txt --format json --output cost-guard-audit.json
   artifacts:
     when: always
-    paths: [backend-audit.json]
+    paths: [backend-audit.json, cost-guard-audit.json]
     expire_in: 30 days
 
 frontend-security:
@@ -110,7 +119,7 @@ container-images:
     entrypoint: [""]
   parallel:
     matrix:
-      - TARGET: [backend, frontend, cloudrun]
+      - TARGET: [backend, frontend, cloudrun, cost-guard]
   before_script:
     - mkdir -p /kaniko/.docker
     - printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}' "$CI_REGISTRY" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" > /kaniko/.docker/config.json

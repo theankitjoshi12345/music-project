@@ -13,10 +13,13 @@ golden path have been tested. Google Cloud project `music-companion-513717` has
 active Free Trial billing, required service APIs enabled, and a project-scoped
 $1 budget that warns from 1 cent of **gross** usage (credits excluded).
 
-The budget is an alert, not a spending cap. A billing-linked Firebase project
-uses Blaze even while no-cost quotas and trial credits apply. Cloud services can
-charge after their allowances, so deployment remains disabled until the
-residual risk and least-privilege IAM changes are explicitly approved.
+The owner authorized up to $1/month. The budget is not a hard spending cap: a
+billing-linked Firebase project uses Blaze even while no-cost quotas and trial
+credits apply, and Google can report usage hours late. The deployment includes
+a private automatic shutdown service that unlinks this project from billing on
+the first verified notification at or above $1. Delayed usage can still make
+the final amount exceed $1, so public deployment and its least-privilege IAM
+changes remain disabled until explicitly approved.
 
 ## User flow
 
@@ -100,6 +103,7 @@ Open <http://localhost:5173/>. Vite proxies `/api/` to port 8000. Set
 | Secret | Secret Manager; never committed or stored in GitLab |
 | Build handoff | Temporary Artifact Registry image, deleted after verification |
 | Deployment | Protected GitLab `main`, OIDC/WIF, no JSON key |
+| Cost stop | Private Cloud Run guard + authenticated budget Pub/Sub push |
 
 Firebase rewrites ordinary `/api/**` calls to Cloud Run so cookies stay
 same-origin. Hosting limits rewritten requests to 60 seconds, while Audiveris
@@ -167,9 +171,10 @@ with daemonless Kaniko; and deploys only from protected `main` when
 `DEPLOY_ENABLED=true`.
 
 Deployment exchanges a GitLab OIDC token through Workload Identity Federation,
-copies the exact image to Artifact Registry, deploys Cloud Run by digest,
-deploys `frontend/dist` to Firebase, verifies frontend/API HTTPS, and deletes
-the temporary image. `CLEAN_ARTIFACT_IMAGE=true` is mandatory.
+copies the exact application and cost-guard images to Artifact Registry,
+deploys both Cloud Run services by digest, deploys `frontend/dist` to Firebase,
+verifies frontend/API HTTPS, and deletes both temporary images.
+`CLEAN_ARTIFACT_IMAGE=true` is mandatory.
 
 ```text
 frontend/          React UI and tests
@@ -189,6 +194,14 @@ abuse can consume quotas, and billing data is delayed. Protections are
 scale-to-zero, one maximum instance, one concurrent request, bounded storage
 and PDFs, strict action rates, temporary images, and gross-usage alerts.
 
-An automatic billing-disconnect action requires separate billing-account IAM,
-may trigger after delayed spend, and stops the app. It is not provisioned
-without explicit approval.
+The automatic guard validates the billing account, budget ID and name, schema,
+USD currency, fixed $1 amount, and 100% threshold. Only an authenticated
+same-project Pub/Sub identity can invoke its private Cloud Run endpoint. Its
+runtime identity receives project Browser plus Project Billing Manager; it has
+no billing-account role and can unlink only this project. Duplicate delivery is
+idempotent and failures are retried.
+
+This is the strictest practical stop, not a guarantee: Google says budget data
+and Pub/Sub delivery can be delayed, and charges incurred before unlinking can
+arrive later. Unlinking stops the app and may make cloud resources unavailable
+or non-recoverable. It is therefore activated only with explicit approval.
