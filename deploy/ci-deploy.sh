@@ -103,7 +103,7 @@ guard_immutable_image="${guard_destination_image%:*}@$guard_image_digest"
 
 readonly guard_service=music-companion-cost-guard
 readonly guard_runtime_account="music-companion-cost-guard@$GCP_PROJECT_ID.iam.gserviceaccount.com"
-readonly guard_push_account="music-companion-cost-guard-push@$GCP_PROJECT_ID.iam.gserviceaccount.com"
+readonly guard_push_account="music-companion-guard-push@$GCP_PROJECT_ID.iam.gserviceaccount.com"
 readonly budget_subscription=music-companion-cost-guard
 readonly budget_topic=music-companion-budget
 readonly billing_account=01124F-AA2E30-D8B14D
