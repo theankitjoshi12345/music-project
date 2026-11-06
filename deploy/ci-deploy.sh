@@ -53,6 +53,19 @@ gcloud iam workload-identity-pools create-cred-config "$GCP_WIF_PROVIDER" \
   --service-account="$GCP_DEPLOY_SERVICE_ACCOUNT" \
   --credential-source-file="$temporary_dir/oidc-token" \
   --output-file="$temporary_dir/credential.json"
+python3 - "$temporary_dir/credential.json" "$GCP_PROJECT_ID" <<'PY'
+import json
+import os
+import sys
+
+path, project_id = sys.argv[1:]
+with open(path, encoding="utf-8") as source:
+    credential = json.load(source)
+credential["quota_project_id"] = project_id
+with open(path, "w", encoding="utf-8") as destination:
+    json.dump(credential, destination)
+os.chmod(path, 0o600)
+PY
 gcloud auth login --cred-file="$temporary_dir/credential.json" --quiet
 gcloud config set project "$GCP_PROJECT_ID" --quiet
 export GOOGLE_APPLICATION_CREDENTIALS="$temporary_dir/credential.json"
