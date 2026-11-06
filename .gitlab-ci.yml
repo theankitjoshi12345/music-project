@@ -146,7 +146,7 @@ deploy-production:
     GCP_ID_TOKEN:
       aud: https://iam.googleapis.com/$GCP_WIF_PROVIDER
   before_script:
-    - apt-get update -qq && apt-get install -y --no-install-recommends ca-certificates curl skopeo xz-utils
+    - apt-get update -qq && apt-get install -y --no-install-recommends ca-certificates curl python3 skopeo xz-utils
     - curl --fail --show-error --silent --location --retry 3 -o /tmp/node.tar.xz https://nodejs.org/dist/v22.21.1/node-v22.21.1-linux-x64.tar.xz
     - echo '680d3f30b24a7ff24b98db5e96f294c0070f8f9078df658da1bce1b9c9873c88  /tmp/node.tar.xz' | sha256sum --check
     - tar --extract --xz --file=/tmp/node.tar.xz --directory=/usr/local --strip-components=1 && rm /tmp/node.tar.xz
