@@ -141,10 +141,21 @@ with open(sys.argv[1], encoding="utf-8") as source:
     service = json.load(source)
 template = service["spec"]["template"]
 assert template["spec"]["serviceAccountName"] == sys.argv[2]
-annotations = template["metadata"].get("annotations", {})
-assert annotations.get("autoscaling.knative.dev/maxScale") == "1"
-assert annotations.get("autoscaling.knative.dev/minScale", "0") == "0"
+service_annotations = service["metadata"].get("annotations", {})
+template_annotations = template["metadata"].get("annotations", {})
+max_scale = service_annotations.get(
+    "run.googleapis.com/maxScale",
+    template_annotations.get("autoscaling.knative.dev/maxScale"),
+)
+min_scale = service_annotations.get(
+    "run.googleapis.com/minScale",
+    template_annotations.get("autoscaling.knative.dev/minScale", "0"),
+)
+assert max_scale == "1"
+assert min_scale == "0"
+assert service_annotations.get("run.googleapis.com/ingress") == "internal"
 container = template["spec"]["containers"][0]
+assert template["spec"]["containerConcurrency"] == 1
 assert container["resources"]["limits"] == {"cpu": "1", "memory": "512Mi"}
 print(service["status"]["url"])
 PY
@@ -236,11 +247,21 @@ with open(sys.argv[1], encoding="utf-8") as source:
     service = json.load(source)
 template = service["spec"]["template"]
 assert template["spec"]["serviceAccountName"] == sys.argv[2]
-annotations = template["metadata"].get("annotations", {})
-assert annotations.get("autoscaling.knative.dev/maxScale") == "1"
-assert annotations.get("autoscaling.knative.dev/minScale", "0") == "0"
+service_annotations = service["metadata"].get("annotations", {})
+template_annotations = template["metadata"].get("annotations", {})
+max_scale = service_annotations.get(
+    "run.googleapis.com/maxScale",
+    template_annotations.get("autoscaling.knative.dev/maxScale"),
+)
+min_scale = service_annotations.get(
+    "run.googleapis.com/minScale",
+    template_annotations.get("autoscaling.knative.dev/minScale", "0"),
+)
+assert max_scale == "1"
+assert min_scale == "0"
 containers = template["spec"]["containers"]
 assert len(containers) == 1
+assert template["spec"]["containerConcurrency"] == 1
 assert containers[0]["resources"]["limits"] == {"cpu": "1", "memory": "4Gi"}
 print(service["status"]["url"])
 PY
