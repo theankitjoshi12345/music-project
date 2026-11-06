@@ -146,7 +146,7 @@ deploy-production:
     GCP_ID_TOKEN:
       aud: https://iam.googleapis.com/$GCP_WIF_PROVIDER
   before_script:
-    - apt-get update -qq && apt-get install -y --no-install-recommends nodejs npm skopeo
+    - apt-get update -qq && apt-get install -y --no-install-recommends curl nodejs npm skopeo
     - npm install --global firebase-tools@15.35.0
   script:
     - bash deploy/ci-deploy.sh
