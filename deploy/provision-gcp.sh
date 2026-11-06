@@ -33,6 +33,7 @@ billing_enabled=$(gcloud billing projects describe "$project" --format='value(bi
   printf '%s\n' 'Project billing is disabled. This script never links a billing account.' >&2
   exit 2
 }
+project_number=$(gcloud projects describe "$project" --format='value(projectNumber)')
 
 gcloud services enable \
   run.googleapis.com artifactregistry.googleapis.com firestore.googleapis.com \
@@ -104,6 +105,24 @@ gcloud projects add-iam-policy-binding "$project" --member="serviceAccount:$cost
 if ! gcloud pubsub topics describe "$budget_topic" --project="$project" >/dev/null 2>&1; then
   gcloud pubsub topics create "$budget_topic" --project="$project"
 fi
+# Refuse to connect the shutdown action if this budget ever drifts from its
+# approved one-project, one-dollar, gross-cost configuration.
+gcloud billing budgets describe "$budget_id" --billing-account="$billing_account" --format=json | \
+  python3 -c '
+import json
+import sys
+
+budget = json.load(sys.stdin)
+amount = budget["amount"]["specifiedAmount"]
+filters = budget["budgetFilter"]
+assert budget["displayName"] == "Music Companion zero-cost guard"
+assert amount == {"currencyCode": "USD", "units": "1"}
+assert filters["calendarPeriod"] == "MONTH"
+assert filters["creditTypesTreatment"] == "EXCLUDE_ALL_CREDITS"
+assert filters["projects"] == [f"projects/{sys.argv[1]}"]
+thresholds = {float(rule["thresholdPercent"]) for rule in budget["thresholdRules"]}
+assert thresholds == {0.01, 0.5, 1.0}
+' "$project_number"
 # Cloud Billing configures its publisher access when this existing,
 # project-scoped budget is connected to the topic.
 gcloud billing budgets update "$budget_id" --billing-account="$billing_account" \
@@ -128,7 +147,6 @@ gcloud artifacts repositories add-iam-policy-binding "$repository" --project="$p
 gcloud secrets add-iam-policy-binding "$django_secret" --project="$project" \
   --member="serviceAccount:$deploy_email" --role=roles/secretmanager.viewer --quiet
 
-project_number=$(gcloud projects describe "$project" --format='value(projectNumber)')
 if ! gcloud iam workload-identity-pools describe "$workload_pool" --location=global --project="$project" >/dev/null 2>&1; then
   gcloud iam workload-identity-pools create "$workload_pool" --location=global --project="$project" \
     --display-name='Protected GitLab pipelines'
