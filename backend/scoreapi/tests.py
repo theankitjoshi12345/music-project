@@ -260,6 +260,19 @@ class ScoreApiTests(APITestCase):
         self.assertIn("Audiveris", detail["extraction_error"])
         self.assertTrue(Passage.objects.filter(pk=self.passage.id).exists())
 
+    @override_settings(OMR_DAILY_LIMIT=2)
+    @patch("scoreapi.extraction_service.extract_pdf_measures", side_effect=OMRUnavailable("Recognition unavailable."))
+    def test_persistent_daily_omr_limit_survives_failed_jobs(self, extract_pdf):
+        self.score.source_file = SimpleUploadedFile("limited.pdf", b"%PDF limited")
+        self.score.save()
+        url = f"/api/scores/{self.score.id}/extract-measures/"
+        self.assertEqual(self.client.post(url).status_code, 503)
+        self.assertEqual(self.client.post(url).status_code, 503)
+        limited = self.client.post(url)
+        self.assertEqual(limited.status_code, 429)
+        self.assertIn("Daily PDF recognition limit", limited.json()["detail"])
+        self.assertEqual(extract_pdf.call_count, 2)
+
     @patch("scoreapi.extraction_service.extract_pdf_measures")
     def test_concurrent_extraction_does_not_launch_a_second_job(self, extract_pdf):
         self.score.source_file = "scores/scan.pdf"

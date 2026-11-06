@@ -3,11 +3,13 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 from pathlib import Path
-from uuid import uuid4
+import re
 
 
 def score_upload_path(instance, filename):
-    return f"scores/{uuid4().hex}{Path(filename).suffix.lower()}"
+    owner = re.sub(r"[^a-zA-Z0-9_-]", "_", instance.owner or "local")[:64]
+    identity = instance.content_sha256 or "unindexed"
+    return f"scores/{owner}/{identity}{Path(filename).suffix.lower()}"
 
 
 class Score(models.Model):
@@ -21,7 +23,8 @@ class Score(models.Model):
     source_file = models.FileField(upload_to=score_upload_path, blank=True)
     owner = models.CharField(max_length=64, null=True, blank=True, editable=False, db_index=True)
     source_bytes = models.PositiveBigIntegerField(default=0, editable=False)
-    content_sha256 = models.CharField(max_length=64, null=True, blank=True, editable=False)
+    content_sha256 = models.CharField(max_length=64, null=True, blank=True, editable=False, db_index=True)
+    passage_count = models.PositiveIntegerField(default=0, editable=False)
     extraction_state = models.CharField(max_length=20, default="not_started", choices=[
         ("not_started", "Not started"), ("processing", "Processing"),
         ("complete", "Complete"), ("failed", "Failed"),
@@ -93,3 +96,18 @@ class PracticeMark(models.Model):
 
     def __str__(self):
         return f"Practice mark: {self.passage}"
+
+
+class UsageCounter(models.Model):
+    """Small persistent cost guard; one document per owner and action."""
+
+    key = models.CharField(max_length=64, primary_key=True)
+    owner = models.CharField(max_length=64, editable=False)
+    action = models.CharField(max_length=32, editable=False)
+    window_start = models.DateField()
+    count = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "action"], name="unique_usage_counter_action"),
+        ]

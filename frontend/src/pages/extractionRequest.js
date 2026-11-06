@@ -4,7 +4,14 @@ const pending = new Map()
 export function requestExtraction(scoreId, headers = {}, request = fetch) {
   if (pending.has(scoreId)) return pending.get(scoreId)
   const task = (async () => {
-    const response = await request(`/api/scores/${scoreId}/extract-measures/`, { method: 'POST', headers })
+    const ticketResponse = await request(`/api/scores/${scoreId}/extraction-ticket/`, { method: 'POST', headers })
+    const ticket = await ticketResponse.json().catch(() => ({}))
+    if (!ticketResponse.ok || !ticket.url || !ticket.token) {
+      throw new Error(ticket.detail || 'Measure extraction could not start. Please retry.')
+    }
+    const response = await request(ticket.url, {
+      method: 'POST', headers: { Authorization: `Bearer ${ticket.token}` },
+    })
     const data = await response.json().catch(() => ({}))
     const alreadyRunning = response.status === 409 && data.detail?.includes('already being extracted')
     if (!response.ok && !alreadyRunning) {

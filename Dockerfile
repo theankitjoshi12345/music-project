@@ -50,3 +50,11 @@ RUN /opt/audiveris/bin/Audiveris -help > /dev/null
 EXPOSE 8000
 ENTRYPOINT ["score-companion-start"]
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--threads", "4", "--timeout", "720", "--access-logfile", "-", "--error-logfile", "-"]
+
+# Production API/OMR image for Cloud Run. Firebase Hosting serves the Vite
+# build; Audiveris and Poppler remain inside this same Linux image.
+FROM backend AS cloudrun
+ENV DJANGO_DATA_DIR=/tmp/score-companion \
+    PORT=8080
+EXPOSE 8080
+CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8080} --workers 1 --threads 2 --timeout 720 --access-logfile - --error-logfile -"]

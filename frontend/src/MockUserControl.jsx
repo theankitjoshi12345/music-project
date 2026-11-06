@@ -2,7 +2,13 @@ import { useMockSession } from './mockSession'
 import './MockUserControl.css'
 
 export default function MockUserControl() {
-  const { user, users, setUserId, authMode } = useMockSession()
+  const { user, users, setUserId, authMode, logout } = useMockSession()
+
+  if (authMode === 'google') return <div className="mock-user-control google-user-control">
+    <span>{user.name}</span>
+    <small>{user.email}</small>
+    <button type="button" onClick={() => logout().catch(() => {})}>Sign out</button>
+  </div>
 
   if (authMode === 'session') return <div className="mock-user-control" title="Your library is private to this browser. Keep its cookies to return to your scores. Access expires after 30 days of inactivity.">
     <span>Private workspace</span><small>Private to this browser · 30 days</small>

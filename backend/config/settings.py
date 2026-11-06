@@ -32,6 +32,12 @@ PUBLIC_MAX_SCORES_PER_SESSION = int(os.environ.get("PUBLIC_MAX_SCORES_PER_SESSIO
 PUBLIC_MAX_BYTES_PER_SESSION = int(os.environ.get("PUBLIC_MAX_BYTES_PER_SESSION", str(100 * 1024 * 1024)))
 PUBLIC_MAX_SCORES_TOTAL = int(os.environ.get("PUBLIC_MAX_SCORES_TOTAL", "100"))
 PUBLIC_MAX_BYTES_TOTAL = int(os.environ.get("PUBLIC_MAX_BYTES_TOTAL", str(500 * 1024 * 1024)))
+# Local/test defaults stay out of the way. Production deployment supplies the
+# deliberately strict rates in deploy/ci-deploy.sh.
+API_REQUEST_RATE = os.environ.get("API_REQUEST_RATE", "10000/hour")
+UPLOAD_REQUEST_RATE = os.environ.get("UPLOAD_REQUEST_RATE", "1000/day")
+OMR_REQUEST_RATE = os.environ.get("OMR_REQUEST_RATE", "100/day")
+OMR_DAILY_LIMIT = int(os.environ.get("OMR_DAILY_LIMIT", "100"))
 
 
 # Quick-start development settings - unsuitable for production
@@ -48,13 +54,34 @@ DJANGO_ENV = os.environ.get("DJANGO_ENV", "development")
 if DJANGO_ENV not in {"development", "production"}:
     raise ImproperlyConfigured("DJANGO_ENV must be development or production.")
 DJANGO_AUTH_MODE = os.environ.get("DJANGO_AUTH_MODE", "demo" if DEBUG else "session")
-if DJANGO_AUTH_MODE not in {"demo", "session"}:
-    raise ImproperlyConfigured("DJANGO_AUTH_MODE must be demo or session.")
+if DJANGO_AUTH_MODE not in {"demo", "session", "google"}:
+    raise ImproperlyConfigured("DJANGO_AUTH_MODE must be demo, session, or google.")
 if DJANGO_ENV == "production":
-    if DEBUG or DJANGO_AUTH_MODE != "session":
-        raise ImproperlyConfigured("Production requires DEBUG=false and session authentication.")
+    if DEBUG or DJANGO_AUTH_MODE not in {"session", "google"}:
+        raise ImproperlyConfigured("Production requires DEBUG=false and server-owned authentication.")
     if SECRET_KEY.startswith("django-insecure-") or len(SECRET_KEY) < 50:
         raise ImproperlyConfigured("Production requires a strong private DJANGO_SECRET_KEY or key file.")
+
+PERSISTENCE_BACKEND = os.environ.get("DJANGO_PERSISTENCE_BACKEND", "sqlite")
+if PERSISTENCE_BACKEND not in {"sqlite", "firestore"}:
+    raise ImproperlyConfigured("DJANGO_PERSISTENCE_BACKEND must be sqlite or firestore.")
+GOOGLE_CLOUD_PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "")
+GOOGLE_CLOUD_STORAGE_BUCKET = os.environ.get("GOOGLE_CLOUD_STORAGE_BUCKET", "")
+CLOUD_RUN_PUBLIC_URL = os.environ.get("CLOUD_RUN_PUBLIC_URL", "").rstrip("/")
+FILE_STORAGE_BACKEND = os.environ.get(
+    "DJANGO_FILE_STORAGE_BACKEND", "gcs" if PERSISTENCE_BACKEND == "firestore" else "filesystem"
+)
+if FILE_STORAGE_BACKEND not in {"filesystem", "gcs"}:
+    raise ImproperlyConfigured("DJANGO_FILE_STORAGE_BACKEND must be filesystem or gcs.")
+if PERSISTENCE_BACKEND == "firestore" and not GOOGLE_CLOUD_PROJECT:
+    raise ImproperlyConfigured("Firestore persistence requires GOOGLE_CLOUD_PROJECT.")
+if DJANGO_AUTH_MODE == "google" and not GOOGLE_OAUTH_CLIENT_ID:
+    raise ImproperlyConfigured("Google authentication requires GOOGLE_OAUTH_CLIENT_ID.")
+if FILE_STORAGE_BACKEND == "gcs" and not GOOGLE_CLOUD_STORAGE_BUCKET:
+    raise ImproperlyConfigured("Google Cloud Storage requires GOOGLE_CLOUD_STORAGE_BUCKET.")
+if CLOUD_RUN_PUBLIC_URL and not CLOUD_RUN_PUBLIC_URL.startswith("https://"):
+    raise ImproperlyConfigured("CLOUD_RUN_PUBLIC_URL must be an HTTPS origin.")
 
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get(
     "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]"
@@ -78,6 +105,10 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = DJANGO_ENV == "production"
 CSRF_COOKIE_SECURE = DJANGO_ENV == "production"
+if DJANGO_AUTH_MODE == "google":
+    # Cloud Run instances are disposable. Keep only signed, encrypted-by-signature
+    # identity data in the browser cookie instead of relying on a local session DB.
+    SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 SECURE_SSL_REDIRECT = DJANGO_ENV == "production"
 SECURE_REDIRECT_EXEMPT = [r"^api/health/$"]
 SECURE_HSTS_SECONDS = 31536000 if DJANGO_ENV == "production" else 0
@@ -93,6 +124,16 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["scoreapi.access.PrivateLibraryPermission"],
     "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    "DEFAULT_THROTTLE_CLASSES": ["scoreapi.throttles.OwnerRateThrottle"],
+    "DEFAULT_THROTTLE_RATES": {
+        "owner": API_REQUEST_RATE,
+        "upload": UPLOAD_REQUEST_RATE,
+        "omr": OMR_REQUEST_RATE,
+    },
+    # Identity is established by our verified Google session, not Django's
+    # database-backed User model.
+    "UNAUTHENTICATED_USER": None,
+    "UNAUTHENTICATED_TOKEN": None,
 }
 LOGGING = {
     "version": 1,
@@ -101,30 +142,43 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
 }
 
-# Application definition
-
+# Application definition. The cloud runtime uses Google ID tokens and signed
+# cookie sessions, so it does not install Django's database-backed admin/user/
+# permission models. Local development keeps the familiar admin when enabled.
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
     'django.contrib.sessions',
-    'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
     'scoreapi',
 ]
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+template_context_processors = [
+    'django.template.context_processors.debug',
+    'django.template.context_processors.request',
+]
+if DJANGO_ADMIN_ENABLED:
+    INSTALLED_APPS = [
+        'django.contrib.admin',
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.messages',
+    ] + INSTALLED_APPS
+    MIDDLEWARE[-1:-1] = [
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
+    ]
+    template_context_processors += [
+        'django.contrib.auth.context_processors.auth',
+        'django.contrib.messages.context_processors.messages',
+    ]
 
 ROOT_URLCONF = 'config.urls'
 
@@ -134,12 +188,7 @@ TEMPLATES = [
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
+            'context_processors': template_context_processors,
         },
     },
 ]
@@ -150,13 +199,31 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': DATA_DIR / 'db.sqlite3',
-        'OPTIONS': {'timeout': 20},
+if PERSISTENCE_BACKEND == "firestore":
+    FIRESTORE_DATABASE_MODE = os.environ.get("FIRESTORE_DATABASE_MODE", "datastore")
+    if FIRESTORE_DATABASE_MODE not in {"datastore", "native"}:
+        raise ImproperlyConfigured("FIRESTORE_DATABASE_MODE must be datastore or native.")
+    firestore_database = {
+        # Firestore in Datastore mode is the connector's recommended mode for
+        # Django ORM semantics. Native mode remains available for compatibility
+        # checks, but isn't used by the launch configuration.
+        "ENGINE": f"gcloudc.db.backends.{FIRESTORE_DATABASE_MODE}",
+        "PROJECT": GOOGLE_CLOUD_PROJECT,
+        "INDEXES_FILE": str(BASE_DIR / "firestore-special-indexes.yaml"),
     }
-}
+    if os.environ.get("FIRESTORE_DATABASE_ID"):
+        firestore_database["DATABASE_ID"] = os.environ["FIRESTORE_DATABASE_ID"]
+    if FIRESTORE_DATABASE_MODE == "datastore":
+        firestore_database["OPTIONS"] = {"count_mode": "emulated"}
+    DATABASES = {"default": firestore_database}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": DATA_DIR / "db.sqlite3",
+            "OPTIONS": {"timeout": 20},
+        }
+    }
 
 
 # Password validation
@@ -193,10 +260,24 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = DATA_DIR / 'static'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = DATA_DIR / 'media'
+if FILE_STORAGE_BACKEND == "gcs":
+    STORAGES = {
+        "default": {
+            "BACKEND": "scoreapi.cloud_storage.ConflictSafeGoogleCloudStorage",
+            "OPTIONS": {
+                "project_id": GOOGLE_CLOUD_PROJECT,
+                "bucket_name": GOOGLE_CLOUD_STORAGE_BUCKET,
+                "default_acl": None,
+                "querystring_auth": True,
+                "file_overwrite": True,
+            },
+        },
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

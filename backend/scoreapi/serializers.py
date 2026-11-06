@@ -18,11 +18,11 @@ class ScoreUploadMetadataSerializer(serializers.Serializer):
 class ScoreSerializer(serializers.ModelSerializer):
     source_file = serializers.SerializerMethodField()
     source_type = serializers.SerializerMethodField()
-    passage_count = serializers.IntegerField(read_only=True)
     extraction_status = serializers.SerializerMethodField()
     extraction_error = serializers.SerializerMethodField()
     extraction_started_at = serializers.SerializerMethodField()
     extraction_estimated_seconds = serializers.SerializerMethodField()
+    passage_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Score
@@ -45,6 +45,11 @@ class ScoreSerializer(serializers.ModelSerializer):
 
     def get_source_file(self, score):
         return f"/api/scores/{score.id}/file/" if score.source_file else None
+
+    def get_passage_count(self, score):
+        # Firestore does not support SQL JOIN/COUNT annotations. Clear the
+        # model ordering to keep this a single-property indexed query.
+        return len(list(Passage.objects.filter(score_id=score.pk).order_by()))
 
     def get_source_type(self, score):
         if not score.source_file:
@@ -143,7 +148,8 @@ class PracticeMarkSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
         if request:
-            self.fields["passage_id"].queryset = Passage.objects.filter(score__in=visible_scores(request))
+            score_ids = list(visible_scores(request).values_list("pk", flat=True))
+            self.fields["passage_id"].queryset = Passage.objects.filter(score_id__in=score_ids)
 
     class Meta:
         model = PracticeMark

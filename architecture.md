@@ -1,558 +1,143 @@
 # Score Companion architecture
 
-This document describes the implemented application and prepared deployment
-configuration. **The free temporary HTTPS demo is verified** through Docker and a
-Cloudflare Quick Tunnel; no public cloud deployment or billing is enabled. Local
-and container verification results are in
-[docs/LAUNCH_VERIFICATION.md](docs/LAUNCH_VERIFICATION.md).
+This describes the implemented local system and prepared Google Cloud
+deployment. Launch is incomplete until the exact Firebase HTTPS URL and a
+signed-in PDF golden path are verified.
 
-## System boundaries
+## Runtime boundaries
 
-Score Companion runs a React browser client and a Django REST Framework API.
-SQLite stores score metadata, detected measures, extraction state, and practice
-marks. Original uploads live on the backend filesystem. Audiveris and Poppler
-run locally as subprocesses; there is no paid recognition API or deployed cloud
-worker in the current implementation.
+```text
+Browser
+  ├─ Google Identity Services → Google ID token
+  └─ Firebase Hosting → React/Vite assets
+       ├─ /api/** rewrite → Cloud Run Django API (short requests)
+       └─ signed OMR ticket → Cloud Run directly (long request only)
+                                  ├─ Poppler → PDF pages/crops
+                                  ├─ Audiveris → MusicXML + measure geometry
+                                  ├─ Firestore Datastore mode → metadata
+                                  ├─ private GCS → PDFs + PNG cache
+                                  └─ Secret Manager → signing key
+```
 
-There are two supported startup options: native development with Vite and Django,
-and Docker Compose with a built React frontend behind Nginx and a Gunicorn API.
-Both use the same application code and recognition pipeline.
+Local Docker substitutes Nginx, SQLite, filesystem media, and a named volume.
+Native development runs Vite and Django separately. Neither path writes to
+cloud persistence.
 
-~~~mermaid
-flowchart LR
-    Browser["React reader and library"]
-    API["Django REST API"]
-    DB[("SQLite")]
-    Files[("Original uploaded files")]
-    Poppler["Poppler: PDF pages and crops"]
-    OMR["Audiveris: MusicXML and layout"]
-    Browser -->|"JSON requests"| API
-    Browser -->|"PNG image requests"| API
-    API --> DB
-    API --> Files
-    Files --> Poppler
-    Poppler -->|"300 dpi page images"| OMR
-    OMR -->|"Measure metadata and coordinates"| API
-    Poppler -->|"Original notation as PNG"| API
-~~~
+## Identity and request security
 
-During development Vite serves the browser on port 5173 and proxies both /api
-and /media to Django at 127.0.0.1:8000. The browser therefore uses one origin,
-including when opening the app through Vite's private-network address.
+Production uses `DJANGO_AUTH_MODE=google`:
 
-## Docker startup and service boundaries
+1. Google Identity Services returns an ID token.
+2. `/api/auth/google/` enforces CSRF and verifies the token audience.
+3. `sub` must exist and `email_verified` must be true.
+4. Ownership is `SHA-256(sub)`; email is display-only.
+5. Identity state uses an HTTP-only, Secure, SameSite=Lax signed cookie.
+6. Score queries begin with owner; child routes verify through the score.
 
-From the repository root, `docker compose up --build -d --wait` builds and starts
-the complete application at http://localhost:8080/. Docker is the only required
-host runtime for this option. The Compose file defines:
+Normal API traffic is same-origin through Firebase. Its 60-second serverless
+rewrite timeout is too short for Audiveris, so an authenticated endpoint signs
+`{owner, score_id}` with a dedicated salt. Only the direct extraction route
+accepts that bearer ticket, for at most 15 minutes. Altered/wrong-score tickets
+fail, and CORS allows only the project's `.web.app` and `.firebaseapp.com`
+origins.
 
-| Service | Responsibilities | Network and storage |
+GCS uses uniform access and public-access prevention. Django returns original
+and derived files only after ownership checks. Production disables Django admin
+and database-backed user tables.
+
+## Data model
+
+| Record | Main fields | Constraint |
 | --- | --- | --- |
-| frontend | Node build stage; Nginx serves React and Django static files; proxies /api and local /admin; blocks /media | Host port 8080 by default; read-only app-data mount |
-| backend | Python 3.12, Django/Gunicorn, Poppler, Audiveris 5.11.0 and bundled Java | Internal port 8000 only; writable app-data mount |
+| `Score` | owner, metadata, source path/bytes/SHA, counts, extraction state/layout | owner + content SHA |
+| `Passage` | score, section, measure, page, normalized box | score + section + measure |
+| `PracticeMark` | owner, passage, note, resolved state, timestamps | passage + owner |
 
-The frontend starts after the backend health check succeeds. Both services have
-health checks, and Compose's wait option checks API readiness through the proxy.
-The port and bind address can be changed without editing application code.
-The default bind address is 127.0.0.1; LAN use requires changing it and including
-the private IP in Django's allowed hosts. No Vite server runs in Docker.
+Django uses SQLite locally and Firestore in Datastore mode publicly through
+`django-gcloud-connectors`. Cloud queries avoid joins, aggregate annotations,
+and composite ordering. Bounded results are sorted in Python. Emulator tests
+cover migrations and the full two-account API lifecycle.
 
-The backend uses the official checksum-verified Ubuntu 24.04 x86_64 Audiveris
-installer. Its bundled Java and native libraries stay in the Linux image.
-Because this release has no Linux ARM installer, Compose sets the backend
-platform to linux/amd64. Apple Silicon Docker Desktop runs that service through
-emulation; the frontend image is built for the host architecture.
+## Conflict-safe objects and deletion
 
-The backend runs as an unprivileged app user. Its entrypoint creates persistent
-media and static directories, generates a Django secret key once, applies
-migrations, collects static files, and starts Gunicorn with one process and four
-threads. Docker allows 600 seconds for Audiveris, with 720-second Gunicorn/Nginx
-timeouts for the current synchronous recognition flow. Native development keeps
-the 300-second Audiveris default. A nonblocking OS file lock permits only one
-Audiveris job across workers on this host; other scores receive a retryable 409.
-The operating system releases the lock if a process dies. There is no background queue. The JVM heap is capped at 1 GB and uses two logical processors.
-Java runs headless with fixed display scaling so Audiveris skips GTK monitor
-detection in the container. The build checks that its CLI starts as the app user.
+Uploads are SHA-256 addressed as
+`scores/<owner>/<sha256>.<extension>`. GCS writes use
+`if_generation_match=0` and CRC32C so concurrent identical uploads converge.
+Database uniqueness preserves the first completed record. Failed writes remove
+only unreferenced objects.
 
-The named app-data volume stores /data/db.sqlite3, /data/media, /data/static,
-and /data/django-secret-key. Container replacement and Compose down preserve the
-volume. Explicit volume removal erases this Docker state. Native development
-continues to use backend/db.sqlite3 and backend/media by default, so the two
-startup options can run concurrently with independent libraries.
+Generated cache keys include owner, source digest, and layout version. Cloud
+objects are materialized in a private temporary directory only while Poppler or
+Audiveris needs them. Generation-guarded deletion prevents a stale request from
+deleting a replacement. Score cleanup is child-first: marks, passages, derived
+prefix, source object, then score.
 
-Django settings accept DJANGO_DEBUG, DJANGO_ALLOWED_HOSTS, DJANGO_DATA_DIR,
-DJANGO_SECRET_KEY and DJANGO_SECRET_KEY_FILE. The file setting takes precedence
-when provided. Compose disables DEBUG and uses the generated secret file;
-the native defaults retain the existing development behavior. Nginx serves collected static files. Original uploads always use ownership-checked
-Django endpoints; Nginx blocks direct /media/ access.
+## PDF recognition
 
-The build context excludes host data, the Mac .local-tools runtime, environment
-files, virtual environments, node_modules and course reports. The source remains
-the same checkout; the container gets its own Linux runtime. See
-[third-party notices](THIRD_PARTY_NOTICES.md) for the installer and source links.
+1. `pdfinfo` validates at most 10 pages.
+2. `pdftoppm` renders 300-dpi recognition pages ephemerally.
+3. Audiveris 5.11 transcribes/exports MusicXML and `.omr` geometry.
+4. Measure identities and normalized bounding boxes become passages.
+5. Retries update section/measure keys, preserving IDs and practice marks.
+6. Completion is published only after every measure is stored.
 
-## User flow
+A file lock permits one Audiveris process; Cloud Run also has one instance and
+concurrency one. A stale processing lease becomes retryable after the deadline
+plus 90 seconds. The UI polls short status calls during the direct long request.
+Display uses 150-dpi full pages and 300-dpi crops from the original PDF.
 
-1. Add a PDF or MusicXML score to Library. Reuploading identical file contents
-   opens the existing score, including its measures and practice marks.
-2. Open the score. PDFs without current layout data start recognition; the
-   reader shows progress and a retry action on failure.
-3. Select a detected measure number to load its original notation as a crop.
-   Full page displays a rendered PDF page with selectable measure regions.
-4. Save a measure with Save for practice. Practice Review lists the selected demo
-   user's saved passages and can mark them practiced.
-5. Open measure returns to the exact score and passage ID, selecting its page
-   and measure image.
-6. Remove from practice deletes the user's saved row and note. Deleting the
-   score through Library's Score options removes the source and related records.
+## Deployable artifacts
 
-Library is shared between the demo users. Practice marks are isolated by the
-X-Mock-User header (alex or sam in the UI). This header is a local demonstration
-mechanism, not authentication or an access-control boundary. Screens remount when
-the selected user or hash route changes so late responses cannot populate another
-user's review or another score's reader.
+The `cloudrun` image contains Ubuntu 24.04 amd64, Django/Gunicorn, Poppler, and
+checksum-verified Audiveris with Java/native dependencies. It runs as UID 10001
+and contains no frontend assets. Cloud Run uses request billing, 1 vCPU, 4 GiB,
+15-minute timeout, min 0, max 1, concurrency 1, and no startup CPU boost.
 
-## Navigation, loading and removal
+Firebase deploys `frontend/dist`, caches hashed assets immutably, does not cache
+`index.html`, rewrites `/api/**` to `music-companion-api` in `us-central1`, and
+falls back to `index.html` for SPA routes.
 
-### Visual theme and browser preferences
+## Cost controls and residual risk
 
-ThemeProvider wraps the app above the route and practice-profile remounts.
-themeContext defines Violet Jam (default), Peach Pop and Mint Groove.
-AppLayout applies the chosen data-color-theme attribute; shared CSS custom
-properties control the header, buttons, forms, cards, loading states and screen
-accents. PDF notation and full-page images retain a white paper background.
-The original SVG brand mark is reused by the header and favicon. Decorative
-library artwork is separate from actual score notation and hidden from
-assistive technology.
-
-ThemePicker is a native disclosure with labelled palette buttons and a pressed
-state. It supports Escape, restores focus after selection and closes on an
-outside pointer action. Its arrow events do not change the reader's measure.
-The selection persists under score-companion-theme-v1 in localStorage, separate
-from the practice profile. Unknown or unavailable storage falls back to Violet
-Jam, and changes still work for the current session. There is no theme API,
-database migration or server-side storage.
-
-Nunito Sans body text and Fraunces display headings are pinned Fontsource
-dependencies. Vite bundles their Latin variable-font files; Nginx serves them
-with the frontend. The public font-licenses directory retains both OFL notices.
-The native and Docker paths use the same assets without a CDN or host fonts.
-
-### Task controls and storage
-
-All four screens use AppLayout and its shared Library/Practice review header.
-Hash-route changes reset page scroll to reveal the new screen's heading and
-navigation. In-reader measure changes keep their scroll position.
-The reader keeps measure navigation and the save/remove action next to the
-selected notation. Saved PDF measures also show an Open practice list link at
-that point in the flow. The library introduces the three core steps and keeps
-the file picker and Add to library action together. Practice review uses Mark
-practiced and Practice again for the existing is_resolved flag; the API field
-and storage semantics are unchanged. Full-page mode has separately labelled page controls. A
-global measure jump and Left/Right keyboard handler change both page and selected
-passage; the handler ignores editable fields and modifier shortcuts and stops
-at score boundaries. Only the measure list scrolls when following a selection.
-The native marker uses the same image endpoint and keyboard behavior. It is
-reachable through Library's Score options, alongside the destructive score action.
-
-LoadingSkeleton provides labelled, aria-busy placeholders for library, reader,
-review, marker and notation reads. Placeholder shapes are hidden from assistive
-technology, and animation respects reduced-motion preferences. Write actions
-show pending button states; a failed request preserves the visible record.
-Retry controls recover failed reads and image loads.
-
-Passage responses include the current user's practice_mark_id. DELETE on the
-practice-mark detail endpoint scopes the lookup to X-Mock-User, deletes the row
-and its inline note, and returns 204. There is no separate practice-file store.
-The reader and marker clear their saved flag/ID only after confirmation, while
-Review removes the corresponding card. Reloading any screen fetches authoritative
-state. Another user's practice row is retained; attempting its ID returns 404.
-Removing a mark retains the library score/PDF. Score deletion removes the source
-file and cascades its passages and every attached mark.
-
-The browser walkthrough in frontend/e2e/workflow.mjs checks the complete UI path,
-keyboard/input behavior, failure recovery, ownership, responsive layouts and
-backend/file cleanup against an empty, separate library. See
-[the usability review](docs/UI_REVIEW.md) for tasks and observed fixes.
-
-## Data model and persistence
-
-| Record | Stored data | Identity and relationships |
-| --- | --- | --- |
-| Score | Browser owner (nullable legacy demo), title, movement, instrument, page count, file/bytes, SHA-256, extraction state/error/time, layout version | One score has many passages; fingerprint is unique per private owner, with a separate constraint for NULL-owned demo records |
-| Passage | Section, measure number, original PDF page, optional bounding box | Belongs to one score; score + section + measure number is unique |
-| PracticeMark | Server session owner or local mock owner, note, resolved state, timestamps | Belongs to a passage; passage + owner is unique |
-
-A passage bounding box contains normalized x, y, width, and height, plus the
-recognition image's pixel width and height. The region covers the measure stack
-across all staves in its system, so a piano preview includes both hands.
-
-The application does not implement MuseScore's complete Score/Measure/Segment/
-Event hierarchy or a music engraving engine. Passage is the current measure-level
-record. PDF notation is rendered from the original file, not reconstructed from
-detected notes.
-
-### Upload safety
-
-- Upload size is limited to 10 MB. Accepted extensions are PDF, MusicXML, XML,
-  and MXL.
-- A SHA-256 fingerprint identifies identical file bytes. Repeated uploads return
-  the existing score without changing its metadata or starting another import.
-- New files use UUID storage names, so different contents with the same original
-  filename cannot overwrite one another.
-- Score and passage database writes are atomic. If an import fails, or an
-  identical concurrent upload wins, the unused newly written file is removed.
-- Existing uploads can be indexed with manage.py index_score_files. The command
-  does not merge or delete existing score records.
-- Deleting a score removes its original source file, its passages, and the
-  passages' practice marks. Repeated practice saves return the existing mark.
-- Repeated manual passage creation returns the existing passage on the same page.
-  A conflicting page returns 409; an out-of-range page returns 400.
-
-SQLite and uploaded media are runtime state and are excluded from Git and Docker
-builds. Native development stores them under backend; Compose stores them in the
-app-data volume. Tests use separate database and media storage and do not populate
-the user's library with sample files.
-
-## PDF recognition and layout import
-
-Recognition is coordinated by extraction_service.py and implemented by
-score_extract.py:
-
-1. Read the PDF page count with pdfinfo and reject PDFs over the demo limit.
-2. Render its pages at 300 dpi with pdftoppm into a temporary work directory.
-3. Run Audiveris in batch mode with save, transcribe, and export enabled.
-4. Import MusicXML measure metadata and read the corresponding .omr layout.
-   Audiveris measure-stack IDs are matched to exported measure numbers.
-5. Derive each crop's horizontal bounds from the stack and vertical bounds from
-   the system's staves, adding notation padding. Store normalized coordinates
-   relative to the original recognition image.
-6. Upsert passages in a database transaction. Matching passages keep their IDs,
-   so existing practice notes and links survive re-extraction.
-7. Save the page count and current layout version, then discard the temporary
-   rendered pages and Audiveris output files.
-
-PDF pages are processed separately by Audiveris. Imported passages receive
-sequential measure numbers across the document and Page N sections. Numbering
-and boundaries are recognition estimates and should be checked against the score.
-The importer rejects a missing page export or missing measure position instead
-of silently assigning that music to a different page.
-
-MusicXML/XML/MXL uploads bypass PDF recognition and import metadata from the first
-score-partwise part. They do not currently produce original-PDF measure crops;
-their existing metadata view uses illustrative notation.
-
-### Extraction lifecycle
-
-| State | Reader behavior |
+| Resource | Guard |
 | --- | --- |
-| not_started | Starts PDF recognition when opened |
-| processing | Shows an estimated countdown and elapsed time; readers poll the score |
-| complete | Uses saved measures and layout coordinates |
-| failed | Shows the stored error and offers retry |
+| Cloud Run | min 0, max 1, concurrency 1; one OMR lock |
+| Requests | 120/account-or-IP/hour |
+| Uploads | 4/account/day; 10 MB/file |
+| Recognition | 2/account/day; 10 pages; 600 seconds |
+| User storage | 10 scores, 50 MB |
+| Global storage | 50 scores, 250 MB |
+| Artifact Registry | temporary digest; delete after verified release |
+| Billing | $1 monthly budget; gross alerts at 1¢, 50¢, and $1 |
 
-A conditional database update allows one active extraction request per score.
-An additional request for that score returns 409 while recognition is active.
-After the configured timeout plus 90 seconds, an interrupted processing state is
-presented as a retryable failure.
+The budget excludes credits when measuring thresholds. It is not a cap: usage
+estimates and notifications can be delayed. Firebase Blaze, Cloud Run,
+Firestore, GCS, networking, logs, Secret Manager, and Artifact Registry can
+charge beyond allowances. Public availability cannot guarantee $0 under quota
+changes or abuse.
 
-A completed PDF import with layout version 0 contains metadata only. Opening it
-prepares the layout coordinates; version 1 means measure positions were stored.
-Completed imports with current layout data are reused. Failed extraction leaves
-existing passages and practice marks intact.
+Automatic billing disconnection can react to budget Pub/Sub, but requires
+billing-account IAM, can arrive after spend, and stops the app. It remains an
+explicit-approval item.
 
-### Conversion time estimate
+## CI/CD trust model
 
-The existing extraction_updated_at field records the claim time while a job is
-processing; page-count updates do not change it. Score responses expose it as
-extraction_started_at for an active job, avoiding a new persistence model.
-The PDF inspection step publishes its real page count before rasterization and
-recognition. The serializer estimates total duration as 15 seconds of setup plus
-page count times OMR_ESTIMATED_SECONDS_PER_PAGE, capped at OMR_TIMEOUT_SECONDS.
-The defaults are 15 seconds per page natively and 150 in Docker for emulation.
-Operators can tune this estimate for their hardware; it is not measured OMR
-progress and does not control the actual timeout.
+GitLab CI performs Django checks/tests, frontend lint/tests/build, dependency
+audits, a Firestore emulator lifecycle, digest-pinned Kaniko builds, protected
+`main` deployment, and separate public verification.
 
-The reader polls every 1.5 seconds even while its extraction POST is pending.
-ExtractionProgress uses the server start time and updates its clock every second;
-refreshing, remounting or polling therefore does not restart the countdown.
-When the estimate expires it shows a longer-than-estimated message and keeps
-counting elapsed time. Only completion/failure from the API ends the progress
-state. Clock updates are outside the live status announcement to avoid reading
-every second aloud. Spinning feedback respects reduced-motion preferences.
-Library conversion/retry actions enter the reader immediately, and on phones
-progress precedes the PDF image so it remains visible.
+GitLab OIDC exchanges through Workload Identity Federation; no JSON key exists.
+CI copies the exact image to temporary Artifact Registry, deploys Cloud Run by
+digest, discovers/publishes its URL, deploys Firebase, verifies health/session/
+frontend HTTPS, and removes the temporary image. GitHub mirrors reviewed
+GitLab `main`.
 
-Recognition remains synchronous in a bounded Django request on one persistent
-host. A cross-process file lock serializes Java jobs. A restart may interrupt
-recognition; the persisted timestamp becomes retryable after timeout plus90seconds,
-while existing measures and notes remain intact. The 720-second proxy/Gunicorn
-timeout exceeds the 600-second OMR deadline. This deliberately small demo has
-no durable background queue or multi-host worker coordination.
+## Completion gates
 
-## PDF and measure rendering
-
-pdf_render.py calls Poppler against the stored original PDF:
-
-| Request | Rendering behavior |
-| --- | --- |
-| GET /api/scores/{id}/pages/{page}/image/ | Full page PNG at 150 dpi |
-| GET /api/passages/{id}/preview/ | Measure crop at 300 dpi, using stored coordinates |
-
-The reader loads PNGs as ordinary browser images rather than depending on a
-browser PDF plugin to jump to a measure. Selecting a passage changes the image
-URL and selected-measure heading. Full-page overlay positions use the same
-normalized boxes as the crop endpoint.
-
-Preview URLs include a geometry hash so changed crop bounds do not reuse stale
-browser images. Responses allow private browser caching for five minutes. PNGs
-are generated on request; there is no persistent preview-image store or server
-render cache. The original PDF remains available through Open PDF.
-
-Rendering checks the page or region before invoking Poppler and returns a clear
-error when a source file or measure position is unavailable. Ownership-checked
-API downloads and image routes use the same-origin browser session cookie.
-
-## Runtime requirements and limits
-
-| Component or operation | Current requirement or limit |
-| --- | --- |
-| Backend | Python 3.12+, Django and Django REST Framework from requirements.txt |
-| Frontend | Node.js LTS and dependencies from frontend/package-lock.json |
-| PDF tools | Poppler: pdfinfo and pdftoppm available on PATH |
-| Recognition | Local Audiveris executable; 5.11 tested with its bundled Java runtime |
-| PDF recognition | Maximum 10 pages |
-| Page-count inspection | 15-second timeout |
-| PDF rasterization | 60-second timeout |
-| Audiveris recognition | 300-second native timeout; 600 seconds in Docker for emulation headroom |
-| One image render | 30-second timeout |
-
-Native Audiveris discovery checks AUDIVERIS_COMMAND, then PATH, then the macOS application
-paths configured in backend/config/settings.py. A mounted installer is not the
-runtime. Local binaries under .local-tools are excluded from Git and must be
-installed separately for native development on another machine. Docker sets
-AUDIVERIS_COMMAND to /opt/audiveris/bin/Audiveris inside its backend image, so the
-Docker host does not need a separate Audiveris, Java or Poppler installation.
-
-Audiveris is an external AGPL-3.0 application; its source and license are available
-in the [upstream repository](https://github.com/Audiveris/audiveris). No Audiveris
-binary is committed to this repository. The Docker build downloads the official
-installer and retains its license material in the resulting image.
-
-## Implementation map
-
-| Location | Responsibility |
-| --- | --- |
-| frontend/src/App.jsx | Hash routing and user/route screen isolation |
-| frontend/src/OfflineScoreLibrary.jsx | Upload, reopen, extraction action, deletion |
-| frontend/src/pages/useScoreViewer.js | Load score data, extraction progress, selection, practice saves |
-| frontend/src/pages/PdfScoreReader.jsx | Measure images, full-page images, region selection, loading/error feedback |
-| frontend/src/pages/ExtractionProgress.jsx, extractionTiming.js | Estimated countdown, elapsed time, overrun feedback and clock formatting |
-| frontend/src/pages/useMeasureKeyboard.js, measureNavigation.js | Keyboard controls, form-field protection and measure boundaries |
-| frontend/src/components/score-companion/LoadingSkeleton.jsx | Accessible placeholders for data and notation loads |
-| frontend/src/PracticeReview.jsx | Review and resolve the selected user's practice marks |
-| backend/scoreapi/models.py | Score, Passage, PracticeMark and constraints |
-| backend/scoreapi/upload_service.py | Content deduplication and file/database cleanup |
-| backend/scoreapi/extraction_service.py | Extraction claiming, retries and transactional passage import |
-| backend/scoreapi/score_extract.py | MusicXML parsing, Audiveris invocation and layout import |
-| backend/scoreapi/pdf_render.py | Original PDF page and measure PNG rendering |
-| backend/scoreapi/views.py | API operations and image responses |
-| backend/scoreapi/migrations/ | Persistent schema changes |
-| Dockerfile, compose.yaml | Frontend/backend image builds, health checks, networking and persistent volume |
-| docker/entrypoint.sh | First-run setup, migrations and Gunicorn startup |
-| docker/nginx.conf | Built frontend, API proxy, static files and direct-media denial |
-| backend/config/settings.py | Native defaults and Docker environment overrides |
-
-See [README.md](README.md) for startup and user testing, and
-[API_CONTRACT.md](API_CONTRACT.md) for endpoint payloads and error responses.
-
-## Verification and remaining boundaries
-
-On November 3, 2026, both startup options passed browser acceptance with the real
-two-page demo PDF. Native testing started fresh Django and Vite processes with an
-isolated data directory. Docker testing built and started both Compose services,
-then exercised the same flow through Nginx and Gunicorn with DEBUG disabled.
-Both ran actual Audiveris recognition, clicked every detected measure, and loaded
-all 56 distinct notation images. Both full-page images and their clickable
-regions worked. Selected crops and browser screenshots were visually checked.
-
-The browser check also saved and resolved a practice mark, returned from Practice
-Review to its exact measure and page, verified demo-user isolation, reused an
-identical upload without losing practice data, and deleted the disposable score,
-its source file, passages, and marks. No browser exceptions or failed application
-requests occurred in the passing acceptance runs. Compose down followed by a
-fresh one-command startup preserved the exact PDF, all 56 passages, the resolved
-practice mark and the generated secret key. The saved passage loaded in the
-browser after recreation. Nginx served original PDFs and collected admin assets
-with DEBUG disabled. Disposable test records were deleted afterward; the native
-library stayed separate from test data. All 34 backend tests pass in both
-runtimes; 23 frontend tests, migration checks and the production build pass.
-
-Those November3results are historical. Current P#11 checks are recorded separately
-in docs/LAUNCH_VERIFICATION.md. Permanent public deployment remains out of scope
-for the free-only demo.
-Verified Google accounts, a background queue, guaranteed OMR accuracy, browser
-offline caching, multi-host scaling, and note-level engraving remain unimplemented.
-
-## Private browser access and trust boundaries
-
-Local demo mode explicitly accepts X-Mock-User and exposes only legacy NULL-owned
-scores. Production requires `DJANGO_ENV=production`, `DEBUG=false`, a private
-secret, and `DJANGO_AUTH_MODE=session`; unsafe combinations stop startup.
-
-The frontend first calls `/api/session/`. Django creates a cryptographically random
-owner identifier in its server-side session store and returns a CSRF token.
-Only after initialization does React fetch the library. Production cookies use
-secure `__Host-` names, HttpOnly for the session, SameSite=Lax, and30days sliding
-expiry. Unsafe API methods explicitly enforce CSRF even though the visitor has
-no named Django account. Identity is never taken from a browser-supplied profile
-header in private mode. Every score, passage, image, original download and practice
-lookup is owner-scoped; inaccessible identifiers return404.
-
-Migrations preserve existing user data as NULL-owned local records; they never
-publish it or assign it to the first visitor. Duplicate bytes across two private
-libraries produce independent files and records. Uploads are serialized around
-quota checks and writes:20scores/100MiB per browser and100scores/500MiB globally.
-XML parsing rejects entities and bounds decompression and measure counts.
-
-Anonymous sessions are appropriate only for a limited course demonstration.
-There is no verified identity, password, Google login, recovery, or cross-device
-sync. Losing cookies loses access; the server does not automatically delete
-expired user files. Storage is bounded but capacity can be exhausted; an operator
-must obtain authorization before removing user data. This is not a general
-public file-hosting service. Google OAuth development setup is separate.
-
-~~~mermaid
-sequenceDiagram
-    participant Browser as React browser
-    participant API as Django
-    participant DB as SQLite sessions and scores
-    Browser->>API: GET /api/session/
-    API->>DB: Create or refresh server-owned session
-    API-->>Browser: Secure session cookie and CSRF token
-    Browser->>API: Upload with cookie and X-CSRFToken
-    API->>API: CSRF, owner, quota and format checks
-    API->>DB: Save owner-scoped metadata
-    Browser->>API: GET authorized measure image
-    API-->>Browser: Original notation PNG
-~~~
-
-## Local and Docker networks
-
-~~~mermaid
-flowchart LR
-    B[Browser] --> V[React and Vite :5173]
-    V -->|/api proxy| D[Django :8000]
-    D --> A[Local demo profiles or private session]
-    D --> S[(SQLite in backend)]
-    D --> F[(Local PDF files)]
-    F --> P[Poppler]
-    P --> O[Audiveris and Java]
-    O --> D
-~~~
-
-~~~mermaid
-flowchart LR
-    B[Browser localhost:8080] --> N[Nginx React frontend]
-    N -->|Internal Docker network /api| G[Gunicorn Django backend]
-    G --> V[(Persistent app-data Docker volume)]
-    V --> S[SQLite and source PDFs]
-    G --> P[Poppler and Audiveris inside backend]
-    N -->|Read only static files| V
-~~~
-
-## Free temporary sharing
-
-The free launch path keeps the tested Docker Compose stack on the developer's
-computer and optionally adds a Cloudflare Quick Tunnel. The tunnel forwards to
-the Nginx frontend over Docker's private network; it does not expose Django,
-SQLite, media, or Audiveris ports. Its random `trycloudflare.com` URL exists
-only while the tunnel container runs, so it is suitable for a short walkthrough,
-not production. See [docs/FREE_DEMO.md](docs/FREE_DEMO.md).
-
-~~~mermaid
-flowchart LR
-    T[Temporary trycloudflare.com URL] --> Q[cloudflared tunnel container]
-    Q --> N[Nginx frontend container]
-    N --> G[Private Django backend]
-    G --> D[(Persistent Docker volume)]
-~~~
-
-## Prepared paid cloud architecture — not yet deployed
-
-`compose.production.yaml` defines the topology below. `deploy/provision-gcp.sh`
-prepares one x86 e2-medium VM with4GiB RAM, a20GiB persistent disk, dedicated VPC,
-reserved IPv4, deletion protection and no VM service account. The public firewall
-permits80/443; SSH is restricted to IAP's source range and uses OS Login. Provisioning
-is gated on explicit billing approval; these resources are not free tier.
-
-~~~mermaid
-flowchart LR
-    U[Public browser] -->|HTTPS with public certificate| C[Caddy gateway]
-    subgraph VM[Proposed GCP e2-medium VM]
-      C --> N[Nginx built React assets]
-      C -->|Private HTTP and replaced forwarded header| G[Gunicorn Django]
-      G --> DB[(SQLite metadata sessions and practice)]
-      G --> PDF[(Original PDFs on persistent disk)]
-      G --> O[Single bounded Audiveris and Poppler job]
-      O -->|Temporary data removed after job| G
-      G --> K[Private generated Django key]
-      G --> L[Bounded container logs]
-      DB --> BK[Backup before migrations on same disk]
-      PDF --> BK
-    end
-~~~
-
-Persistence lives under `/srv/music-companion/data`, mounted at `/data`; replacing
-containers does not replace the disk. PNG previews are computed on demand, so the
-source PDF and stored crop coordinates are sufficient to regenerate them. Caddy
-certificate state has its own persistent directories. CI credentials are short-lived
-and kept outside release directories; the application key is generated once in
-private storage. No OAuth secret is embedded in the frontend or images.
-
-The database remains SQLite because existing transactions, constraints and joins
-are useful and the application deliberately runs one host. Firestore would require
-rewriting those semantics. Cloud Run would require separate relational/object
-storage and file-localization changes; it cannot safely use ephemeral SQLite.
-The persistent VM retains the tested native file paths and long OMR requests.
-This choice sacrifices autoscaling and high availability. Cloud disk loss is not
-covered by the same-disk deployment backup; independent backup storage is pending.
-
-Caddy provides HTTPS and blocks admin/media paths; Django enforces host/origin,
-secure-cookie, CSRF and owner checks. Only trusted private proxy traffic reaches
-Gunicorn. Resource limits bound memory, processes and temporary recognition work.
-The proposed sslip.io hostname requires no purchase, but is a third-party DNS
-service, not a Google-managed app domain. No live hostname is claimed yet.
-
-## CI/CD implementation and approval boundary
-
-~~~mermaid
-flowchart LR
-    Dev[Developer feature branch] --> GL[GitLab merge request]
-    GL --> Test[Django tests and checks / React tests lint build]
-    Test --> Audit[Python and npm vulnerability audits]
-    Audit --> Build[Immutable amd64 images in GitLab registry]
-    Build --> Main[Protected main merge]
-    Main --> Mirror[GitHub source mirror]
-    Main --> Gate{Approved deployment variables enabled?}
-    Gate -->|No| Skip[Deployment skipped: no launch claim]
-    Gate -->|Yes| WIF[Short-lived GitLab OIDC to GCP WIF]
-    WIF --> IAP[IAP SSH with verified host key]
-    IAP --> Backup[Stop writers and back up persistent data]
-    Backup --> Deploy[Pull SHA images / migrate / replace containers]
-    Deploy --> Verify[HTTPS health checks and golden-path verification]
-    Verify -->|Failure| Recover[Previous image only if schema compatible]
-    Recover --> Manual[Data restoration requires explicit review]
-~~~
-
-Only `.gitlab-ci.yml` deploys; GitHub mirrors source. Jobs never create cloud
-infrastructure or silently enable billing. Main deployment requires protected
-`DEPLOY_ENABLED=true` plus the reviewed WIF/provider/VM/host variables. Secrets
-are not committed; WIF is preferred over a service-account JSON key. SSH pins
-independently verified host keys. The release script serializes deployments,
-pulls images before downtime, stops writers, backs up data, runs migrations and
-verifies HTTPS before marking the release current. Rollback must consider schema
-compatibility and must not overwrite newer user data automatically.
-
-See [deploy/README.md](deploy/README.md) for exact scripts, permissions, variables,
-cost sources, operational limits and recovery steps.
+- Firebase project/site, Firestore database, private bucket, secret, runtime
+  and deploy identities, and GitLab WIF provider exist with least privilege.
+- OAuth origins include the exact Firebase domains.
+- Protected GitLab variables are configured and the main pipeline succeeds.
+- Public frontend, health, session, sign-in, PDF/OMR, measure navigation,
+  practice create/remove, score deletion, and two-account isolation are tested.
+- GitLab and GitHub `main` resolve to the reviewed release commit.

@@ -3,14 +3,17 @@ import subprocess
 import secrets
 
 from django.conf import settings
+from django.core import signing
 from django.db import IntegrityError
 from django.http import FileResponse, HttpResponse
-from django.db.models import Count
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.clickjacking import xframe_options_sameorigin
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 from rest_framework import status
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
@@ -24,7 +27,16 @@ from .serializers import PassageCreateSerializer, PassageSerializer, PracticeMar
 from .upload_service import UploadQuotaExceeded, store_upload
 from .pdf_render import render_pdf
 from .pdf_safety import PDFSafetyError
-from .access import is_demo, request_owner, score_owner, visible_scores
+from .access import ExtractionTicketPermission, is_demo, request_owner, score_owner, visible_scores
+from .storage_assets import (
+    delete_derived_assets,
+    load_cached_image,
+    local_file_path,
+    save_cached_image,
+)
+from .persistence import delete_id_direct, delete_ids_direct
+from .throttles import OwnerScopedRateThrottle
+from .usage import UsageLimitExceeded, consume_omr_allowance
 
 
 @api_view(["GET"])
@@ -37,23 +49,76 @@ def health_check(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def browser_session(request):
-    if not is_demo() and not request.session.get("score_owner"):
+    if settings.DJANGO_AUTH_MODE == "session" and not request.session.get("score_owner"):
         request.session.cycle_key()
         request.session["score_owner"] = secrets.token_hex(32)
         request.session.set_expiry(settings.SESSION_COOKIE_AGE)
-    response = Response({
+    response = Response(_session_data(request))
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+def _session_data(request):
+    authenticated = settings.DJANGO_AUTH_MODE != "google" or bool(request.session.get("google_sub"))
+    return {
         "auth_mode": settings.DJANGO_AUTH_MODE,
-        "display_name": "Local practice profile" if is_demo() else "Private browser library",
+        "authenticated": authenticated,
+        "display_name": ("Local practice profile" if is_demo() else
+                         request.session.get("google_name", "Google account") if authenticated and settings.DJANGO_AUTH_MODE == "google"
+                         else "Private browser library" if authenticated else "Sign in required"),
+        "email": request.session.get("google_email") if authenticated and settings.DJANGO_AUTH_MODE == "google" else None,
+        "google_client_id": settings.GOOGLE_OAUTH_CLIENT_ID if settings.DJANGO_AUTH_MODE == "google" else None,
         "csrfToken": get_token(request),
         "expires_in_seconds": None if is_demo() else settings.SESSION_COOKIE_AGE,
-    })
+    }
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def google_login(request):
+    if settings.DJANGO_AUTH_MODE != "google":
+        return Response({"detail": "Google sign-in is not enabled."}, status=404)
+    SessionAuthentication().enforce_csrf(request)
+    credential = request.data.get("credential")
+    if not credential:
+        raise ValidationError({"credential": "Google did not return an identity credential."})
+    try:
+        identity = google_id_token.verify_oauth2_token(
+            credential, google_requests.Request(), settings.GOOGLE_OAUTH_CLIENT_ID
+        )
+    except (ValueError, TypeError):
+        return Response({"detail": "Google sign-in could not be verified."}, status=status.HTTP_401_UNAUTHORIZED)
+    if not identity.get("sub") or identity.get("email_verified") is not True:
+        return Response({"detail": "Use a verified Google account."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    request.session.cycle_key()
+    request.session["google_sub"] = str(identity["sub"])
+    request.session["google_email"] = str(identity.get("email", ""))[:254]
+    request.session["google_name"] = str(identity.get("name") or identity.get("email") or "Musician")[:120]
+    request.session.set_expiry(settings.SESSION_COOKIE_AGE)
+    response = Response(_session_data(request))
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def google_logout(request):
+    if settings.DJANGO_AUTH_MODE != "google":
+        return Response({"detail": "Google sign-in is not enabled."}, status=404)
+    SessionAuthentication().enforce_csrf(request)
+    request.session.flush()
+    response = Response(status=status.HTTP_204_NO_CONTENT)
     response["Cache-Control"] = "private, no-store"
     return response
 
 
 class ScoreListView(APIView):
     def get(self, request):
-        scores = visible_scores(request).annotate(passage_count=Count("passages"))
+        scores = sorted(
+            visible_scores(request),
+            key=lambda score: (score.title.casefold(), score.movement.casefold(), score.instrument.casefold()),
+        )
         return Response(ScoreSerializer(scores, many=True).data)
 
 
@@ -62,6 +127,8 @@ class ScoreUploadView(APIView):
 
     allowed_extensions = {".pdf", ".musicxml", ".xml", ".mxl"}
     max_file_size = 10 * 1024 * 1024
+    throttle_classes = [OwnerScopedRateThrottle]
+    throttle_scope = "upload"
 
     def post(self, request):
         score_file = request.FILES.get("score_file")
@@ -99,7 +166,7 @@ class ScoreUploadView(APIView):
             return Response({"detail": str(error)}, status=status.HTTP_429_TOO_MANY_REQUESTS)
         except IntegrityError:
             raise ValidationError({"score_file": "The score contains duplicate measure identifiers. Check the MusicXML file."})
-        score = Score.objects.annotate(passage_count=Count("passages")).get(pk=score.pk)
+        score.refresh_from_db()
         data = ScoreSerializer(score).data
         data["already_uploaded"] = not created
         return Response(data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
@@ -107,18 +174,22 @@ class ScoreUploadView(APIView):
 
 class ScoreDetailView(APIView):
     def get(self, request, score_id):
-        score = get_object_or_404(
-            visible_scores(request).annotate(passage_count=Count("passages")), pk=score_id
-        )
+        score = get_object_or_404(visible_scores(request), pk=score_id)
         return Response(ScoreSerializer(score).data)
 
     def delete(self, request, score_id):
         score = get_object_or_404(visible_scores(request), pk=score_id)
-        # Explicitly remove the uploaded file as well as its cascaded passages
-        # and practice marks; Django does not delete FileField files by default.
+        # Remove dependent rows explicitly for Firestore, then assets, then the
+        # parent. If storage fails, the parent remains so deletion can retry.
+        passage_ids = list(Passage.objects.filter(score_id=score.pk).order_by().values_list("pk", flat=True))
+        if passage_ids:
+            mark_ids = list(PracticeMark.objects.filter(passage_id__in=passage_ids).order_by().values_list("pk", flat=True))
+            delete_ids_direct(PracticeMark, mark_ids)
+            delete_ids_direct(Passage, passage_ids)
+        delete_derived_assets(score)
         if score.source_file:
             score.source_file.delete(save=False)
-        score.delete()
+        delete_id_direct(Score, score.pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -143,10 +214,19 @@ class ScoreFileView(APIView):
 class ScorePdfExtractionView(APIView):
     """Import PDF measures; duplicate requests retain saved IDs and marks."""
 
+    throttle_classes = [OwnerScopedRateThrottle]
+    throttle_scope = "omr"
+    permission_classes = [ExtractionTicketPermission]
+
     def post(self, request, score_id):
         score = get_object_or_404(visible_scores(request), pk=score_id)
         if not score.source_file.name.lower().endswith(".pdf"):
             raise ValidationError({"score": "PDF measure extraction is only available for PDF scores."})
+        if not (score.extraction_state == "complete" and score.measure_layout_version >= 1):
+            try:
+                consume_omr_allowance(request_owner(request))
+            except UsageLimitExceeded as error:
+                return Response({"detail": str(error)}, status=status.HTTP_429_TOO_MANY_REQUESTS)
         try:
             extract_score_measures(score.pk)
         except ExtractionBusy as error:
@@ -157,8 +237,30 @@ class ScorePdfExtractionView(APIView):
             return Response({"detail": str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except ValueError as error:
             return Response({"detail": str(error)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-        score = Score.objects.annotate(passage_count=Count("passages")).get(pk=score.pk)
+        score.refresh_from_db()
         return Response(ScoreSerializer(score).data)
+
+
+class ScorePdfExtractionTicketView(APIView):
+    """Issue a short-lived ticket for the long direct-to-Cloud-Run OMR call."""
+
+    def post(self, request, score_id):
+        score = get_object_or_404(visible_scores(request), pk=score_id)
+        if not score.source_file.name.lower().endswith(".pdf"):
+            raise ValidationError({"score": "PDF measure extraction is only available for PDF scores."})
+        token = signing.dumps(
+            {"owner": request_owner(request), "score_id": score.pk},
+            salt=ExtractionTicketPermission.salt,
+            compress=True,
+        )
+        path = f"/api/scores/{score.pk}/extract-measures/"
+        response = Response({
+            "url": f"{settings.CLOUD_RUN_PUBLIC_URL}{path}" if settings.CLOUD_RUN_PUBLIC_URL else path,
+            "token": token,
+            "expires_in_seconds": ExtractionTicketPermission.max_age,
+        })
+        response["Cache-Control"] = "private, no-store"
+        return response
 
 
 class ScorePassageListView(APIView):
@@ -192,7 +294,8 @@ class ScorePageImageView(APIView):
 
 class PassagePreviewView(APIView):
     def get(self, request, passage_id):
-        passage = get_object_or_404(Passage.objects.select_related("score").filter(score__in=visible_scores(request)), pk=passage_id)
+        score_ids = list(visible_scores(request).values_list("pk", flat=True))
+        passage = get_object_or_404(Passage.objects.filter(score_id__in=score_ids), pk=passage_id)
         if not passage.bounding_box:
             return Response({"detail": "This measure has no saved position. Extract measure previews first."}, status=409)
         return pdf_image_response(passage.score, passage.page_number, passage.bounding_box)
@@ -200,7 +303,11 @@ class PassagePreviewView(APIView):
 
 def pdf_image_response(score, page_number, region=None):
     try:
-        image = render_pdf(score.source_file.path, page_number, region)
+        image = load_cached_image(score, page_number, region)
+        if image is None:
+            with local_file_path(score.source_file) as source_path:
+                image = render_pdf(source_path, page_number, region)
+            save_cached_image(score, page_number, region, image)
     except PDFSafetyError as error:
         return Response({"detail": str(error)}, status=422)
     except (OSError, ValueError, subprocess.SubprocessError):
@@ -213,12 +320,17 @@ def pdf_image_response(score, page_number, region=None):
 class PracticeMarkListCreateView(APIView):
     def get(self, request):
         owner = request_owner(request)
-        marks = PracticeMark.objects.select_related("passage", "passage__score").prefetch_related("passage__practice_marks").filter(owner=owner, passage__score__in=visible_scores(request))
+        score_ids = list(visible_scores(request).values_list("pk", flat=True))
+        passage_ids = list(Passage.objects.filter(score_id__in=score_ids).values_list("pk", flat=True))
+        marks = PracticeMark.objects.prefetch_related(
+            "passage", "passage__score", "passage__practice_marks"
+        ).filter(owner=owner, passage_id__in=passage_ids)
         score_id = request.query_params.get("score")
         mark_status = request.query_params.get("status")
 
         if score_id:
-            marks = marks.filter(passage__score_id=score_id)
+            score_passage_ids = list(Passage.objects.filter(score_id=score_id).values_list("pk", flat=True))
+            marks = marks.filter(passage_id__in=score_passage_ids)
         if mark_status == "unresolved":
             marks = marks.filter(is_resolved=False)
         elif mark_status == "resolved":
@@ -243,14 +355,18 @@ class PracticeMarkListCreateView(APIView):
 class PracticeMarkDetailView(APIView):
     def delete(self, request, mark_id):
         owner = request_owner(request)
-        mark = get_object_or_404(PracticeMark, pk=mark_id, owner=owner, passage__score__in=visible_scores(request))
+        score_ids = list(visible_scores(request).values_list("pk", flat=True))
+        passage_ids = list(Passage.objects.filter(score_id__in=score_ids).values_list("pk", flat=True))
+        mark = get_object_or_404(PracticeMark, pk=mark_id, owner=owner, passage_id__in=passage_ids)
         # Notes live on this row; no separate practice files or orphan notes remain.
-        mark.delete()
+        delete_id_direct(PracticeMark, mark.pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, mark_id):
         owner = request_owner(request)
-        mark = get_object_or_404(PracticeMark, pk=mark_id, owner=owner, passage__score__in=visible_scores(request))
+        score_ids = list(visible_scores(request).values_list("pk", flat=True))
+        passage_ids = list(Passage.objects.filter(score_id__in=score_ids).values_list("pk", flat=True))
+        mark = get_object_or_404(PracticeMark, pk=mark_id, owner=owner, passage_id__in=passage_ids)
         serializer = PracticeMarkSerializer(mark, data=request.data, partial=True, context={"request": request})
         serializer.is_valid(raise_exception=True)
         mark = serializer.save()

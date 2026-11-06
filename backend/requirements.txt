@@ -2,3 +2,7 @@ Django==5.2.19
 djangorestframework==3.18.3
 django-cors-headers==4.9.0
 defusedxml==0.7.1
+django-gcloud-connectors==1.5.0
+django-storages[google]==1.14.6
+google-auth==2.62.1
+google-cloud-storage==3.17.1

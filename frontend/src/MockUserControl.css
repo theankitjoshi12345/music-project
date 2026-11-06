@@ -1,2 +1,6 @@
 .mock-user-control { display:inline-flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; font-weight:700; white-space:nowrap; }
 .mock-user-control span { max-width:55px; white-space:normal; line-height:1.2; }
+.google-user-control { flex-wrap:wrap; justify-content:flex-end; max-width:220px; }
+.google-user-control span { max-width:100px; overflow:hidden; text-overflow:ellipsis; }
+.google-user-control small { max-width:130px; overflow:hidden; text-overflow:ellipsis; }
+.google-user-control button { border:0; background:transparent; color:var(--accent-strong); font:inherit; cursor:pointer; padding:2px 4px; }
