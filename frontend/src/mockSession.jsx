@@ -19,6 +19,7 @@ function loadSession() {
 function GoogleSignIn({ clientId, onCredential }) {
   const button = useRef(null)
   const [error, setError] = useState('')
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -34,6 +35,7 @@ function GoogleSignIn({ clientId, onCredential }) {
       window.google.accounts.id.renderButton(button.current, {
         type: 'standard', theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with', width: 280,
       })
+      setReady(true)
     }
     if (window.google?.accounts?.id) render()
     else {
@@ -42,7 +44,9 @@ function GoogleSignIn({ clientId, onCredential }) {
       })
       script.dataset.scoreGoogleSignin = 'true'
       script.addEventListener('load', render)
-      script.addEventListener('error', () => active && setError('Google sign-in could not load. Check your connection and retry.'))
+      script.addEventListener('error', () => {
+        if (active) setError('Google sign-in could not load. Check your connection and retry.')
+      })
       if (!script.isConnected) document.head.appendChild(script)
     }
     return () => {
@@ -51,11 +55,12 @@ function GoogleSignIn({ clientId, onCredential }) {
     }
   }, [clientId, onCredential])
 
-  return <main className="session-start google-sign-in">
+  return <main className="session-start google-sign-in" aria-busy={!ready && !error}>
     <img src="/favicon.svg" width="72" height="72" alt="" />
     <h1>Welcome to Score Companion</h1>
     <p>Sign in to keep your scores private and available when you return.</p>
     <div ref={button} aria-label="Google sign-in" />
+    {!ready && !error && <p role="status">Loading secure Google sign-in…</p>}
     {error && <p role="alert">{error}</p>}
     <small>We use only your basic Google identity. We never request Drive, Gmail, or payment access.</small>
   </main>

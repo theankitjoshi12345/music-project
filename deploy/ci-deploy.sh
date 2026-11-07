@@ -70,6 +70,33 @@ gcloud auth login --cred-file="$temporary_dir/credential.json" --quiet
 gcloud config set project "$GCP_PROJECT_ID" --quiet
 export GOOGLE_APPLICATION_CREDENTIALS="$temporary_dir/credential.json"
 
+# Keep required Datastore-mode composite indexes under version control. The
+# command is idempotent; existing ready indexes are left unchanged.
+gcloud datastore indexes create backend/index.yaml \
+  --project="$GCP_PROJECT_ID" --quiet
+index_ready=false
+for attempt in $(seq 1 60); do
+  gcloud datastore indexes list --project="$GCP_PROJECT_ID" --format=json > "$temporary_dir/datastore-indexes.json"
+  if python3 - "$temporary_dir/datastore-indexes.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    indexes = json.load(source)
+for index in indexes:
+    names = [property_["name"] for property_ in index.get("properties", [])]
+    if index.get("kind") == "scoreapi_score" and names == ["content_sha256", "owner"]:
+        raise SystemExit(0 if index.get("state") == "READY" else 1)
+raise SystemExit(1)
+PY
+  then
+    index_ready=true
+    break
+  fi
+  sleep 10
+done
+[[ $index_ready == true ]] || { printf '%s\n' 'Datastore upload index did not become ready.' >&2; exit 2; }
+
 registry_host="${GCP_REGION}-docker.pkg.dev"
 destination_image="$registry_host/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPOSITORY/music-companion:$CI_COMMIT_SHA"
 source_image="$CI_REGISTRY_IMAGE/cloudrun:$CI_COMMIT_SHA"

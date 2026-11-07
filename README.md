@@ -162,6 +162,11 @@ The Firestore emulator smoke test exercises migrations, account isolation,
 uploads, passages, practice create/delete, and complete score deletion. It
 refuses to run without `DATASTORE_EMULATOR_HOST`.
 
+The production duplicate-upload lookup needs the owner/content-SHA composite
+index declared in `backend/index.yaml`. Protected-main deployment creates the
+index idempotently and waits until Datastore reports it ready before releasing
+the new Cloud Run revision.
+
 Firebase Hosting can be checked without cloud deployment after building Vite:
 
 ```bash
@@ -180,7 +185,8 @@ with daemonless Kaniko; and deploys only from protected `main` when
 Deployment exchanges a GitLab OIDC token through Workload Identity Federation,
 copies the exact application and cost-guard images to Artifact Registry,
 deploys both Cloud Run services by digest, deploys `frontend/dist` to Firebase,
-verifies frontend/API HTTPS, and deletes both temporary images.
+creates and verifies the versioned Datastore indexes, verifies frontend/API
+HTTPS, and deletes both temporary images.
 `CLEAN_ARTIFACT_IMAGE=true` is mandatory.
 
 The deploy job downloads checksum-pinned Node.js 22, builds Vite from the lock

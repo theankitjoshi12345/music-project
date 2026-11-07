@@ -63,7 +63,9 @@ def store_upload(source, metadata, measures, owner=None):
 
 
 def _store_upload(source, metadata, measures, owner, fingerprint):
-    existing = Score.objects.filter(content_sha256=fingerprint, owner=owner).first()
+    # Clear Score.Meta.ordering. Otherwise Datastore expands this equality
+    # lookup into an unnecessary five-property composite index.
+    existing = Score.objects.filter(content_sha256=fingerprint, owner=owner).order_by().first()
     if existing:
         return existing, False
 
@@ -89,7 +91,7 @@ def _store_upload(source, metadata, measures, owner, fingerprint):
     except Exception as error:
         if isinstance(error, IntegrityError) and not score_saved:
             # Another request may have committed the same content first.
-            existing = Score.objects.filter(content_sha256=fingerprint, owner=owner).first()
+            existing = Score.objects.filter(content_sha256=fingerprint, owner=owner).order_by().first()
             if existing:
                 if score.source_file.name != existing.source_file.name:
                     score.source_file.delete(save=False)

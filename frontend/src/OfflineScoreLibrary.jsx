@@ -41,7 +41,14 @@ export default function OfflineScoreLibrary() {
       const response = await fetch(`${apiBase}/scores/upload/`, {
         method: 'POST', headers: mockUserHeaders(user), body: new FormData(form),
       })
-      const score = await response.json()
+      let score
+      try {
+        score = await response.json()
+      } catch {
+        throw new Error(response.ok
+          ? 'The score service returned an invalid response. Please try again.'
+          : 'The score service could not process this upload. Please try again.')
+      }
       if (!response.ok) {
         const failure = score.score_file || score.page_count || score.detail
         throw new Error((Array.isArray(failure) ? failure[0] : failure) || 'The score could not be uploaded.')
