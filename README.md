@@ -114,6 +114,11 @@ owner-and-score-bound ticket and sends only the long OMR call directly to Cloud
 Run. CORS accepts only the two Firebase origins, and the ticket cannot access a
 different score or general endpoint.
 
+Firebase Hosting forwards only its specially named `__session` cookie to a
+rewritten Cloud Run request. Production therefore uses that name for Django's
+signed, secure, HTTP-only Google session; local development keeps Django's
+normal `sessionid` cookie.
+
 See [architecture.md](architecture.md) for the detailed data and trust model.
 
 ## Authentication and isolation
