@@ -64,6 +64,12 @@ Django uses SQLite locally and Firestore in Datastore mode publicly through
 and composite ordering. Bounded results are sorted in Python. Emulator tests
 cover migrations and the full two-account API lifecycle.
 
+`backend/index.yaml` defines the one composite production lookup: score owner
+plus content SHA for idempotent duplicate uploads. CI creates it with the
+short-lived deploy identity and blocks release until Datastore reports the
+index ready; the query explicitly clears display ordering so no wider index is
+required.
+
 ## Conflict-safe objects and deletion
 
 Uploads are SHA-256 addressed as
@@ -146,8 +152,9 @@ audits, a Firestore emulator lifecycle, digest-pinned Kaniko builds, protected
 GitLab OIDC exchanges through Workload Identity Federation; no JSON key exists.
 CI copies the exact app and cost-guard images to temporary Artifact Registry,
 deploys both by digest, configures authenticated Pub/Sub delivery, discovers/
-publishes the app URL, deploys Firebase, verifies health/session/frontend HTTPS,
-and removes both temporary images. GitHub mirrors reviewed GitLab `main`.
+publishes the app URL, creates and waits for the versioned Datastore indexes,
+deploys Firebase, verifies health/session/frontend HTTPS, and removes both
+temporary images. GitHub mirrors reviewed GitLab `main`.
 
 The deploy container installs checksum-pinned Node.js 22 and builds
 `frontend/dist` from the lock file. Its temporary external-account credential

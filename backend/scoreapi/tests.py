@@ -169,8 +169,9 @@ class ScoreApiTests(APITestCase):
         winner, _ = store_upload(SimpleUploadedFile("winner.pdf", b"%PDF race"), metadata, [])
         before_files = set(Path(settings.MEDIA_ROOT).rglob("*.*"))
         with patch("scoreapi.upload_service.Score.objects.filter") as lookup:
-            lookup.return_value.first.side_effect = [None, winner]
+            lookup.return_value.order_by.return_value.first.side_effect = [None, winner]
             score, created = store_upload(SimpleUploadedFile("loser.pdf", b"%PDF race"), metadata, [])
+        lookup.return_value.order_by.assert_called_with()
         self.assertFalse(created)
         self.assertEqual(score.id, winner.id)
         self.assertEqual(set(Path(settings.MEDIA_ROOT).rglob("*.*")), before_files)

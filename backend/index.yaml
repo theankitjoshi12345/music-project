@@ -1,0 +1,9 @@
+indexes:
+
+# Duplicate detection is scoped to the signed-in owner. Datastore requires
+# this composite index when both fields are filtered in one query.
+- kind: scoreapi_score
+  ancestor: no
+  properties:
+  - name: content_sha256
+  - name: owner
