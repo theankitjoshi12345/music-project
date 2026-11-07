@@ -165,6 +165,11 @@ fi
 principal="principalSet://iam.googleapis.com/projects/$project_number/locations/global/workloadIdentityPools/$workload_pool/attribute.project_id/$gitlab_project_id"
 gcloud iam service-accounts add-iam-policy-binding "$deploy_email" --project="$project" \
   --member="$principal" --role=roles/iam.workloadIdentityUser --quiet
+# Quota-aware Application Default Credentials attach this project to the
+# IAMCredentials token exchange. Grant only this provider-restricted GitLab
+# project principal the permission to consume the project's enabled APIs.
+gcloud projects add-iam-policy-binding "$project" --member="$principal" \
+  --role=roles/serviceusage.serviceUsageConsumer --condition=None --quiet
 
 printf '%s\n' 'Approved Google resources and narrowly scoped identities are configured.'
 printf 'GCP_WIF_PROVIDER=%s\n' "$provider_resource"
