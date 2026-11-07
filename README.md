@@ -7,11 +7,13 @@ supported.
 
 ## Launch status
 
-The application and cloud adapters are implemented and locally verified. A
-public deployment is not claimed until the Firebase URL and signed-in PDF
-golden path have been tested. Google Cloud project `music-companion-513717` has
-active Free Trial billing, required service APIs enabled, and a project-scoped
-$1 budget that warns from 1 cent of **gross** usage (credits excluded).
+The application is live at
+[https://music-companion-513717.web.app](https://music-companion-513717.web.app).
+The public frontend, health endpoint, Google-auth session configuration, cloud
+database migrations, and keyless deployment were verified on November 7, 2026.
+Google Cloud project `music-companion-513717` has active Free Trial billing,
+required service APIs enabled, and a project-scoped $1 budget that warns from
+1 cent of **gross** usage (credits excluded).
 
 The owner authorized up to $1/month. The budget is not a hard spending cap: a
 billing-linked Firebase project uses Blaze even while no-cost quotas and trial
@@ -19,7 +21,7 @@ credits apply, and Google can report usage hours late. The deployment includes
 a private automatic shutdown service that unlinks this project from billing on
 the first verified notification at or above $1. Delayed usage can still make
 the final amount exceed $1, so public deployment and its least-privilege IAM
-changes remain disabled until explicitly approved.
+changes were activated only after explicit owner approval.
 
 ## User flow
 
@@ -175,6 +177,13 @@ copies the exact application and cost-guard images to Artifact Registry,
 deploys both Cloud Run services by digest, deploys `frontend/dist` to Firebase,
 verifies frontend/API HTTPS, and deletes both temporary images.
 `CLEAN_ARTIFACT_IMAGE=true` is mandatory.
+
+The deploy job downloads checksum-pinned Node.js 22, builds Vite from the lock
+file, and gives its short-lived external-account credential an explicit quota
+project. The GitLab-project principal set has only Workload Identity User on
+the deploy identity and Service Usage Consumer on this project; the provider
+also requires this repository's protected `main` branch. No service-account
+key or Firebase refresh token is stored in GitLab.
 
 ```text
 frontend/          React UI and tests

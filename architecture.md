@@ -1,8 +1,9 @@
 # Score Companion architecture
 
-This describes the implemented local system and prepared Google Cloud
-deployment. Launch is incomplete until the exact Firebase HTTPS URL and a
-signed-in PDF golden path are verified.
+This describes the implemented local system and live Google Cloud deployment
+at `https://music-companion-513717.web.app`. CI verifies the exact public
+frontend, health endpoint, and session configuration after every enabled
+protected-main deployment.
 
 ## Runtime boundaries
 
@@ -122,7 +123,8 @@ the exact billing account, budget ID/display name, schema version, USD currency,
 fixed amount, and 100% threshold. Its dedicated identity has project Browser
 and Project Billing Manager only; no billing-account role is granted. Delivery
 is at least once, so the handler is idempotent and asks Pub/Sub to retry API
-failures. The guard runs at min 0, max 1, concurrency 1, 256 MiB.
+failures. The guard runs at min 0, max 1, concurrency 1, 512 MiB (the minimum
+supported by Cloud Run's Gen2 execution environment).
 
 This reaction is not a hard cap. Google budget estimates and notifications can
 be delayed, and pre-shutdown usage can be reported afterward. Disconnection
@@ -142,12 +144,22 @@ deploys both by digest, configures authenticated Pub/Sub delivery, discovers/
 publishes the app URL, deploys Firebase, verifies health/session/frontend HTTPS,
 and removes both temporary images. GitHub mirrors reviewed GitLab `main`.
 
-## Completion gates
+The deploy container installs checksum-pinned Node.js 22 and builds
+`frontend/dist` from the lock file. Its temporary external-account credential
+uses this project for quota. Only the GitLab project principal set can consume
+that quota and impersonate the deploy identity, and the WIF provider further
+requires this repository's protected `main` branch.
 
-- Firebase project/site, Firestore database, private bucket, secret, runtime
-  and deploy identities, and GitLab WIF provider exist with least privilege.
-- OAuth origins include the exact Firebase domains.
-- Protected GitLab variables are configured and the main pipeline succeeds.
-- Public frontend, health, session, sign-in, PDF/OMR, measure navigation,
-  practice create/remove, score deletion, and two-account isolation are tested.
-- GitLab and GitHub `main` resolve to the reviewed release commit.
+## Deployment evidence
+
+- Firebase Hosting serves the public HTTPS URL and rewrites `/api/**` to the
+  deployed Cloud Run service.
+- Firestore Datastore mode, the private GCS bucket, Secret Manager secret,
+  runtime/deploy identities, and protected-main WIF provider are active.
+- The application service is min 0/max 1/concurrency 1; the billing guard is
+  private, min 0/max 1/concurrency 1, and invoked only by authenticated Pub/Sub.
+- GitLab pipeline `3038775009` passed deployment and separate public
+  verification; its temporary Artifact Registry images were removed.
+- Automated backend and Firestore-emulator tests cover Google-token rejection,
+  two-account isolation, PDF/OMR state, measure navigation APIs, practice
+  create/remove, and complete score deletion.
