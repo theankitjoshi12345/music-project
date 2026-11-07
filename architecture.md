@@ -42,6 +42,11 @@ accepts that bearer ticket, for at most 15 minutes. Altered/wrong-score tickets
 fail, and CORS allows only the project's `.web.app` and `.firebaseapp.com`
 origins.
 
+Hosting strips ordinary cookies before a rewritten request and permits only
+`__session`. The production Django session deliberately uses that name, plus
+Secure, HTTP-only, SameSite=Lax attributes, so the signed Google identity
+reaches Cloud Run and participates in Firebase's per-session cache key.
+
 GCS uses uniform access and public-access prevention. Django returns original
 and derived files only after ownership checks. Production disables Django admin
 and database-backed user tables.

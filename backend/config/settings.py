@@ -99,7 +99,12 @@ CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get(
 CORS_ALLOW_CREDENTIALS = bool(CORS_ALLOWED_ORIGINS)
 SESSION_COOKIE_AGE = 30 * 24 * 60 * 60
 SESSION_SAVE_EVERY_REQUEST = True
-SESSION_COOKIE_NAME = "__Host-score-session" if DJANGO_ENV == "production" else "sessionid"
+# Firebase Hosting removes ordinary cookies from requests rewritten to Cloud
+# Run. Its one documented exception is ``__session``, which is also included
+# in the CDN cache key. Keep the normal Django name locally, but use the
+# Hosting-compatible name publicly so the verified Google session reaches the
+# API after the login response.
+SESSION_COOKIE_NAME = "__session" if DJANGO_ENV == "production" else "sessionid"
 CSRF_COOKIE_NAME = "__Host-score-csrf" if DJANGO_ENV == "production" else "csrftoken"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
