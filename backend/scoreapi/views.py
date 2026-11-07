@@ -4,7 +4,9 @@ import secrets
 
 from django.conf import settings
 from django.core import signing
+from django.http import Http404
 from django.db import IntegrityError
+from django.db.models import Prefetch
 from django.http import FileResponse, HttpResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
@@ -266,7 +268,14 @@ class ScorePdfExtractionTicketView(APIView):
 class ScorePassageListView(APIView):
     def get(self, request, score_id):
         score = get_object_or_404(visible_scores(request), pk=score_id)
-        passages = score.passages.prefetch_related("practice_marks")
+        # Datastore needs a composite index when a filtered query also uses
+        # Passage.Meta ordering. Fetch the quota-bounded rows with built-in
+        # indexes and preserve the UI order in Python instead. Clear ordering
+        # on the nested practice-mark prefetch for the same reason.
+        passages = list(score.passages.order_by().prefetch_related(
+            Prefetch("practice_marks", queryset=PracticeMark.objects.order_by()),
+        ))
+        passages.sort(key=lambda passage: (passage.page_number, passage.section, passage.measure_number))
         return Response(PassageSerializer(passages, many=True, context={"request": request}).data)
 
     def post(self, request, score_id):
@@ -320,53 +329,65 @@ def pdf_image_response(score, page_number, region=None):
 class PracticeMarkListCreateView(APIView):
     def get(self, request):
         owner = request_owner(request)
-        score_ids = list(visible_scores(request).values_list("pk", flat=True))
-        passage_ids = list(Passage.objects.filter(score_id__in=score_ids).values_list("pk", flat=True))
-        marks = PracticeMark.objects.prefetch_related(
-            "passage", "passage__score", "passage__practice_marks"
-        ).filter(owner=owner, passage_id__in=passage_ids)
+        score_ids = set(visible_scores(request).values_list("pk", flat=True))
+        passage_ids = set(Passage.objects.filter(score_id__in=score_ids).order_by().values_list("pk", flat=True))
+        # Owner is a built-in single-property index. Apply the bounded
+        # passage/status filters in Python instead of requiring several
+        # combinations of Datastore composite indexes.
+        marks = list(PracticeMark.objects.filter(owner=owner).order_by().prefetch_related(
+            Prefetch("passage", queryset=Passage.objects.order_by()),
+            Prefetch("passage__score", queryset=Score.objects.order_by()),
+            Prefetch("passage__practice_marks", queryset=PracticeMark.objects.order_by()),
+        ))
+        marks = [mark for mark in marks if mark.passage_id in passage_ids]
         score_id = request.query_params.get("score")
         mark_status = request.query_params.get("status")
 
         if score_id:
-            score_passage_ids = list(Passage.objects.filter(score_id=score_id).values_list("pk", flat=True))
-            marks = marks.filter(passage_id__in=score_passage_ids)
+            marks = [mark for mark in marks if str(mark.passage.score_id) == score_id]
         if mark_status == "unresolved":
-            marks = marks.filter(is_resolved=False)
+            marks = [mark for mark in marks if not mark.is_resolved]
         elif mark_status == "resolved":
-            marks = marks.filter(is_resolved=True)
+            marks = [mark for mark in marks if mark.is_resolved]
         elif mark_status:
             raise ValidationError({"status": "Use 'unresolved' or 'resolved'."})
 
+        marks.sort(key=lambda mark: (mark.is_resolved, -mark.updated_at.timestamp()))
         return Response(PracticeMarkSerializer(marks, many=True, context={"request": request}).data)
 
     def post(self, request):
         serializer = PracticeMarkSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         values = serializer.validated_data
-        mark, created = PracticeMark.objects.get_or_create(
-            passage=values["passage"], owner=request_owner(request),
-            defaults={key: value for key, value in values.items() if key != "passage"},
-        )
+        owner = request_owner(request)
+        mark = next((candidate for candidate in PracticeMark.objects.filter(owner=owner).order_by()
+                     if candidate.passage_id == values["passage"].pk), None)
+        created = mark is None
+        if created:
+            mark = PracticeMark.objects.create(
+                passage=values["passage"], owner=owner,
+                **{key: value for key, value in values.items() if key != "passage"},
+            )
         return Response(PracticeMarkSerializer(mark, context={"request": request}).data,
                         status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
 class PracticeMarkDetailView(APIView):
+    @staticmethod
+    def owned_mark(request, mark_id):
+        mark = get_object_or_404(PracticeMark, pk=mark_id)
+        if mark.owner != request_owner(request) or mark.passage.score.owner != score_owner(request):
+            raise Http404
+        return mark
+
     def delete(self, request, mark_id):
-        owner = request_owner(request)
-        score_ids = list(visible_scores(request).values_list("pk", flat=True))
-        passage_ids = list(Passage.objects.filter(score_id__in=score_ids).values_list("pk", flat=True))
-        mark = get_object_or_404(PracticeMark, pk=mark_id, owner=owner, passage_id__in=passage_ids)
+        mark = self.owned_mark(request, mark_id)
         # Notes live on this row; no separate practice files or orphan notes remain.
         delete_id_direct(PracticeMark, mark.pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, mark_id):
-        owner = request_owner(request)
-        score_ids = list(visible_scores(request).values_list("pk", flat=True))
-        passage_ids = list(Passage.objects.filter(score_id__in=score_ids).values_list("pk", flat=True))
-        mark = get_object_or_404(PracticeMark, pk=mark_id, owner=owner, passage_id__in=passage_ids)
+        mark = self.owned_mark(request, mark_id)
         serializer = PracticeMarkSerializer(mark, data=request.data, partial=True, context={"request": request})
         serializer.is_valid(raise_exception=True)
         mark = serializer.save()

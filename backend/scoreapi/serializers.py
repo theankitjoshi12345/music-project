@@ -107,7 +107,10 @@ class PassageSerializer(serializers.ModelSerializer):
     def get_practice_mark_id(self, passage):
         request = self.context.get("request")
         owner = request_owner(request)
-        return next((mark.id for mark in passage.practice_marks.all() if mark.owner == owner), None)
+        manager = passage.practice_marks
+        marks = (manager.all() if "practice_marks" in getattr(passage, "_prefetched_objects_cache", {})
+                 else manager.order_by())
+        return next((mark.id for mark in marks if mark.owner == owner), None)
 
 
 class PassageCreateSerializer(serializers.ModelSerializer):
