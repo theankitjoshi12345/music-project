@@ -334,11 +334,11 @@ class PracticeMarkListCreateView(APIView):
         # Owner is a built-in single-property index. Apply the bounded
         # passage/status filters in Python instead of requiring several
         # combinations of Datastore composite indexes.
-        marks = list(PracticeMark.objects.filter(owner=owner).order_by().prefetch_related(
-            Prefetch("passage", queryset=Passage.objects.order_by()),
-            Prefetch("passage__score", queryset=Score.objects.order_by()),
-            Prefetch("passage__practice_marks", queryset=PracticeMark.objects.order_by()),
-        ))
+        # django-gcloud-connectors cannot compile Django 5.2's ColPairs query
+        # produced by forward-FK prefetching. Keep this owner query simple;
+        # bounded related objects are fetched by their Datastore keys during
+        # filtering/serialization.
+        marks = list(PracticeMark.objects.filter(owner=owner).order_by())
         marks = [mark for mark in marks if mark.passage_id in passage_ids]
         score_id = request.query_params.get("score")
         mark_status = request.query_params.get("status")
