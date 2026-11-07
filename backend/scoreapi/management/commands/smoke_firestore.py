@@ -77,12 +77,20 @@ class Command(BaseCommand):
             if passage.status_code != 201:
                 raise CommandError(f"Passage creation returned {passage.status_code}.")
             passage_id = passage.json()["id"]
+            passages = alice.get(f"/api/scores/{score_id}/passages/")
+            if passages.status_code != 200 or [item["id"] for item in passages.json()] != [passage_id]:
+                raise CommandError(f"Passage listing returned {passages.status_code}: {passages.content!r}")
             mark = alice.post("/api/practice-marks/", {
                 "passage_id": passage_id, "note": "Firestore emulator test",
             }, format="json")
             if mark.status_code != 201:
                 raise CommandError(f"Practice mark creation returned {mark.status_code}.")
             mark_id = mark.json()["id"]
+            review = alice.get("/api/practice-marks/")
+            if review.status_code != 200 or [item["id"] for item in review.json()] != [mark_id]:
+                raise CommandError(f"Practice review returned {review.status_code}: {review.content!r}")
+            if bob.get("/api/practice-marks/").json() != []:
+                raise CommandError("Google account practice-mark isolation failed.")
             if alice.delete(f"/api/practice-marks/{mark_id}/").status_code != 204:
                 raise CommandError("Practice mark deletion failed.")
             if PracticeMark.objects.filter(pk=mark_id).exists():
