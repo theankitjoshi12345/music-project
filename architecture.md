@@ -94,8 +94,10 @@ prefix, source object, then score.
 6. Completion is published only after every measure is stored.
 
 A file lock permits one Audiveris process; Cloud Run also has one instance and
-concurrency one. A stale processing lease becomes retryable after the deadline
-plus 90 seconds. The UI polls short status calls during the direct long request.
+concurrency four with four Gunicorn threads, leaving capacity for library and
+session requests during recognition. A stale processing lease becomes retryable
+after the deadline plus 90 seconds. The UI polls every five seconds and skips
+a poll while its previous request is pending.
 Display uses 150-dpi full pages and 300-dpi crops from the original PDF.
 
 ## Deployable artifacts
@@ -103,7 +105,7 @@ Display uses 150-dpi full pages and 300-dpi crops from the original PDF.
 The `cloudrun` image contains Ubuntu 24.04 amd64, Django/Gunicorn, Poppler, and
 checksum-verified Audiveris with Java/native dependencies. It runs as UID 10001
 and contains no frontend assets. Cloud Run uses request billing, 1 vCPU, 4 GiB,
-15-minute timeout, min 0, max 1, concurrency 1, and no startup CPU boost.
+15-minute timeout, min 0, max 1, concurrency 4, and no startup CPU boost.
 
 Firebase deploys `frontend/dist`, caches hashed assets immutably, does not cache
 `index.html`, rewrites `/api/**` to `music-companion-api` in `us-central1`, and
@@ -113,9 +115,9 @@ falls back to `index.html` for SPA routes.
 
 | Resource | Guard |
 | --- | --- |
-| Cloud Run | min 0, max 1, concurrency 1; one OMR lock |
-| Requests | 120/account-or-IP/hour |
-| Uploads | 4/account/day; 10 MB/file |
+| Cloud Run | min 0, max 1, concurrency 4; one OMR lock |
+| Requests | 10,000/account-or-IP/hour |
+| Uploads | 100/account/day; 10 MB/file |
 | Recognition | 2/account/day; 10 pages; 600 seconds |
 | User storage | 10 scores, 50 MB |
 | Global storage | 50 scores, 250 MB |
@@ -168,7 +170,7 @@ requires this repository's protected `main` branch.
   deployed Cloud Run service.
 - Firestore Datastore mode, the private GCS bucket, Secret Manager secret,
   runtime/deploy identities, and protected-main WIF provider are active.
-- The application service is min 0/max 1/concurrency 1; the billing guard is
+- The application service is min 0/max 1/concurrency 4; the billing guard is
   private, min 0/max 1/concurrency 1, and invoked only by authenticated Pub/Sub.
 - GitLab pipeline `3038775009` passed deployment and separate public
   verification; its temporary Artifact Registry images were removed.
