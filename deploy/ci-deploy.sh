@@ -301,7 +301,7 @@ assert max_scale == "1"
 assert min_scale == "0"
 containers = template["spec"]["containers"]
 assert len(containers) == 1
-assert template["spec"]["containerConcurrency"] == 1
+assert template["spec"]["containerConcurrency"] == 4
 assert containers[0]["resources"]["limits"] == {"cpu": "1", "memory": "4Gi"}
 print(service["status"]["url"])
 PY
