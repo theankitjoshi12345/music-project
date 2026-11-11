@@ -241,8 +241,8 @@ environment_values=(
   "PUBLIC_MAX_BYTES_PER_SESSION=52428800"
   "PUBLIC_MAX_SCORES_TOTAL=50"
   "PUBLIC_MAX_BYTES_TOTAL=262144000"
-  "API_REQUEST_RATE=120/hour"
-  "UPLOAD_REQUEST_RATE=4/day"
+  "API_REQUEST_RATE=10000/hour"
+  "UPLOAD_REQUEST_RATE=100/day"
   "OMR_REQUEST_RATE=2/day"
   "OMR_DAILY_LIMIT=2"
 )
@@ -267,7 +267,7 @@ gcloud run deploy "$GCP_CLOUD_RUN_SERVICE" \
   --port=8080 \
   --cpu=1 \
   --memory=4Gi \
-  --concurrency=1 \
+  --concurrency=4 \
   --timeout=900 \
   --min=0 \
   --max=1 \

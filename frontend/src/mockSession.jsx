@@ -7,7 +7,7 @@ let sessionRequest
 
 function loadSession() {
   // React StrictMode can mount twice; establish one server identity first.
-  sessionRequest ??= fetch('/api/session/', { credentials: 'same-origin' }).then(async response => {
+  sessionRequest ??= fetch('/api/session/', { credentials: 'same-origin', signal: AbortSignal.timeout(60000) }).then(async response => {
     if (!response.ok) throw new Error('Your private workspace could not start. Please try again.')
     const session = await response.json()
     csrfToken = session.csrfToken || session.csrf_token || ''
@@ -60,10 +60,19 @@ function GoogleSignIn({ clientId, onCredential }) {
     <h1>Welcome to Score Companion</h1>
     <p>Sign in to keep your scores private and available when you return.</p>
     <div ref={button} aria-label="Google sign-in" />
-    {!ready && !error && <p role="status">Loading secure Google sign-in…</p>}
+    {!ready && !error && <SessionLoading message="Loading secure Google sign-in…" />}
     {error && <p role="alert">{error}</p>}
     <small>We use only your basic Google identity. We never request Drive, Gmail, or payment access.</small>
   </main>
+}
+
+function SessionLoading({ message = 'Opening your practice space…' }) {
+  return <div className="session-loading" role="status">
+    <span className="session-spinner" aria-hidden="true" />
+    <p>{message}</p>
+    <p className="session-loading-hint">Please keep this page open. The first visit can take up to a minute while we start your workspace.</p>
+    <div className="session-loading-bars" aria-hidden="true"><span /><span /><span /></div>
+  </div>
 }
 
 export const mockUsers = [
@@ -120,7 +129,7 @@ export function MockSessionProvider({ children }) {
 
   if (!session) return <main className="session-start" aria-busy={!error}>
     <h1>Score Companion</h1>
-    {error ? <><p role="alert">{error}</p><button type="button" onClick={() => { setError(''); setAttempt(value => value + 1) }}>Try again</button></> : <p role="status">Opening your practice space…</p>}
+    {error ? <><p role="alert">{error}</p><button type="button" onClick={() => { setError(''); setAttempt(value => value + 1) }}>Try again</button></> : <SessionLoading />}
   </main>
   if (session.auth_mode === 'google' && !session.authenticated) {
     return <GoogleSignIn clientId={session.google_client_id} onCredential={async credential => {

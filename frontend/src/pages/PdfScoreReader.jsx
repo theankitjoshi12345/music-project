@@ -17,6 +17,7 @@ export function ScoreImage({ src, alt }) {
 export default function PdfScoreReader({ score, passages, page, focusedPassageId, onPageChange, onSelect, onExtract, extracting, extractionError, onSave, onRemove, savingId }) {
   const [view, setView] = useState('measure')
   const [jumpError, setJumpError] = useState('')
+  const [notes, setNotes] = useState({})
   const listRef = useRef(null)
   const ordered = useMemo(() => [...passages].sort((a, b) => a.page_number - b.page_number || a.measure_number - b.measure_number), [passages])
   const pageMeasures = ordered.filter(passage => passage.page_number === page)
@@ -65,7 +66,8 @@ export default function PdfScoreReader({ score, passages, page, focusedPassageId
             <button className="button-secondary" type="button" aria-label="Previous measure" disabled={!previous} onClick={() => select(previous)}>← Previous</button>
             <button className="button-secondary" type="button" aria-label="Next measure" disabled={!next} onClick={() => select(next)}>Next →</button>
           </div>
-          <button className={selected.is_marked_for_practice ? 'button-secondary' : 'button-primary'} type="button" disabled={savingId !== null} onClick={() => selected.is_marked_for_practice ? onRemove(selected) : onSave(selected)} aria-label={`${selected.is_marked_for_practice ? 'Remove' : 'Save'} measure ${selected.measure_number} ${selected.is_marked_for_practice ? 'from' : 'for'} practice`}>
+          {!selected.is_marked_for_practice && <label className="practice-note">Practice note (optional)<textarea maxLength={2000} value={notes[selected.id] || ''} onChange={event => setNotes(current => ({ ...current, [selected.id]: event.target.value }))} placeholder="What would you like to work on?" /></label>}
+          <button className={selected.is_marked_for_practice ? 'button-secondary' : 'button-primary'} type="button" disabled={savingId !== null} onClick={() => selected.is_marked_for_practice ? onRemove(selected) : onSave(selected, notes[selected.id] || '')} aria-label={`${selected.is_marked_for_practice ? 'Remove' : 'Save'} measure ${selected.measure_number} ${selected.is_marked_for_practice ? 'from' : 'for'} practice`}>
             {savingId === selected.id ? 'Saving…' : selected.is_marked_for_practice ? 'Remove from practice' : 'Save for practice'}
           </button>
         </div>}

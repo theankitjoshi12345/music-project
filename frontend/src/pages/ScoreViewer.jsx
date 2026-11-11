@@ -23,10 +23,10 @@ export default function ScoreViewer() {
     document.getElementById(`measure-${viewer.focusedPassageId}`)?.scrollIntoView({ behavior: 'smooth', block: sourceIsPdf ? 'nearest' : 'center' })
   }, [viewer.focusedPassageId, viewer.page, sourceIsPdf])
 
-  async function saveForPractice(passage) {
+  async function saveForPractice(passage, note = '') {
     setSavingId(passage.id); setActionError(''); setActionMessage('')
     try {
-      await viewer.saveForPractice(passage)
+      await viewer.saveForPractice(passage, note)
       setActionMessage(`Measure ${passage.measure_number} is now in ${user.name}'s Practice Review.`)
     } catch (error) { setActionError(error.message) } finally { setSavingId(null) }
   }

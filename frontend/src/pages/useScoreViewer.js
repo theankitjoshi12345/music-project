@@ -68,7 +68,10 @@ export default function useScoreViewer(user) {
   useEffect(() => {
     if (!data?.score?.id || (!extracting && data.score.extraction_status !== 'processing')) return
     const controller = new AbortController()
+    let polling = false
     const timer = setInterval(async () => {
+      if (polling) return
+      polling = true
       try {
         const refreshed = await loadViewerData(data.score.id, controller.signal, fetch, mockUserHeaders(user))
         if (!controller.signal.aborted) {
@@ -77,8 +80,10 @@ export default function useScoreViewer(user) {
         }
       } catch (failure) {
         if (!controller.signal.aborted) setExtractionError(failure.message)
+      } finally {
+        polling = false
       }
-    }, 1500)
+    }, 5000)
     return () => { clearInterval(timer); controller.abort() }
   }, [data?.score?.id, data?.score?.extraction_status, extracting, user])
 
@@ -146,9 +151,9 @@ export default function useScoreViewer(user) {
       setFocusedPassageId(passage.id)
       return passage
     },
-    async saveForPractice(passage) {
+    async saveForPractice(passage, note = '') {
       const response = await fetch('/api/practice-marks/', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...mockUserHeaders(user) }, body: JSON.stringify({ passage_id: passage.id }),
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...mockUserHeaders(user) }, body: JSON.stringify({ passage_id: passage.id, note }),
       })
       const mark = await response.json()
       if (!response.ok) throw new Error(mark.passage_id?.[0] || 'The practice mark could not be saved.')

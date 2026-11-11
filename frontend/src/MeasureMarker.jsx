@@ -14,6 +14,7 @@ export default function MeasureMarker() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [notes, setNotes] = useState({})
   const [retry, setRetry] = useState(0)
   const passages = data?.passages ?? []
   const selected = passages.find(passage => passage.id === selectedId) ?? passages[0]
@@ -43,7 +44,7 @@ export default function MeasureMarker() {
       if (removing && !selected.practice_mark_id) throw new Error('Reload this score to refresh its practice state.')
       const response = await fetch(removing ? `/api/practice-marks/${selected.practice_mark_id}/` : '/api/practice-marks/', {
         method: removing ? 'DELETE' : 'POST', headers: { 'Content-Type': 'application/json', ...mockUserHeaders(user) },
-        ...(removing ? {} : { body: JSON.stringify({ passage_id: selected.id }) }),
+        ...(removing ? {} : { body: JSON.stringify({ passage_id: selected.id, note: notes[selected.id] || '' }) }),
       })
       if (!response.ok && !(removing && response.status === 404)) throw new Error('Your practice item could not be updated. Please try again.')
       const mark = removing ? null : await response.json()
@@ -65,6 +66,7 @@ export default function MeasureMarker() {
         <aside className="marker-list" aria-label="Choose a measure">{passages.map(passage => <button className="button-secondary" key={passage.id} type="button" aria-current={passage.id === selected.id ? 'true' : undefined} onClick={() => setSelectedId(passage.id)}>Measure {passage.measure_number}<span>Page {passage.page_number}{passage.is_marked_for_practice ? ' · Saved' : ''}</span></button>)}</aside>
         <section className="marker-preview" aria-label="Selected measure">
           <h2>Measure {selected.measure_number} · Page {selected.page_number}</h2>
+          {!selected.is_marked_for_practice && <label className="practice-note">Practice note (optional)<textarea maxLength={2000} value={notes[selected.id] || ''} onChange={event => setNotes(current => ({ ...current, [selected.id]: event.target.value }))} placeholder="What would you like to work on?" /></label>}
           <div className="screen-actions marker-actions"><button className="button-secondary" type="button" aria-label="Previous measure" disabled={!previous} onClick={() => setSelectedId(previous.id)}>← Previous</button><button className="button-secondary" type="button" aria-label="Next measure" disabled={!next} onClick={() => setSelectedId(next.id)}>Next →</button><button className={selected.is_marked_for_practice ? 'button-secondary' : 'button-primary'} type="button" disabled={busy} onClick={changePractice}>{busy ? 'Saving…' : selected.is_marked_for_practice ? 'Remove from practice' : 'Save for practice'}</button></div>
           {selected.preview_url ? <ScoreImage key={selected.id} src={selected.preview_url} alt={`Music notation for measure ${selected.measure_number}, page ${selected.page_number}`} /> : <p>Open the score reader to view the original notation.</p>}
           <a className="button-link" href={`#/score-viewer?score=${data.score.id}&passage=${selected.id}`}>Open this measure in the score reader →</a>

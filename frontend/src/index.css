@@ -17,3 +17,15 @@ html { scroll-behavior:smooth; }
 button, input, select { font:inherit; }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
  .session-start { max-width: 36rem; margin: 12vh auto; padding: 2rem; }
+.session-start { text-align:center; }
+.session-loading { padding:24px 0; }
+.session-spinner { display:inline-block; width:42px; height:42px; border:4px solid #e8def7; border-top-color:#6939bf; border-radius:50%; animation:session-spin 1s linear infinite; }
+.session-loading-hint { color:#71627e; line-height:1.6; }
+.session-loading-bars { display:grid; gap:12px; margin:28px auto; max-width:320px; }
+.session-loading-bars span { height:16px; border-radius:12px; background:linear-gradient(90deg,#e8def7,#faf7ff,#e8def7); background-size:200% 100%; animation:session-shimmer 1.8s ease-in-out infinite; }
+.session-loading-bars span:last-child { width:65%; margin:auto; }
+.practice-note { display:flex; flex-direction:column; gap:8px; flex:1 1 240px; font-weight:700; }
+.practice-note textarea { font:inherit; padding:12px; border:1px solid #bdaeCD; border-radius:12px; min-height:64px; resize:vertical; background:#fff; color:#342840; }
+@keyframes session-spin { to { transform:rotate(360deg); } }
+@keyframes session-shimmer { to { background-position:-200% 0; } }
+@media(prefers-reduced-motion:reduce) { .session-spinner,.session-loading-bars span { animation:none; } }

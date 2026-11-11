@@ -98,7 +98,7 @@ Open <http://localhost:5173/>. Vite proxies `/api/` to port 8000. Set
 | Concern | Service/control |
 | --- | --- |
 | React/Vite | Firebase Hosting with SPA fallback |
-| Django + OMR | Cloud Run, min 0, max 1, concurrency 1 |
+| Django + OMR | Cloud Run, min 0, max 1, concurrency 4; one recognition job at a time |
 | Metadata | Firestore in Datastore mode |
 | PDFs/images | Private GCS bucket with public-access prevention |
 | Identity | Verified Google ID token + signed secure cookie |
@@ -143,7 +143,7 @@ Deployment supplies:
   `CLOUD_RUN_PUBLIC_URL`.
 - Firestore Datastore mode, GCS storage, project/bucket names, OAuth client ID,
   and a Secret Manager reference for `DJANGO_SECRET_KEY`.
-- 10 PDF pages, 600-second OMR timeout, 120 API requests/hour, 4 uploads/day,
+- 10 PDF pages, 600-second OMR timeout, 10,000 API requests/hour, 100 uploads/day,
   and 2 OMR jobs/day per account/IP guard.
 
 Storage ceilings are 10 scores/50 MB per account and 50 scores/250 MB globally.
