@@ -144,7 +144,7 @@ Deployment supplies:
 - Firestore Datastore mode, GCS storage, project/bucket names, OAuth client ID,
   and a Secret Manager reference for `DJANGO_SECRET_KEY`.
 - 10 PDF pages, 600-second OMR timeout, 10,000 API requests/hour, 100 uploads/day,
-  and 2 OMR jobs/day per account/IP guard.
+  and 20 OMR requests/day per account/IP guard (also 20 persistent recognition attempts/account/day).
 
 Storage ceilings are 10 scores/50 MB per account and 50 scores/250 MB globally.
 Each file is limited to 10 MB.

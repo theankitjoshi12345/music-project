@@ -369,6 +369,7 @@ class ScoreApiTests(APITestCase):
                 "page_number": 2,
                 "is_marked_for_practice": False,
                 "practice_mark_id": None,
+                "practice_note": "",
                 "bounding_box": None,
                 "preview_url": None,
             }

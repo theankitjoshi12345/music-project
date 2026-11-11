@@ -118,7 +118,7 @@ falls back to `index.html` for SPA routes.
 | Cloud Run | min 0, max 1, concurrency 4; one OMR lock |
 | Requests | 10,000/account-or-IP/hour |
 | Uploads | 100/account/day; 10 MB/file |
-| Recognition | 2/account/day; 10 pages; 600 seconds |
+| Recognition | 20/account/day; 10 pages; 600 seconds; single recognition lock |
 | User storage | 10 scores, 50 MB |
 | Global storage | 50 scores, 250 MB |
 | Artifact Registry | temporary digest; delete after verified release |

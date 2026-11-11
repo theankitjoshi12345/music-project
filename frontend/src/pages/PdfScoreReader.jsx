@@ -61,6 +61,7 @@ export default function PdfScoreReader({ score, passages, page, focusedPassageId
       </div>
       {view === 'measure' ? <section className="pdf-selected-measure" aria-label="Selected measure preview">
         <div className="reader-measure-heading"><h2>{selected ? `Measure ${selected.measure_number} · Page ${selected.page_number}` : 'Preparing your measures'}</h2>{selected?.is_marked_for_practice && <><span className="reader-saved">Saved for practice</span><a className="button-link" href="#/practice-review">Open practice list →</a></>}</div>
+        {selected?.practice_note && <aside className="saved-practice-note" aria-label="Saved practice note"><strong>Your practice note</strong><p>{selected.practice_note}</p></aside>}
         {selected && <div className="reader-measure-actions">
           <div className="reader-step-controls" aria-label="Measure navigation">
             <button className="button-secondary" type="button" aria-label="Previous measure" disabled={!previous} onClick={() => select(previous)}>← Previous</button>

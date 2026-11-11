@@ -157,7 +157,7 @@ export default function useScoreViewer(user) {
       })
       const mark = await response.json()
       if (!response.ok) throw new Error(mark.passage_id?.[0] || 'The practice mark could not be saved.')
-      setData((current) => ({ ...current, passages: current.passages.map((item) => item.id === passage.id ? { ...item, is_marked_for_practice: true, practice_mark_id: mark.id } : item) }))
+      setData((current) => ({ ...current, passages: current.passages.map((item) => item.id === passage.id ? { ...item, is_marked_for_practice: true, practice_mark_id: mark.id, practice_note: mark.note || '' } : item) }))
       return mark
     },
     async removeFromPractice(passage) {
@@ -166,7 +166,7 @@ export default function useScoreViewer(user) {
         method: 'DELETE', headers: mockUserHeaders(user),
       })
       if (!response.ok && response.status !== 404) throw new Error('The practice item could not be removed. Please try again.')
-      setData(current => ({ ...current, passages: current.passages.map(item => item.id === passage.id ? { ...item, is_marked_for_practice: false, practice_mark_id: null } : item) }))
+      setData(current => ({ ...current, passages: current.passages.map(item => item.id === passage.id ? { ...item, is_marked_for_practice: false, practice_mark_id: null, practice_note: '' } : item) }))
     },
   }
 }

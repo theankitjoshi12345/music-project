@@ -27,5 +27,7 @@ button, input, select { font:inherit; }
 .practice-note { display:flex; flex-direction:column; gap:8px; flex:1 1 240px; font-weight:700; }
 .practice-note textarea { font:inherit; padding:12px; border:1px solid #bdaeCD; border-radius:12px; min-height:64px; resize:vertical; background:#fff; color:#342840; }
 @keyframes session-spin { to { transform:rotate(360deg); } }
+.saved-practice-note { margin:16px; padding:16px; border-radius:12px; background:var(--surface-soft,#f1eafa); border:1px solid var(--line,#d9cceb); }
+.saved-practice-note p { white-space:pre-wrap; overflow-wrap:anywhere; }
 @keyframes session-shimmer { to { background-position:-200% 0; } }
 @media(prefers-reduced-motion:reduce) { .session-spinner,.session-loading-bars span { animation:none; } }

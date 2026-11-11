@@ -55,6 +55,16 @@ class PrivateLibraryTests(TestCase):
         self.assertEqual(browser.get(f"/api/scores/{self.score.id}/file/").status_code, 403)
         self.assertEqual(browser.post(f"/api/scores/{self.score.id}/extract-measures/").status_code, 403)
 
+    def test_reopened_measure_returns_only_its_owners_saved_note(self):
+        PracticeMark.objects.create(passage=self.passage, owner="someone-else", note="Do not expose")
+        response = self.alice.get(f"/api/scores/{self.score.id}/passages/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]["practice_note"], "Private reminder")
+        self.assertNotContains(response, "Do not expose")
+        self.alice.delete(f"/api/practice-marks/{self.mark.id}/")
+        response = self.alice.get(f"/api/scores/{self.score.id}/passages/")
+        self.assertEqual(response.json()[0]["practice_note"], "")
+
     @patch("scoreapi.views.render_pdf", return_value=b"PNG")
     @patch("scoreapi.views.extract_score_measures")
     def test_second_browser_cannot_read_change_or_render_first_browsers_data(self, extract, render):

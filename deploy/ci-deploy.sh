@@ -243,8 +243,8 @@ environment_values=(
   "PUBLIC_MAX_BYTES_TOTAL=262144000"
   "API_REQUEST_RATE=10000/hour"
   "UPLOAD_REQUEST_RATE=100/day"
-  "OMR_REQUEST_RATE=2/day"
-  "OMR_DAILY_LIMIT=2"
+  "OMR_REQUEST_RATE=20/day"
+  "OMR_DAILY_LIMIT=20"
 )
 existing_service_url=$(gcloud run services describe "$GCP_CLOUD_RUN_SERVICE" \
   --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)' 2>/dev/null || true)
