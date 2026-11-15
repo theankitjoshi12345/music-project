@@ -21,7 +21,7 @@ backend-tests:
     - python backend/manage.py check
     - python backend/manage.py makemigrations --check --dry-run
     - python backend/manage.py test scoreapi --verbosity 2
-    - DJANGO_ENV=production DJANGO_DEBUG=false DJANGO_ALLOWED_HOSTS=ci.example.test DJANGO_CSRF_TRUSTED_ORIGINS=https://ci.example.test python backend/manage.py check --deploy --fail-level WARNING
+    - DJANGO_ENV=production DJANGO_DEBUG=false DJANGO_AUTH_MODE=session DJANGO_ALLOWED_HOSTS=ci.example.test DJANGO_CSRF_TRUSTED_ORIGINS=https://ci.example.test python backend/manage.py check --deploy --fail-level WARNING
 
 cost-guard-tests:
   stage: test
