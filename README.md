@@ -25,7 +25,7 @@ changes were activated only after explicit owner approval.
 
 ## User flow
 
-1. Sign in with Google in production; local demo mode has mock profiles.
+1. Sign in with Google in production; create a username and password in the local app.
 2. Upload a PDF or MusicXML-family score up to 10 MB.
 3. Poppler validates/renders PDFs and Audiveris identifies measures. The UI
    displays estimated and elapsed processing time.
@@ -47,7 +47,9 @@ SQLite, Poppler, Java, and Audiveris; teammates install no OMR tools on the host
 docker compose up --build -d --wait
 ```
 
-Open <http://localhost:8080/>.
+Open <http://localhost:8080/>, create an account, then sign in. To verify
+isolation, open a private browser window and create a second account: it starts
+with an empty library and cannot access the first account's scores or notes.
 
 ```bash
 docker compose ps
@@ -78,7 +80,8 @@ filesystem media are the defaults.
 python3.12 -m venv backend/.venv
 backend/.venv/bin/pip install -r backend/requirements.txt
 backend/.venv/bin/python backend/manage.py migrate
-backend/.venv/bin/python backend/manage.py runserver
+DJANGO_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')" \\
+  DJANGO_AUTH_MODE=local backend/.venv/bin/python backend/manage.py runserver
 ```
 
 In another terminal:
@@ -92,6 +95,9 @@ npm run dev
 Open <http://localhost:5173/>. Vite proxies `/api/` to port 8000. Set
 `AUDIVERIS_COMMAND` if it is not on `PATH`; macOS discovery also checks
 `/Applications/Audiveris.app` and `.local-tools/Audiveris.app`.
+
+The first page asks you to create a local account. Open an incognito window to
+create a second account and verify that its library starts empty.
 
 ## Production architecture
 
@@ -123,8 +129,11 @@ See [architecture.md](architecture.md) for the detailed data and trust model.
 
 ## Authentication and isolation
 
-`DJANGO_AUTH_MODE` supports `demo` locally, compatibility `session`, and
-production `google`. Google mode verifies the ID-token audience and
+`DJANGO_AUTH_MODE=local` is the default local account mode. It stores a
+password hash in SQLite and keeps the selected account in a server session.
+`demo` remains an explicit development-only compatibility mode; it is never
+the default and Cloud Run refuses it. Production uses `google`, which verifies
+the ID-token audience and
 `email_verified`, then hashes the stable `sub` as the owner key. Email/name are
 display-only.
 

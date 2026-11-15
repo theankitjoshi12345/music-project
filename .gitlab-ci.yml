@@ -17,10 +17,10 @@ backend-tests:
   script:
     - apt-get update -qq && apt-get install -y --no-install-recommends poppler-utils
     - pip install -r backend/requirements-docker.txt
+    - export DJANGO_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(64))')"
     - python backend/manage.py check
     - python backend/manage.py makemigrations --check --dry-run
     - python backend/manage.py test scoreapi --verbosity 2
-    - export DJANGO_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(64))')"
     - DJANGO_ENV=production DJANGO_DEBUG=false DJANGO_ALLOWED_HOSTS=ci.example.test DJANGO_CSRF_TRUSTED_ORIGINS=https://ci.example.test python backend/manage.py check --deploy --fail-level WARNING
 
 cost-guard-tests:
@@ -54,6 +54,7 @@ firestore-integration:
     DJANGO_ALLOWED_HOSTS: testserver
   script:
     - pip install -r backend/requirements-docker.txt
+    - export DJANGO_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(64))')"
     - |
       for attempt in $(seq 1 60); do
         if python -c 'import socket; socket.create_connection(("firestore", 8787), 2).close()'; then

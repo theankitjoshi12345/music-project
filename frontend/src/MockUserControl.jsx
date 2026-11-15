@@ -10,6 +10,12 @@ export default function MockUserControl() {
     <button type="button" onClick={() => logout().catch(() => {})}>Sign out</button>
   </div>
 
+  if (authMode === 'local') return <div className="mock-user-control google-user-control">
+    <span>{user.name}</span>
+    <small>Local account</small>
+    <button type="button" onClick={() => logout().catch(() => {})}>Sign out</button>
+  </div>
+
   if (authMode === 'session') return <div className="mock-user-control" title="Your library is private to this browser. Keep its cookies to return to your scores. Access expires after 30 days of inactivity.">
     <span>Private workspace</span><small>Private to this browser · 30 days</small>
   </div>

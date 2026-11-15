@@ -46,16 +46,18 @@ OMR_DAILY_LIMIT = int(os.environ.get("OMR_DAILY_LIMIT", "100"))
 # SECURITY WARNING: keep the secret key used in production secret!
 _secret_key_file = os.environ.get("DJANGO_SECRET_KEY_FILE")
 SECRET_KEY = (Path(_secret_key_file).read_text().strip() if _secret_key_file else
-              os.environ.get("DJANGO_SECRET_KEY", 'django-insecure-am054yffs4&j)l#v$f^b$_q^-pi6t(x!c3*ljo)i8as@26!28='))
+              os.environ.get("DJANGO_SECRET_KEY", ""))
+if len(SECRET_KEY) < 50:
+    raise ImproperlyConfigured("Set a strong DJANGO_SECRET_KEY or DJANGO_SECRET_KEY_FILE before starting Score Companion.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() in {"1", "true", "yes"}
+DEBUG = os.environ.get("DJANGO_DEBUG", "false").lower() in {"1", "true", "yes"}
 DJANGO_ENV = os.environ.get("DJANGO_ENV", "development")
 if DJANGO_ENV not in {"development", "production"}:
     raise ImproperlyConfigured("DJANGO_ENV must be development or production.")
-DJANGO_AUTH_MODE = os.environ.get("DJANGO_AUTH_MODE", "demo" if DEBUG else "session")
-if DJANGO_AUTH_MODE not in {"demo", "session", "google"}:
-    raise ImproperlyConfigured("DJANGO_AUTH_MODE must be demo, session, or google.")
+DJANGO_AUTH_MODE = os.environ.get("DJANGO_AUTH_MODE", "local")
+if DJANGO_AUTH_MODE not in {"demo", "local", "session", "google"}:
+    raise ImproperlyConfigured("DJANGO_AUTH_MODE must be demo, local, session, or google.")
 if DJANGO_ENV == "production":
     if DEBUG or DJANGO_AUTH_MODE not in {"session", "google"}:
         raise ImproperlyConfigured("Production requires DEBUG=false and server-owned authentication.")
@@ -147,9 +149,8 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
 }
 
-# Application definition. The cloud runtime uses Google ID tokens and signed
-# cookie sessions, so it does not install Django's database-backed admin/user/
-# permission models. Local development keeps the familiar admin when enabled.
+# Application definition. Local accounts live in scoreapi so the cloud runtime
+# does not need Django's admin/user permission models.
 INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.staticfiles',

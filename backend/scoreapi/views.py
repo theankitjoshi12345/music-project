@@ -1,11 +1,13 @@
 from pathlib import Path
 import subprocess
 import secrets
+import re
 
 from django.conf import settings
 from django.core import signing
 from django.http import Http404
 from django.db import IntegrityError
+from django.contrib.auth.hashers import check_password, make_password
 from django.db.models import Prefetch
 from django.http import FileResponse, HttpResponse
 from django.middleware.csrf import get_token
@@ -22,7 +24,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Passage, PracticeMark, Score
+from .models import LocalAccount, Passage, PracticeMark, Score
 from .extraction_service import ExtractionBusy, extract_score_measures
 from .score_extract import OMRUnavailable, extract_musicxml_measures
 from .serializers import PassageCreateSerializer, PassageSerializer, PracticeMarkSerializer, ScoreSerializer, ScoreUploadMetadataSerializer
@@ -61,11 +63,18 @@ def browser_session(request):
 
 
 def _session_data(request):
-    authenticated = settings.DJANGO_AUTH_MODE != "google" or bool(request.session.get("google_sub"))
+    local_account = None
+    if settings.DJANGO_AUTH_MODE == "local" and request.session.get("local_account_id"):
+        local_account = LocalAccount.objects.filter(pk=request.session["local_account_id"]).first()
+        if not local_account:
+            request.session.flush()
+    authenticated = (bool(local_account) if settings.DJANGO_AUTH_MODE == "local"
+                     else settings.DJANGO_AUTH_MODE != "google" or bool(request.session.get("google_sub")))
     return {
         "auth_mode": settings.DJANGO_AUTH_MODE,
         "authenticated": authenticated,
         "display_name": ("Local practice profile" if is_demo() else
+                         local_account.username if local_account else
                          request.session.get("google_name", "Google account") if authenticated and settings.DJANGO_AUTH_MODE == "google"
                          else "Private browser library" if authenticated else "Sign in required"),
         "email": request.session.get("google_email") if authenticated and settings.DJANGO_AUTH_MODE == "google" else None,
@@ -73,6 +82,55 @@ def _session_data(request):
         "csrfToken": get_token(request),
         "expires_in_seconds": None if is_demo() else settings.SESSION_COOKIE_AGE,
     }
+
+
+def _local_auth_allowed():
+    return settings.DJANGO_AUTH_MODE == "local"
+
+
+def _credentials(request):
+    username = str(request.data.get("username", "")).strip().lower()
+    password = str(request.data.get("password", ""))
+    if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{2,63}", username):
+        raise ValidationError({"username": "Use 3–64 lowercase letters, numbers, hyphens, or underscores."})
+    if len(password) < 8 or len(password) > 128:
+        raise ValidationError({"password": "Use a password between 8 and 128 characters."})
+    return username, password
+
+
+def _start_local_session(request, account):
+    request.session.flush()
+    request.session["local_account_id"] = account.pk
+    request.session.set_expiry(settings.SESSION_COOKIE_AGE)
+    response = Response(_session_data(request))
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def local_register(request):
+    if not _local_auth_allowed():
+        return Response({"detail": "Local account sign-up is not enabled."}, status=404)
+    SessionAuthentication().enforce_csrf(request)
+    username, password = _credentials(request)
+    if LocalAccount.objects.filter(username=username).exists():
+        raise ValidationError({"username": "That username is already in use."})
+    account = LocalAccount.objects.create(username=username, password_hash=make_password(password))
+    return _start_local_session(request, account)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def local_login(request):
+    if not _local_auth_allowed():
+        return Response({"detail": "Local account sign-in is not enabled."}, status=404)
+    SessionAuthentication().enforce_csrf(request)
+    username, password = _credentials(request)
+    account = LocalAccount.objects.filter(username=username).first()
+    if not account or not check_password(password, account.password_hash):
+        return Response({"detail": "Username or password is incorrect."}, status=status.HTTP_401_UNAUTHORIZED)
+    return _start_local_session(request, account)
 
 
 @api_view(["POST"])
@@ -106,8 +164,8 @@ def google_login(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def google_logout(request):
-    if settings.DJANGO_AUTH_MODE != "google":
-        return Response({"detail": "Google sign-in is not enabled."}, status=404)
+    if settings.DJANGO_AUTH_MODE not in {"google", "local", "session"}:
+        return Response({"detail": "Sign-out is not enabled."}, status=404)
     SessionAuthentication().enforce_csrf(request)
     request.session.flush()
     response = Response(status=status.HTTP_204_NO_CONTENT)

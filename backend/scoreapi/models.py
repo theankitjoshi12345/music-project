@@ -12,6 +12,21 @@ def score_upload_path(instance, filename):
     return f"scores/{owner}/{identity}{Path(filename).suffix.lower()}"
 
 
+class LocalAccount(models.Model):
+    """Password-hashed account used by the self-contained local product."""
+
+    username = models.CharField(max_length=64, unique=True)
+    password_hash = models.CharField(max_length=256)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["username"]
+
+    @property
+    def owner_key(self):
+        return f"local-{self.pk}"
+
+
 class Score(models.Model):
     """A downloaded musical part available to the score library."""
 
