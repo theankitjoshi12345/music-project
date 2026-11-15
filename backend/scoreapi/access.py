@@ -28,6 +28,9 @@ def request_owner(request):
         if not owner or len(owner) > 64:
             raise PermissionDenied("Choose a valid local practice profile.")
         return owner
+    if settings.DJANGO_AUTH_MODE == "local":
+        account_id = request.session.get("local_account_id") if request else None
+        return f"local-{account_id}" if account_id else None
     if settings.DJANGO_AUTH_MODE == "google":
         subject = request.session.get("google_sub") if request else None
         owner = hashlib.sha256(subject.encode()).hexdigest() if subject else None
@@ -35,6 +38,7 @@ def request_owner(request):
         owner = request.session.get("score_owner") if request else None
     if not owner:
         message = ("Sign in with Google to open your library." if settings.DJANGO_AUTH_MODE == "google"
+                   else "Create an account or sign in to open your library." if settings.DJANGO_AUTH_MODE == "local"
                    else "Start a private browser session to open your library.")
         raise PermissionDenied(message)
     return owner
@@ -54,7 +58,13 @@ def visible_scores(request):
 
 class PrivateLibraryPermission(BasePermission):
     def has_permission(self, request, view):
-        request_owner(request)
+        owner = request_owner(request)
+        if not owner:
+            raise PermissionDenied(
+                "Sign in with Google to open your library." if settings.DJANGO_AUTH_MODE == "google"
+                else "Create an account or sign in to open your library." if settings.DJANGO_AUTH_MODE == "local"
+                else "Start a private browser session to open your library."
+            )
         if not is_demo() and request.method not in SAFE_METHODS:
             # DRF's default SessionAuthentication skips CSRF for anonymous users.
             # These anonymous sessions own real data, so enforce it explicitly.

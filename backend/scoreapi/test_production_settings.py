@@ -9,6 +9,21 @@ from django.test import SimpleTestCase
 
 
 class ProductionSettingsTests(SimpleTestCase):
+    def test_missing_secret_refuses_to_start_in_development_too(self):
+        backend = Path(__file__).resolve().parents[1]
+        environment = {**os.environ}
+        environment.pop("DJANGO_SECRET_KEY", None)
+        environment.pop("DJANGO_SECRET_KEY_FILE", None)
+        result = subprocess.run(
+            [sys.executable, "-c", "from config import settings"],
+            cwd=backend,
+            env=environment,
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("DJANGO_SECRET_KEY", result.stderr)
+
     def test_firebase_rewrite_uses_the_only_forwarded_session_cookie(self):
         backend = Path(__file__).resolve().parents[1]
         environment = {

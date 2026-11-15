@@ -24,6 +24,12 @@ Local Docker substitutes Nginx, SQLite, filesystem media, and a named volume.
 Native development runs Vite and Django separately. Neither path writes to
 cloud persistence.
 
+The default local mode is `DJANGO_AUTH_MODE=local`. It stores a `LocalAccount`
+row with a Django password hash, creates an HTTP-only server session after
+registration or sign-in, and uses `local-<account id>` as the owner key. The
+mock-profile header exists only in explicit `demo` mode and is not accepted by
+the default local or public deployment paths.
+
 ## Identity and request security
 
 Production uses `DJANGO_AUTH_MODE=google`:
@@ -55,6 +61,7 @@ and database-backed user tables.
 
 | Record | Main fields | Constraint |
 | --- | --- | --- |
+| `LocalAccount` | username, password hash, created time | unique username |
 | `Score` | owner, metadata, source path/bytes/SHA, counts, extraction state/layout | owner + content SHA |
 | `Passage` | score, section, measure, page, normalized box | score + section + measure |
 | `PracticeMark` | owner, passage, note, resolved state, timestamps | passage + owner |

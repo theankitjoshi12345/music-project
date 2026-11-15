@@ -16,6 +16,8 @@ from .views import (
     browser_session,
     google_login,
     google_logout,
+    local_login,
+    local_register,
 )
 
 app_name = "scoreapi"
@@ -24,6 +26,8 @@ urlpatterns = [
     path("health/", health_check, name="health-check"),
     path("session/", browser_session, name="browser-session"),
     path("auth/google/", google_login, name="google-login"),
+    path("auth/register/", local_register, name="local-register"),
+    path("auth/login/", local_login, name="local-login"),
     path("auth/logout/", google_logout, name="google-logout"),
     path("scores/", ScoreListView.as_view(), name="score-list"),
     path("scores/upload/", ScoreUploadView.as_view(), name="score-upload"),

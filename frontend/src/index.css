@@ -24,6 +24,11 @@ button, input, select { font:inherit; }
 .session-loading-bars { display:grid; gap:12px; margin:28px auto; max-width:320px; }
 .session-loading-bars span { height:16px; border-radius:12px; background:linear-gradient(90deg,#e8def7,#faf7ff,#e8def7); background-size:200% 100%; animation:session-shimmer 1.8s ease-in-out infinite; }
 .session-loading-bars span:last-child { width:65%; margin:auto; }
+.local-auth-form { display:grid; gap:16px; max-width:360px; margin:24px auto; text-align:left; }
+.local-auth-form label { display:grid; gap:6px; font-weight:700; }
+.local-auth-form input { padding:12px; border:1px solid #bdaeCD; border-radius:10px; font:inherit; }
+.local-auth-form .button-primary { justify-self:stretch; }
+.local-auth-switch { border:0; background:none; color:#5d2db0; cursor:pointer; }
 .practice-note { display:flex; flex-direction:column; gap:8px; flex:1 1 240px; font-weight:700; }
 .practice-note textarea { font:inherit; padding:12px; border:1px solid #bdaeCD; border-radius:12px; min-height:64px; resize:vertical; background:#fff; color:#342840; }
 @keyframes session-spin { to { transform:rotate(360deg); } }

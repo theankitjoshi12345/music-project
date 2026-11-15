@@ -75,6 +75,45 @@ function SessionLoading({ message = 'Opening your practice space…' }) {
   </div>
 }
 
+function LocalSignIn({ onAuthenticated }) {
+  const [mode, setMode] = useState('signin')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function submit(event) {
+    event.preventDefault()
+    setBusy(true); setError('')
+    const form = new FormData(event.currentTarget)
+    try {
+      const response = await fetch(`/api/auth/${mode === 'signin' ? 'login' : 'register'}/`, {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) },
+        body: JSON.stringify({ username: form.get('username'), password: form.get('password') }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.detail || data.username?.[0] || data.password?.[0] || 'Could not sign in.')
+      csrfToken = data.csrfToken || csrfToken
+      onAuthenticated(data)
+    } catch (failure) { setError(failure.message) }
+    finally { setBusy(false) }
+  }
+
+  return <main className="session-start local-sign-in">
+    <img src="/favicon.svg" width="72" height="72" alt="" />
+    <h1>{mode === 'signin' ? 'Welcome back' : 'Create your practice space'}</h1>
+    <p>{mode === 'signin' ? 'Sign in to open your private score library.' : 'Create a local account. Your scores and practice notes stay separate from other accounts.'}</p>
+    <form onSubmit={submit} className="local-auth-form">
+      <label>Username<input name="username" autoComplete="username" required minLength="3" maxLength="64" pattern="[a-z0-9][a-z0-9_-]{2,63}" /></label>
+      <label>Password<input name="password" type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required minLength="8" maxLength="128" /></label>
+      {error && <p role="alert">{error}</p>}
+      <button className="button-primary" disabled={busy}>{busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}</button>
+    </form>
+    <button className="button-link local-auth-switch" type="button" onClick={() => { setMode(current => current === 'signin' ? 'register' : 'signin'); setError('') }}>
+      {mode === 'signin' ? 'New here? Create an account' : 'Already have an account? Sign in'}
+    </button>
+  </main>
+}
+
 export const mockUsers = [
   { id: 'alex', name: 'Alex Rivera' },
   { id: 'sam', name: 'Sam Lee' },
@@ -109,6 +148,8 @@ export function MockSessionProvider({ children }) {
   const value = useMemo(() => ({
     user: session?.auth_mode === 'google'
       ? { id: 'google-account', name: session.display_name, email: session.email }
+      : session?.auth_mode === 'local'
+        ? { id: 'local-account', name: session.display_name }
       : session?.auth_mode === 'session'
         ? { id: 'private-session', name: 'Your private workspace' }
         : mockUsers.find((candidate) => candidate.id === userId) ?? mockUsers[0],
@@ -144,6 +185,9 @@ export function MockSessionProvider({ children }) {
       setSession(data)
     }} />
   }
+  if (session.auth_mode === 'local' && !session.authenticated) {
+    return <LocalSignIn onAuthenticated={data => { sessionRequest = Promise.resolve(data); setSession(data) }} />
+  }
   return <MockSessionContext.Provider value={value}>{children}</MockSessionContext.Provider>
 }
 
@@ -157,5 +201,5 @@ export function useMockSession() {
 }
 
 export function mockUserHeaders(user) {
-  return { 'X-Mock-User': user.id, ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) }
+  return { ...(user?.id === 'alex' || user?.id === 'sam' ? { 'X-Mock-User': user.id } : {}), ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) }
 }
