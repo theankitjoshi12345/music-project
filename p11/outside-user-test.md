@@ -1,7 +1,8 @@
 # Outside user test
 
-**Status: pending.** No actual non-team tester result has been supplied or
-observed. Automated browser testing does not replace this requirement.
+**Status: pending required human action.** No actual non-team tester result has
+been supplied or observed. Automated browser testing does not replace this
+requirement.
 
 After the public URL is verified, ask a person outside Team 08 to follow the
 root README user guide without a developer operating the application for them.
@@ -12,7 +13,7 @@ Use a sheet-music PDF they have permission to upload.
 | Tester identifier or optional name | Pending |
 | Confirmation that tester is outside Team 08 | Pending |
 | Date and time | Pending |
-| Public HTTPS URL and deployed commit | Pending |
+| Public HTTPS URL and deployed commit | `https://music-companion-513717.web.app` · `dd3f569` |
 | Device/browser | Pending |
 | Task | Upload PDF; extract measures; view a measure; save a note; open practice review; mark practiced; return to the passage. |
 | Completed without developer-only steps | Pending |

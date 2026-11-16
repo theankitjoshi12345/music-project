@@ -12,6 +12,8 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from lxml import etree
+from docx import Document
+from docx.shared import Inches
 
 HERE = Path(__file__).resolve().parent
 TEMPLATE = HERE.parent / "P11-Report-template.docx"
@@ -128,6 +130,19 @@ def main():
     with ZipFile(TEMPLATE) as original, ZipFile(output) as final:
         unchanged = [name for name in original.namelist() if name != "word/document.xml"]
         assert all(original.read(name) == final.read(name) for name in unchanged)
+
+    # The official template reserves a launch-screenshot slot. Add the real,
+    # dated public capture after the factual caption without changing the
+    # original template itself.
+    screenshot = HERE.parent / "evidence" / "launch" / "public-google-sign-in-2026-11-15.png"
+    document = Document(output)
+    target = next((paragraph for paragraph in document.paragraphs
+                   if paragraph.text.startswith("Figure 1. Public Google sign-in page")), None)
+    if target is None or not screenshot.is_file():
+        raise RuntimeError("Launch screenshot slot or public screenshot is missing.")
+    target.add_run().add_break()
+    target.add_run().add_picture(str(screenshot), width=Inches(5.7))
+    document.save(output)
     assert hashlib.sha256(TEMPLATE.read_bytes()).hexdigest() == TEMPLATE_SHA256
     print(f"Created {output}; {len(unchanged)} untouched package parts verified.")
 

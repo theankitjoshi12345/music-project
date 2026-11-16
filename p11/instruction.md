@@ -3,12 +3,15 @@
 **Course:** CMPS453  
 **Product:** Score Companion  
 **Team:** 08  
-**Deadline:** November 9, 2026
+**Deadline:** November 16, 2026, 11:55 PM
 
 Launch the existing P10 product at a verified public HTTPS URL. A new user must
 be able to upload sheet music, extract and view measures, save a practice note,
 and return to that passage. Complete repeatable GitLab delivery, document the
-actual security controls, and submit the official report as Word and PDF.
+actual security controls, and submit the official report as Word and PDF. The
+current deployed URL is https://music-companion-513717.web.app; the remaining
+human-only evidence is the required non-team tester record in
+`outside-user-test.md`.
 
 ## Sources and grading
 

@@ -1,53 +1,26 @@
 # P11 Launch submission
 
-**Score Companion · Team 08 · CMPS453 · Due November 9, 2026**
+**Score Companion · Team 08 · CMPS453 · Due November 16, 2026, 11:55 PM**
 
-P11 makes the completed P10 workflow available publicly, with repeatable
-delivery and documented application and infrastructure security.
+Score Companion is live at [music-companion-513717.web.app](https://music-companion-513717.web.app). Firebase Hosting provides the public HTTPS frontend and Cloud Run provides the Django/PDF-recognition API.
 
-**Free demo URL:** https://locate-valuation-using-donald.trycloudflare.com
+## Submission files
 
-This is a temporary Cloudflare Quick Tunnel backed by Docker on the development
-computer. It is HTTPS and was verified with the real PDF-to-measure workflow,
-but it stops when the tunnel container stops and its address is not permanent.
-No billing, paid hosting, or billable cloud resource is used.
-
-## Project documentation
-
-- [Root project guide and user instructions](../README.md)
-- [Root architecture](../architecture.md)
-- [Completed P10 report](../p10/P10_Integrated_MVP_Report.docx)
-
-## Assignment files
-
-- [Organized instructions](instruction.md)
-- [Rubric and launch checklist](launch-checklist.md)
+- [Final Word report](report/P11-Report.docx)
+- [Final PDF report](report/P11-Report.pdf)
 - [Official report template](P11-Report-template.docx)
 - [Official grader notes](P11-grader-notes.docx)
-- [Word report](report/P11-Report.docx)
-- [PDF report](report/P11-Report.pdf)
-- [Editable report data](report/report-data.json) and [report builder](report/build_report.py)
-- [Evidence index](evidence/README.md)
+- [Web-app launch guide](P11-WebApp-Launch-Guide.pdf)
+- [Live launch screenshot](evidence/launch/public-google-sign-in-2026-11-15.png)
 - [Team contribution record](team-contributions.md)
-- [Actual outside-user test record](outside-user-test.md)
+- [Outside-user test record](outside-user-test.md)
 
-## Evidence status
+## Launch and CI/CD evidence
 
-| Area | Evidence |
-| --- | --- |
-| Public launch, core task, persistence | Temporary free HTTPS demo verified; durable production hosting and outside-user evidence remain pending. |
-| GitLab CI/CD | Configuration linted; execution blocked until the GitLab account completes identity verification. |
-| Security | Production checks, restart persistence, and live two-session isolation verified; permanent-host controls remain out of scope. |
-| Report | Regenerated from the official template and visually verified; remaining human-only fields stay explicit. |
-| Outside-user testing | Pending an actual person outside Team 08. |
+The protected-main deployment for commit `dd3f569` completed successfully in [GitLab pipeline 3071046544](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/pipelines/3071046544). It ran backend, Firestore, frontend, and security checks; packaged images; deployed Cloud Run and Firebase Hosting; then verified the public site.
 
-## Remaining human actions
+The root [README](../README.md) is the current user guide, local/Docker run book, deployment reference, and environment-variable guide. The root [architecture](../architecture.md) describes the deployed trust boundaries, persistence, authentication, and CI/CD flow.
 
-An actual non-team person must try the deployed product and provide the record
-described in `outside-user-test.md`. Completed assigned issue evidence for all
-four members is recorded in `team-contributions.md`. A durable public host would
-require a separately approved free-tier or paid service; that work is
-intentionally out of scope for this free demo.
+## Required human record
 
-No video is included. The official template places the final presentation and
-live demo in P13.
+The only remaining human-only evidence is a real non-team walkthrough. Before Moodle submission, have an outside person follow the public URL and record the result in [outside-user-test.md](outside-user-test.md). Do not substitute an automated test or invent a result.

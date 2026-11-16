@@ -1,19 +1,11 @@
 # CI and deployment evidence
 
-**Status: configuration verified; execution blocked by GitLab account identity
-verification.**
+The root [.gitlab-ci.yml](../../.gitlab-ci.yml) is the launch pipeline. Merge requests and `main` run backend tests, Firestore integration, frontend lint/tests/build, dependency and frontend-security scans, and container-image packaging. Protected `main` also deploys Cloud Run and Firebase Hosting, then verifies the public HTTPS frontend and session endpoint.
 
-Merge request !30 created pipeline 3032702793 for commit
-`ffb201c77b6c37d46fa12e81942e3778946adaf4`. GitLab marked it failed before any
-job was created. Merge request !31 then removed GitLab-hosted runner tags and
-routed jobs to eight online ULL group runners (`python` and `node`); pipeline
-3032789671 was rejected at the same pre-job stage. Static CI lint accepted
-`.gitlab-ci.yml`, while pipeline simulation returned `Identity verification is
-required in order to run CI jobs`. This is an external account gate, not a
-successful test or deployment result. No paid runner, deployment, or cloud
-resource was enabled.
+Current successful protected-main evidence:
 
-After the account holder completes GitLab's free identity-verification step,
-rerun the pipeline and record its job results. A checked-in pipeline definition
-and local checks are implementation evidence; they do not establish a successful
-GitLab run.
+- Commit: `dd3f56980fa14553a9f4238438102583dcd66254`
+- Pipeline: [3071046544](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/pipelines/3071046544)
+- Successful jobs: backend tests, Firestore integration, frontend tests, dependency scan, frontend-security scan, four image builds, `deploy-production`, and `verify-production`.
+
+GitLab authenticates deployment through OpenID Connect and Google Workload Identity Federation. No service-account JSON key is stored in the repository.
