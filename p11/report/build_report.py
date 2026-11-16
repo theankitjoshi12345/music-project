@@ -131,17 +131,26 @@ def main():
         unchanged = [name for name in original.namelist() if name != "word/document.xml"]
         assert all(original.read(name) == final.read(name) for name in unchanged)
 
-    # The official template reserves a launch-screenshot slot. Add the real,
-    # dated public capture after the factual caption without changing the
+    # The official template reserves a launch-screenshot slot. Add two real,
+    # dated public captures after the factual caption without changing the
     # original template itself.
-    screenshot = HERE.parent / "evidence" / "launch" / "public-google-sign-in-2026-11-15.png"
+    screenshots = [
+        HERE.parent / "evidence" / "launch" / "public-google-sign-in-2026-11-15.png",
+        HERE.parent / "evidence" / "launch" / "public-sign-in-2026-11-16.png",
+    ]
     document = Document(output)
     target = next((paragraph for paragraph in document.paragraphs
                    if paragraph.text.startswith("Figure 1. Public Google sign-in page")), None)
-    if target is None or not screenshot.is_file():
-        raise RuntimeError("Launch screenshot slot or public screenshot is missing.")
+    if target is None or not all(screenshot.is_file() for screenshot in screenshots):
+        raise RuntimeError("Launch screenshot slot or public screenshots are missing.")
+    target.paragraph_format.keep_together = False
+    target.paragraph_format.keep_with_next = False
     target.add_run().add_break()
-    target.add_run().add_picture(str(screenshot), width=Inches(5.7))
+    target.add_run().add_picture(str(screenshots[0]), width=Inches(4.7))
+    target.add_run().add_break()
+    target.add_run("Figure 2. Public sign-in page re-verified November 16, 2026.")
+    target.add_run().add_break()
+    target.add_run().add_picture(str(screenshots[1]), width=Inches(4.7))
     document.save(output)
     assert hashlib.sha256(TEMPLATE.read_bytes()).hexdigest() == TEMPLATE_SHA256
     print(f"Created {output}; {len(unchanged)} untouched package parts verified.")
