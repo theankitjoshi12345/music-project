@@ -40,13 +40,14 @@ code. Migrations, management commands, and test modules are excluded because
 they are framework scaffolding or test code rather than application behavior.
 The enforced floor is 80%. Frontend coverage targets the deterministic core
 data and request modules (`scoreViewerData`, `extractionRequest`,
-`extractionTiming`, and `measureNavigation`) at 80% lines/statements/functions
-and 70% branches. JSX screen composition is additionally exercised by the
+`extractionTiming`, and `measureNavigation`) at 80% lines/functions and 70%
+branches. JSX screen composition is additionally exercised by the
 server-rendered component tests and the real-browser test.
 
-Coverage reports are generated at `coverage/backend-html/index.html` and
-`frontend/coverage/index.html`; GitLab retains the corresponding Cobertura XML
-and HTML artifacts for 30 days.
+The backend writes HTML and Cobertura reports at
+`coverage/backend-html/index.html` and `coverage/backend.xml`; GitLab retains
+them for 30 days. Node's built-in coverage runner prints the frontend result in
+the job log and enforces its thresholds without adding a separate dependency.
 
 ## Golden-path E2E
 

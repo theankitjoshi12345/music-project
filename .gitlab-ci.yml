@@ -91,11 +91,7 @@ frontend-tests:
     - npm run test:coverage
     - npm run build
   artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: frontend/coverage/cobertura-coverage.xml
-    paths: [frontend/dist/, frontend/coverage/]
+    paths: [frontend/dist/]
     expire_in: 30 days
 
 e2e-golden-path:
