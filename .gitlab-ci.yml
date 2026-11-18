@@ -20,8 +20,18 @@ backend-tests:
     - export DJANGO_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(64))')"
     - python backend/manage.py check
     - python backend/manage.py makemigrations --check --dry-run
-    - python backend/manage.py test scoreapi --verbosity 2
+    - coverage run backend/manage.py test scoreapi --verbosity 2
+    - coverage report
+    - coverage html
+    - coverage xml
     - DJANGO_ENV=production DJANGO_DEBUG=false DJANGO_AUTH_MODE=session DJANGO_ALLOWED_HOSTS=ci.example.test DJANGO_CSRF_TRUSTED_ORIGINS=https://ci.example.test python backend/manage.py check --deploy --fail-level WARNING
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/backend.xml
+    paths: [coverage/backend-html/, coverage/backend.xml]
+    expire_in: 30 days
 
 cost-guard-tests:
   stage: test
@@ -78,10 +88,44 @@ frontend-tests:
     - npm ci
     - npm run lint
     - npm test
+    - npm run test:coverage
     - npm run build
   artifacts:
     paths: [frontend/dist/]
-    expire_in: 7 days
+    expire_in: 30 days
+
+e2e-golden-path:
+  stage: test
+  tags: [node]
+  image: node:22-bookworm
+  script:
+    - apt-get update -qq && apt-get install -y --no-install-recommends curl python3 python3-venv
+    - python3 -m venv /tmp/score-p12-e2e-venv
+    - /tmp/score-p12-e2e-venv/bin/pip install -r backend/requirements-docker.txt
+    - npm ci --prefix frontend
+    - cd frontend && npx playwright install --with-deps chromium && cd ..
+    - mkdir -p .p12-e2e-data
+    - export DJANGO_SECRET_KEY="p12-ci-secret-key-is-long-enough-for-an-isolated-browser-test-run"
+    - export DJANGO_AUTH_MODE=demo DJANGO_DATA_DIR="$CI_PROJECT_DIR/.p12-e2e-data"
+    - /tmp/score-p12-e2e-venv/bin/python backend/manage.py migrate --noinput
+    - /tmp/score-p12-e2e-venv/bin/python backend/manage.py runserver 127.0.0.1:8000 > p12-e2e-backend.log 2>&1 &
+    - npm run dev --prefix frontend -- --host 127.0.0.1 --port 5173 --strictPort > p12-e2e-frontend.log 2>&1 &
+    - |
+      for attempt in $(seq 1 30); do
+        if curl --fail --silent http://127.0.0.1:5173/api/session/ > /dev/null; then
+          break
+        fi
+        if [ "$attempt" = 30 ]; then
+          cat p12-e2e-backend.log p12-e2e-frontend.log
+          exit 1
+        fi
+        sleep 1
+      done
+    - cd frontend && E2E_ORIGIN=http://127.0.0.1:5173 npm run test:e2e:golden
+  artifacts:
+    when: always
+    paths: [p12-e2e-backend.log, p12-e2e-frontend.log, frontend/test-results/]
+    expire_in: 30 days
 
 dependency-security:
   stage: security

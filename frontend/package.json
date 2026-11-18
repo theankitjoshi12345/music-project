@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "test": "node --test src/pages/scoreViewerData.test.js src/pages/qualityRegression.test.js src/components/score-companion/components.test.js",
+    "test:coverage": "node --experimental-test-coverage --test-coverage-include='src/pages/scoreViewerData.js' --test-coverage-include='src/pages/extractionRequest.js' --test-coverage-include='src/pages/extractionTiming.js' --test-coverage-include='src/pages/measureNavigation.js' --test-coverage-lines=80 --test-coverage-branches=70 --test-coverage-functions=80 --test src/pages/scoreViewerData.test.js src/pages/qualityRegression.test.js",
     "test:e2e": "node e2e/workflow.mjs",
     "test:e2e:golden": "node e2e/golden-path.mjs",
     "preview": "vite preview"

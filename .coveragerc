@@ -1,0 +1,19 @@
+[run]
+branch = True
+source =
+    backend/scoreapi
+
+[report]
+fail_under = 80
+show_missing = True
+omit =
+    */migrations/*
+    */management/*
+    */test_*.py
+    */tests.py
+
+[html]
+directory = coverage/backend-html
+
+[xml]
+output = coverage/backend.xml

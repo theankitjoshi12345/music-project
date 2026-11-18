@@ -9,6 +9,8 @@ backend/media/
 # JavaScript
 frontend/node_modules/
 frontend/dist/
+coverage/
+.coverage
 
 # Local and operating-system files
 .DS_Store
