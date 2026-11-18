@@ -171,6 +171,26 @@ The Firestore emulator smoke test exercises migrations, account isolation,
 uploads, passages, practice create/delete, and complete score deletion. It
 refuses to run without `DATASTORE_EMULATOR_HOST`.
 
+## Testing
+
+P12 adds repeatable backend, frontend, coverage, and browser-regression checks.
+Run the full local testing workflow in [TESTING.md](TESTING.md); recorded,
+reproducible results and scope are in [TEST-RESULTS.md](TEST-RESULTS.md).
+
+The CI-equivalent quick checks are:
+
+```bash
+backend/.venv/bin/coverage run backend/manage.py test scoreapi --verbosity 1
+backend/.venv/bin/coverage report
+cd frontend && npm run lint && npm test && npm run test:coverage && npm run build
+```
+
+The browser golden path uses an isolated demo database and verifies upload,
+measure selection, practice save/review, return navigation, and cleanup. CI
+runs these checks for merge requests and pushes before protected-main package
+and deployment stages. Coverage reports are retained as GitLab artifacts for
+30 days.
+
 The production duplicate-upload lookup needs the owner/content-SHA composite
 index declared in `backend/index.yaml`. Protected-main deployment creates the
 index idempotently and waits until Datastore reports it ready before releasing
