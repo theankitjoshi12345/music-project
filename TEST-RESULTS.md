@@ -35,6 +35,22 @@ optional longer local workflow, but is not a shared-runner E2E dependency.
 
 ## CI evidence
 
-The final P12 merge request and protected-main pipeline must be green before
-submission. The final pipeline URL is recorded in the P12 report after the
-documentation merge completes.
+Verified green P12 merge-request pipeline:
+[3086384025](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/pipelines/3086384025)
+(MR !53, commit `1c1dfb5`). Its P12 test jobs all passed:
+
+- [`backend-tests`](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/jobs/18162365965)
+  ran Django checks, migrations, 79 tests, and branch coverage. Its retained
+  artifacts contain `coverage/backend-html/index.html` and
+  `coverage/backend.xml` (Cobertura).
+- [`frontend-tests`](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/jobs/18162365968)
+  ran lint, 27 unit/component tests, enforced frontend coverage, and the
+  production build. Frontend coverage is printed in this job's log.
+- [`e2e-golden-path`](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/jobs/18162365969)
+  passed the isolated Playwright upload → measure → practice-review → cleanup
+  workflow.
+
+The coverage and job artifacts for this pipeline expire after 30 days, on
+December 18, 2026. GitLab project settings currently do not require a passing
+pipeline before a merge; this evidence records the verified green pipeline
+used for the P12 review rather than claiming an enforced protection.
