@@ -41,10 +41,23 @@ try {
   await review.getByRole('link', { name: 'Open measure', exact: false }).click()
   await page.getByRole('button', { name: 'Remove from practice', exact: true }).waitFor()
 
+  const deleted = await context.request.delete(`${origin}/api/scores/${scoreId}/`, { headers: { 'X-Mock-User': 'alex' } })
+  assert.equal(deleted.status(), 204, 'The isolated demo score must be deleted successfully.')
+  const missing = await context.request.get(`${origin}/api/scores/${scoreId}/`, { headers: { 'X-Mock-User': 'alex' } })
+  assert.equal(missing.status(), 404, 'The deleted isolated demo score must no longer be readable.')
+  scoreId = undefined
+
   console.log('PASS: P12 golden path uploads MusicXML, opens a measure, saves/reviews practice, and returns to the measure')
 } finally {
   if (scoreId) {
-    await context.request.delete(`${origin}/api/scores/${scoreId}/`, { headers: { 'X-Mock-User': 'alex' } }).catch(() => {})
+    try {
+      const cleanup = await context.request.delete(`${origin}/api/scores/${scoreId}/`, { headers: { 'X-Mock-User': 'alex' } })
+      if (![204, 404].includes(cleanup.status())) {
+        console.error(`Fallback cleanup returned unexpected status ${cleanup.status()} for isolated score ${scoreId}`)
+      }
+    } catch (error) {
+      console.error(`Fallback cleanup failed for isolated score ${scoreId}:`, error)
+    }
   }
   await browser.close()
 }

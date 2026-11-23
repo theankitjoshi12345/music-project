@@ -3,7 +3,7 @@
 **Course:** CMPS453  
 **Product:** Score Companion  
 **Team:** 08  
-**Due:** Sunday, November 22, 2026, 11:55 PM
+**Due:** Sunday, November 29, 2026, 11:55 PM
 
 ## Purpose
 

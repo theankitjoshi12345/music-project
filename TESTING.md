@@ -13,9 +13,10 @@ does not depend on Audiveris or production data.
 - Chromium for the E2E command. Install it once with
   `cd frontend && npx playwright install chromium`.
 
-Create a development secret before Django commands:
+Create the virtual environment and development secret before Django commands:
 
 ```bash
+python3.12 -m venv backend/.venv
 export DJANGO_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')"
 ```
 
@@ -59,14 +60,14 @@ practiced in Practice Review, returns to the measure, and removes the score.
 Terminal 1:
 
 ```bash
-mkdir -p /tmp/score-companion-p12-e2e
+export P12_E2E_DATA_DIR="$(mktemp -d /tmp/score-companion-p12-e2e.XXXXXX)"
 DJANGO_SECRET_KEY="$DJANGO_SECRET_KEY" \
   DJANGO_AUTH_MODE=demo \
-  DJANGO_DATA_DIR=/tmp/score-companion-p12-e2e \
+  DJANGO_DATA_DIR="$P12_E2E_DATA_DIR" \
   backend/.venv/bin/python backend/manage.py migrate --noinput
 DJANGO_SECRET_KEY="$DJANGO_SECRET_KEY" \
   DJANGO_AUTH_MODE=demo \
-  DJANGO_DATA_DIR=/tmp/score-companion-p12-e2e \
+  DJANGO_DATA_DIR="$P12_E2E_DATA_DIR" \
   backend/.venv/bin/python backend/manage.py runserver 127.0.0.1:8000
 ```
 

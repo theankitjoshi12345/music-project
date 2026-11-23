@@ -185,11 +185,24 @@ backend/.venv/bin/coverage report
 cd frontend && npm run lint && npm test && npm run test:coverage && npm run build
 ```
 
+For the browser golden path, first use the isolated Django/Vite server setup in
+[TESTING.md](TESTING.md#golden-path-e2e), then run:
+
+```bash
+cd frontend
+E2E_ORIGIN=http://127.0.0.1:5173 npm run test:e2e:golden
+```
+
 The browser golden path uses an isolated demo database and verifies upload,
 measure selection, practice save/review, return navigation, and cleanup. CI
 runs these checks for merge requests and pushes before protected-main package
-and deployment stages. Coverage reports are retained as GitLab artifacts for
-30 days.
+and deployment stages. Verified P12 evidence is [GitLab pipeline
+3086384025](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/pipelines/3086384025): backend HTML and Cobertura coverage are retained in the
+[`backend-tests` artifact](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/jobs/18162365965)
+at `coverage/backend-html/index.html` and `coverage/backend.xml`; frontend
+coverage is recorded in the [`frontend-tests` job
+log](https://gitlab.com/ull-gitlab/453/fa26/fa26-team-08/music-project/-/jobs/18162365968).
+These artifacts expire after 30 days.
 
 The production duplicate-upload lookup needs the owner/content-SHA composite
 index declared in `backend/index.yaml`. Protected-main deployment creates the
